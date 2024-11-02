@@ -4,37 +4,43 @@ from typing import List, Literal, TypedDict
 import pandas as pd
 import threading
 import re
+import argon2
 
 import sqlite3
 import sqlite_vec
 
 from dotenv import load_dotenv
 
+
 class OldLabelData(TypedDict):  # readable by frontend
-    record_id: str # a unit name for the annotation
-    sample_id: str # traditionally, mercury_{\d+} where \d is the sample number, e.g., 15
+    record_id: str  # a unit name for the annotation
+    sample_id: str  # traditionally, mercury_{\d+} where \d is the sample number, e.g., 15
     summary_start: int
     summary_end: int
     source_start: int
     source_end: int
-    consistent: str # used to be boolean 
-    task_index: int # traditionally, \d+ where \d is the sample number, e.g., 15
+    consistent: str  # used to be boolean
+    task_index: int  # traditionally, \d+ where \d is the sample number, e.g., 15
     user_id: str
     note: str
 
-class AnnotSpan(TypedDict): # In future expansion, the fields can be any user-defined fields
-    source: tuple[int, int] # optional
+
+class AnnotSpan(TypedDict):  # In future expansion, the fields can be any user-defined fields
+    source: tuple[int, int]  # optional
     summary: tuple[int, int]
 
+
 class LabelData(TypedDict):  # human annotation on a sample
-    annot_id: int 
-    sample_id: int 
+    annot_id: int
+    sample_id: int
     annot_spans: AnnotSpan
     annotator: str
     label: str  # json string
     note: str
 
-def convert_LabelData(lb: LabelData | OldLabelData, direction: Literal["new2old", "old2new"] ) -> LabelData | OldLabelData: 
+
+def convert_LabelData(lb: LabelData | OldLabelData,
+                      direction: Literal["new2old", "old2new"]) -> LabelData | OldLabelData:
     if direction == "old2new":
         return {
             "annot_id": lb["record_id"],
@@ -63,10 +69,12 @@ def convert_LabelData(lb: LabelData | OldLabelData, direction: Literal["new2old"
             "note": lb["note"]
         }
 
+
 class AnnotationLabelItem(TypedDict):
     text: str
     start: int
     end: int
+
 
 class AnnotationItem(TypedDict):
     source: AnnotationLabelItem
@@ -108,35 +116,35 @@ class AnnotationData(TypedDict):
 
 # def fetch_annotations(sqlite_db_path: str) -> List[LabelData]:
 #     db = sqlite3.connect(sqlite_db_path)
-    # cmd = "SELECT annot_id, doc_id, annot_spans, annotator, label FROM annotations"
-    # annotations = db.execute(cmd).fetchall()
-    # db.close()
+# cmd = "SELECT annot_id, doc_id, annot_spans, annotator, label FROM annotations"
+# annotations = db.execute(cmd).fetchall()
+# db.close()
 
-    # label_data = []
-    # for annot_id, doc_id, annot_spans, annotator, label in annotations:
-    #     annot_spans = json.loads(text_spans)
-    #     label_data.append({
-    #         "record_id": annot_id,
-    #         "sample_id": doc_id, # traditionally, this is mercury_{\d+} where \d is the sample number, e.g., 15
-    #         "summary_start": text_spans["summary"][0],
-    #         "summary_end": text_spans["summary"][1],
-    #         "source_start": text_spans["source"][0],
-    #         "source_end": text_spans["source"][1],
-    #         "consistent": label,
-    #         "task_index": doc_id, # traditionally, this is \d+ where \d is the sample number, e.g., 15
-    #         "user_id": annotator
-    #     })
+# label_data = []
+# for annot_id, doc_id, annot_spans, annotator, label in annotations:
+#     annot_spans = json.loads(text_spans)
+#     label_data.append({
+#         "record_id": annot_id,
+#         "sample_id": doc_id, # traditionally, this is mercury_{\d+} where \d is the sample number, e.g., 15
+#         "summary_start": text_spans["summary"][0],
+#         "summary_end": text_spans["summary"][1],
+#         "source_start": text_spans["source"][0],
+#         "source_end": text_spans["source"][1],
+#         "consistent": label,
+#         "task_index": doc_id, # traditionally, this is \d+ where \d is the sample number, e.g., 15
+#         "user_id": annotator
+#     })
 
-    # annotations = pd.DataFrame.from_records(
-    #     label_data,
-    #     columns=["record_id", "sample_id", "summary_start", "summary_end", "source_start",
-    #              "source_end", "consistent", "task_index", "user_id"])
-    # return annotations
+# annotations = pd.DataFrame.from_records(
+#     label_data,
+#     columns=["record_id", "sample_id", "summary_start", "summary_end", "source_start",
+#              "source_end", "consistent", "task_index", "user_id"])
+# return annotations
 
 class Database:
-# class Annotate:
+    # class Annotate:
     # def __init__(self, annotation_corpus_id: int, vectara_client: Vectara = Vectara()):
-    def __init__(self, sqlite_db_path: str):
+    def __init__(self, mercury_db_path: str, user_db_path: str):
         self.lock = threading.Lock()
         # self.vectara_client = vectara_client
         # self.annotation_corpus_id = annotation_corpus_id
@@ -150,25 +158,34 @@ class Database:
         # self.annotations = fetch_annotations(sqlite_db_path)
 
         # prepare the database
-        db = sqlite3.connect(sqlite_db_path)
-        print ("Open db at ", sqlite_db_path)
-        db.execute("CREATE TABLE IF NOT EXISTS annotations (\
+        mercury_db = sqlite3.connect(mercury_db_path)
+        print("Open db at ", mercury_db_path)
+        mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
                    annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
                    sample_id INTEGER, \
                    annot_spans TEXT, \
                    annotator TEXT, \
                    label TEXT, \
                    note TEXT)")
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, user_name TEXT)"
-        )
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        db.enable_load_extension(False)
-        db.commit()
-        self.db = db # Forrst is unsure whether it is a good idea to keep the db connection open
+        # mercury_db.execute(
+        #     "CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, user_name TEXT)"
+        # )
+        mercury_db.enable_load_extension(True)
+        sqlite_vec.load(mercury_db)
+        mercury_db.enable_load_extension(False)
+        mercury_db.commit()
+        user_db = sqlite3.connect(user_db_path)
+        user_db.execute("""CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            user_name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            hashed_password TEXT NOT NULL)""")
+        user_db.commit()
+        self.mercury_db = mercury_db  # Forrst is unsure whether it is a good idea to keep the db connection open
+        self.user_db = user_db
+        self.ph = argon2.PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)
 
-    @staticmethod # Forrest: Seems no need to update this function after Vectara-to-SQLite migration
+    @staticmethod  # Forrest: Seems no need to update this function after Vectara-to-SQLite migration
     def database_lock():
         def decorator(func):
             def wrapper(self, *args, **kwargs):
@@ -176,16 +193,18 @@ class Database:
                 result = func(self, *args, **kwargs)
                 self.lock.release()
                 return result
+
             return wrapper
+
         return decorator
 
     def fetch_data_for_labeling(self):
         """Fetch the source-summary pairs for labeling from the database."""
 
         data_for_labeling = {}
-        sectioned_chunks = {} 
+        sectioned_chunks = {}
         # db = sqlite3.connect(sqlite_db_path)
-        db = self.db
+        db = self.mercury_db
         texts = db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
         """ texts = 
         [('The quick brown fox.', 'source', 1, 0),
@@ -230,7 +249,7 @@ class Database:
 
         data_for_labeling = [
             {
-                "_id": str(sample_id), 
+                "_id": str(sample_id),
                 "source": " ".join(sectioned_chunks[sample_id]["source"].values()),
                 "summary": " ".join(sectioned_chunks[sample_id]["summary"].values())
             }
@@ -256,10 +275,10 @@ class Database:
         data_for_labeling.sort(key=lambda x: int(x["_id"]))
 
         return data_for_labeling
-    
+
     def fetch_configs(self):
         # db = sqlite3.connect(sqlite_db_path)
-        db = self.db
+        db = self.mercury_db
         configs = db.execute("SELECT key, value FROM config").fetchall()
         return {key: value for key, value in configs}
 
@@ -278,7 +297,7 @@ class Database:
         #     return
 
         sql_cmd = "SELECT * FROM annotations WHERE sample_id = ? AND annot_spans = ? AND annotator = ? AND label = ? AND note = ?"
-        res = self.db.execute(sql_cmd, (
+        res = self.mercury_db.execute(sql_cmd, (
             label_data["sample_id"],
             json.dumps(label_data["annot_spans"]),
             label_data["annotator"],
@@ -291,7 +310,7 @@ class Database:
         # record_id = uuid.uuid4().hex # No need for this line in SQLite because it auto-increments
         # label_data["record_id"] = record_id
         # self.annotations.loc[len(self.annotations.index)] = (
-            # label_data["record_id"],
+        # label_data["record_id"],
         #     label_data["sample_id"],
         #     label_data["summary_start"],
         #     label_data["summary_end"],
@@ -311,14 +330,14 @@ class Database:
         # label_data = convert_LabelData(label_data, "old2new")
 
         sql_cmd = "INSERT INTO annotations (sample_id, annot_spans, annotator, label, note) VALUES (?, ?, ?, ?, ?)"
-        self.db.execute(sql_cmd, (
+        self.mercury_db.execute(sql_cmd, (
             label_data["sample_id"],
             json.dumps(label_data["annot_spans"]),
             label_data["annotator"],
             label_data["label"],
             label_data["note"]
         ))
-        self.db.commit()
+        self.mercury_db.commit()
 
     @database_lock()
     # def delete_annotation(self, record_id: str, user_id: str):
@@ -332,33 +351,30 @@ class Database:
         # self.annotations.drop(record_index, inplace=True)
         # self.vectara_client.delete_document(self.annotation_corpus_id, record_id)
         sql_cmd = "DELETE FROM annotations WHERE annot_id = ? AND annotator = ?"
-        self.db.execute(sql_cmd, (int(record_id), annotator))
-        self.db.commit()
-    
+        self.mercury_db.execute(sql_cmd, (int(record_id), annotator))
+        self.mercury_db.commit()
+
     @database_lock()
-    def add_user(self, user_id: str, user_name: str):
+    def add_user(self, user_id: str, user_name: str): #TODO: remove this method since now only admin can add user
         sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
-        self.db.execute(sql_cmd, (user_id, user_name))
-        self.db.commit()
-    
+        self.mercury_db.execute(sql_cmd, (user_id, user_name))
+        self.mercury_db.commit()
+
     @database_lock()
     def change_user_name(self, user_id: str, user_name: str):
-        sql_cmd = "UPDATE users SET user_name = ? WHERE user_id = ?"
-        self.db.execute(sql_cmd, (user_name, user_id))
-        self.db.commit()
-    
+        self.user_db.execute("UPDATE users SET user_name = ? WHERE user_id = ?", (user_name, user_id))
+        self.mercury_db.commit()
+
     @database_lock()
     def get_user_name(self, user_id: str) -> str:
-        sql_cmd = "SELECT user_name FROM users WHERE user_id = ?"
-        res = self.db.execute(sql_cmd, (user_id,))
+        res = self.user_db.execute("SELECT user_name FROM users WHERE user_id = ?", (user_id,))
         user_name = res.fetchone()
         if user_name is None:
             return None
         return user_name[0]
-    
+
     def get_user_name_without_lock(self, user_id: str) -> str:
-        sql_cmd = "SELECT user_name FROM users WHERE user_id = ?"
-        res = self.db.execute(sql_cmd, (user_id,))
+        res = self.user_db.execute("SELECT user_name FROM users WHERE user_id = ?", (user_id,))
         user_name = res.fetchone()
         if user_name is None:
             return None
@@ -366,19 +382,19 @@ class Database:
 
     @database_lock()
     # def export_user_data(self, user_id: str) -> list[LabelData]:
-    def export_user_data(self, annotator: str) -> list[LabelData]:
+    def export_user_data(self, annotator_uuid: str) -> list[LabelData]:
         # return self.annotations[self.annotations["user_id"] == user_id].to_dict(orient="records")
         sql_cmd = "SELECT * FROM annotations WHERE annotator = ?"
-        res = self.db.execute(sql_cmd, (annotator,))
+        res = self.mercury_db.execute(sql_cmd, (annotator_uuid,))
         annotations = res.fetchall()
-        label_data = [] # in OldLabelData format
-        for annot_id, sample_id, annot_spans, annotator, label, note in annotations:
+        label_data = []  # in OldLabelData format
+        for annot_id, sample_id, annot_spans, annotator_uuid, label, note in annotations:
             annot_spans = json.loads(annot_spans)
             label_data.append(convert_LabelData({
                 "annot_id": annot_id,
-                "sample_id": sample_id, 
+                "sample_id": sample_id,
                 "annot_spans": annot_spans,
-                "annotator": annotator,
+                "annotator": annotator_uuid,
                 "label": json.loads(label),
                 "note": note
             }, "new2old"))
@@ -392,25 +408,25 @@ class Database:
         #         (self.annotations["task_index"] == task_index)
         #     ].to_dict(orient="records")
         sql_cmd = "SELECT * FROM annotations WHERE annotator = ? AND sample_id = ?"
-        res = self.db.execute(sql_cmd, (annotator, sample_id))
+        res = self.mercury_db.execute(sql_cmd, (annotator, sample_id))
         annotations = res.fetchall()
         label_data = []
         for annot_id, sample_id, annot_spans, annotator, label, note in annotations:
             annot_spans = json.loads(annot_spans)
             label_data.append(convert_LabelData({
                 "annot_id": annot_id,
-                "sample_id": sample_id, 
+                "sample_id": sample_id,
                 "annot_spans": annot_spans,
                 "annotator": annotator,
                 "label": json.loads(label),
                 "note": note
             }, "new2old"))
         return label_data
-    
+
     @database_lock()
     def dump_annotator_labels(self, annotator: str):
         sql_cmd = "SELECT * FROM annotations WHERE annotator = ?"
-        res = self.db.execute(sql_cmd, (annotator,))
+        res = self.mercury_db.execute(sql_cmd, (annotator,))
         annotations = res.fetchall()
         results = []
         results_dict = {}
@@ -419,12 +435,14 @@ class Database:
             full_texts = {}
             for text_type in ["source", "summary"]:
                 sql_cmd = "SELECT text FROM chunks WHERE sample_id = ? AND text_type = ? ORDER BY chunk_offset"
-                res = self.db.execute(sql_cmd, (sample_id, text_type))
-                text = res.fetchall() # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
+                res = self.mercury_db.execute(sql_cmd, (sample_id, text_type))
+                text = res.fetchall()  # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
                 text = [t[0] for t in text]
                 full_texts[text_type] = " ".join(text)
-            
-            result_local = {"annot_id": annot_id, "sample_id": sample_id, "annotator": annotator, "label": json.loads(label), "note": note, "annotator_name": self.get_user_name_without_lock(annotator)}
+
+            result_local = {"annot_id": annot_id, "sample_id": sample_id, "annotator": annotator,
+                            "label": json.loads(label), "note": note,
+                            "annotator_name": self.get_user_name_without_lock(annotator)}
             # annot_spans example: {'source': (1, 10), 'summary': (7, 10)}
             annot_spans = json.loads(annot_spans)
             for text_type, (start, end) in annot_spans.items():
@@ -435,18 +453,20 @@ class Database:
 
             results.append(result_local)
 
-            results_dict.setdefault(sample_id, {"source": full_texts["source"], "summary": full_texts["summary"], "annotations": []})
+            results_dict.setdefault(sample_id, {"source": full_texts["source"], "summary": full_texts["summary"],
+                                                "annotations": []})
             results_dict[sample_id]["annotations"].append(result_local)
 
         results_nested = [{"sample_id": key, **value} for key, value in results_dict.items()]
 
         # TODO: copy and paste from dump_annotation is too ugly. Please turn common code to a function
 
-        sql_cmd = "SELECT * from sample_meta" # get the metadata
-        res = self.db.execute(sql_cmd)
+        sql_cmd = "SELECT * from sample_meta"  # get the metadata
+        res = self.mercury_db.execute(sql_cmd)
         sample_meta = res.fetchall()
         sample_meta_dict = {sample_id: json.loads(json_meta) for sample_id, json_meta in sample_meta}
-        sample_meta_dict = {sample_id: {f"meta_{k}": v for k, v in meta.items()} for sample_id, meta in sample_meta_dict.items()}
+        sample_meta_dict = {sample_id: {f"meta_{k}": v for k, v in meta.items()} for sample_id, meta in
+                            sample_meta_dict.items()}
 
         # add metadata to each dict in results_nested
         new_results_nested = []
@@ -467,23 +487,25 @@ class Database:
     ):
 
         sql_cmd = "SELECT * FROM annotations"
-        res = self.db.execute(sql_cmd)
+        res = self.mercury_db.execute(sql_cmd)
         annotations = res.fetchall()
 
         # match annotations with chunks by doc_id
         results = []
-        results_dict = {} # keys are sample_id, values are source text, summary text, and each pair of spans and labels and annotators
+        results_dict = {}  # keys are sample_id, values are source text, summary text, and each pair of spans and labels and annotators
         for annot_id, sample_id, annot_spans, annotator, label, note in annotations:
             # find the source and summary text by doc_id
             full_texts = {}
             for text_type in ["source", "summary"]:
                 sql_cmd = "SELECT text FROM chunks WHERE sample_id = ? AND text_type = ? ORDER BY chunk_offset"
-                res = self.db.execute(sql_cmd, (sample_id, text_type))
-                text = res.fetchall() # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
+                res = self.mercury_db.execute(sql_cmd, (sample_id, text_type))
+                text = res.fetchall()  # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
                 text = [t[0] for t in text]
                 full_texts[text_type] = " ".join(text)
-            
-            result_local = {"annot_id": annot_id, "sample_id": sample_id, "annotator": annotator, "label": json.loads(label), "note": note, "annotator_name": self.get_user_name_without_lock(annotator)}
+
+            result_local = {"annot_id": annot_id, "sample_id": sample_id, "annotator": annotator,
+                            "label": json.loads(label), "note": note,
+                            "annotator_name": self.get_user_name_without_lock(annotator)}
             # annot_spans example: {'source': (1, 10), 'summary': (7, 10)}
             annot_spans = json.loads(annot_spans)
             for text_type, (start, end) in annot_spans.items():
@@ -493,16 +515,18 @@ class Database:
 
             results.append(result_local)
 
-            results_dict.setdefault(sample_id, {"source": full_texts["source"], "summary": full_texts["summary"], "annotations": []})
+            results_dict.setdefault(sample_id, {"source": full_texts["source"], "summary": full_texts["summary"],
+                                                "annotations": []})
             results_dict[sample_id]["annotations"].append(result_local)
 
         results_nested = [{"sample_id": key, **value} for key, value in results_dict.items()]
 
-        sql_cmd = "SELECT * from sample_meta" # get the metadata
-        res = self.db.execute(sql_cmd)
+        sql_cmd = "SELECT * from sample_meta"  # get the metadata
+        res = self.mercury_db.execute(sql_cmd)
         sample_meta = res.fetchall()
         sample_meta_dict = {sample_id: json.loads(json_meta) for sample_id, json_meta in sample_meta}
-        sample_meta_dict = {sample_id: {f"meta_{k}": v for k, v in meta.items()} for sample_id, meta in sample_meta_dict.items()}
+        sample_meta_dict = {sample_id: {f"meta_{k}": v for k, v in meta.items()} for sample_id, meta in
+                            sample_meta_dict.items()}
 
         # add metadata to each dict in results_nested
         new_results_nested = []
@@ -516,22 +540,31 @@ class Database:
                 full_texts = {}
                 for text_type in ["source", "summary"]:
                     sql_cmd = "SELECT text FROM chunks WHERE sample_id = ? AND text_type = ? ORDER BY chunk_offset"
-                    res = self.db.execute(sql_cmd, (sample_id, text_type))
-                    text = res.fetchall() # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
+                    res = self.mercury_db.execute(sql_cmd, (sample_id, text_type))
+                    text = res.fetchall()  # text =  [('The quick brown fox.',), ('Jumps over a lazy dog.',)]
                     text = [t[0] for t in text]
                     full_texts[text_type] = " ".join(text)
-                sample_dict = {"sample_id": sample_id, "source": full_texts["source"], "summary": full_texts["summary"], "annotations": []}
+                sample_dict = {"sample_id": sample_id, "source": full_texts["source"], "summary": full_texts["summary"],
+                               "annotations": []}
                 sample_dict.update(sample_meta_dict[sample_id])
                 new_results_nested.append(sample_dict)
-        
+
         results_nested = new_results_nested
         results_nested = sorted(results_nested, key=lambda d: d['sample_id'])
-        
+
         if dump_file is None:
             return results_nested
         with open(dump_file, "w") as f:
             json.dump(results_nested, f, indent=2, ensure_ascii=False)
-            #TODO add JSONL support. Automatically detect file format based on filename extension
+            # TODO add JSONL support. Automatically detect file format based on filename extension
+
+    @database_lock()
+    def auth_user(self, email: str, password: str):
+        res = self.user_db.execute("SELECT hashed_password FROM users WHERE email = ?", (email,))
+        hashed_password = res.fetchone()
+        if hashed_password is None:
+            return False
+        return self.ph.verify(hashed_password[0], password)
 
 
 if __name__ == "__main__":
@@ -549,7 +582,7 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(
-        description="Dump all annotations from a Vectara corpus to a JSON file.", 
+        description="Dump all annotations from a Vectara corpus to a JSON file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("sqlite_db_path", type=str, help="Path to the SQLite database")

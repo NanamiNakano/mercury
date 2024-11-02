@@ -10,3 +10,4 @@ sentence-transformers
 spacy
 openai
 argon2-cffi
+python-multipart
