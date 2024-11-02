@@ -90,7 +90,10 @@ def main():
 
     match args.command:
         case "new":
-            password = db_utils.new_user(args.user_name, args.email, args.password)
+            if args.password:
+                password = db_utils.new_user(args.user_name, args.email, args.password)
+            else:
+                password = db_utils.new_user(args.user_name, args.email)
             print(f"New user created with password: {password}")
         case "delete":
             db_utils.delete_user(args.user_id)

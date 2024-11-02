@@ -566,7 +566,6 @@ class Database:
             return False
         return self.ph.verify(hashed_password[0], password)
 
-
 if __name__ == "__main__":
     import argparse
     import os

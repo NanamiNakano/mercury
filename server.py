@@ -7,8 +7,9 @@ import struct
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import List
 
@@ -25,6 +26,10 @@ import sqlite_vec
 from ingester import Embedder
 from database import Database
 
+import jwt
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime, timedelta, timezone
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -33,11 +38,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 # vectara_client = Vectara()
 
 def serialize_f32(vector: List[float]) -> bytes:
     """serializes a list of floats into a compact "raw bytes" format"""
     return struct.pack("%sf" % len(vector), *vector)
+
 
 class Label(BaseModel):
     summary_start: int
@@ -47,26 +55,60 @@ class Label(BaseModel):
     consistent: list[str]
     note: str
 
+
 class Selection(BaseModel):
     start: int
     end: int
     from_summary: bool
 
+
 class Name(BaseModel):
     name: str
 
-@app.get("/candidate_labels") 
-async def get_labels() -> list: # get all candidate labels for human annotators to choose from
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+SECRET_KEY = ""
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
+def create_access_token(email: str):
+    to_encode = {"email": email}
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+@app.post("/login")
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    if not database.auth_user(form_data.username, form_data.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password",
+                            headers={"WWW-Authenticate": "Bearer"})
+    access_token = create_access_token(form_data.username)
+    return Token(access_token=access_token, token_type="bearer")
+
+@app.get("/candidate_labels")
+async def get_labels() -> list:  # get all candidate labels for human annotators to choose from
     with open("labels.yaml") as f:
         labels = yaml.safe_load(f)
     return labels
 
-@app.get("/user/new") # please update the route name to be more meaningful, e.g., /user/new_user
+
+@app.get("/user/new")  # please update the route name to be more meaningful, e.g., /user/new_user
 async def create_new_user():
     user_id = uuid.uuid4().hex
     user_name = "New User"
     database.add_user(user_id, user_name)
     return {"key": user_id, "name": user_name}
+
 
 @app.post("/user/name")
 async def update_user_name(name: Name, user_key: Annotated[str, Header()]):
@@ -74,6 +116,7 @@ async def update_user_name(name: Name, user_key: Annotated[str, Header()]):
         user_key = user_key[1:-1]
     database.change_user_name(user_key, name.name)
     return {"message": "success"}
+
 
 @app.get("/user/me")
 async def get_user_name(user_key: Annotated[str, Header()]):
@@ -85,7 +128,8 @@ async def get_user_name(user_key: Annotated[str, Header()]):
     else:
         return {"name": username}
 
-@app.get("/user/export") # please update the route name to be more meaningful, e.g., /user/export_user_data
+
+@app.get("/user/export")  # please update the route name to be more meaningful, e.g., /user/export_user_data
 async def export_user_data(user_key: Annotated[str, Header()]):
     if user_key.startswith('"') and user_key.endswith('"'):
         user_key = user_key[1:-1]
@@ -128,29 +172,30 @@ async def post_task(task_index: int, label: Label, user_key: Annotated[str, Head
     #     task_index=task_index,
     #     user_id=user_key,
     # )
-    
+
     sample_id = task_index
     annot_spans = {}
     if label.summary_start != -1:
         annot_spans["summary"] = (label.summary_start, label.summary_end)
     if label.source_start != -1:
         annot_spans["source"] = (label.source_start, label.source_end)
-    
+
     annotator = user_key
-    
+
     label_string = json.dumps(label.consistent)
-    
+
     database.push_annotation({
         "sample_id": sample_id,
         "annotator": annotator,
         "label": label_string,
         "annot_spans": annot_spans,
         "note": label.note
-    }) # the label_data is in databse.OldLabelData format
+    })  # the label_data is in databse.OldLabelData format
     return {"message": "success"}
 
 
-@app.post("/task/{task_index}/select") # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
+@app.post(
+    "/task/{task_index}/select")  # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
 async def post_selections(task_index: int, selection: Selection):
     if task_index >= len(tasks):
         return {"error": "Invalid task index"}
@@ -158,9 +203,9 @@ async def post_selections(task_index: int, selection: Selection):
         return {"error": "Invalid task index"}
     # use_id = source_corpus_id if selection.from_summary else summary_corpus_id
     query = (
-        tasks[task_index]["source"][selection.start : selection.end]
+        tasks[task_index]["source"][selection.start: selection.end]
         if not selection.from_summary
-        else tasks[task_index]["summary"][selection.start : selection.end]
+        else tasks[task_index]["summary"][selection.start: selection.end]
     )
     id_ = tasks[task_index]["_id"]
 
@@ -176,7 +221,7 @@ async def post_selections(task_index: int, selection: Selection):
 
     # first embedd query 
     embedding = embedder.embed([query], embedding_dimension=configs["embedding_dimension"])[0]
-    
+
     # Then get the chunk_id's from the opposite document
     sql_cmd = "SELECT chunk_id, text FROM chunks WHERE text_type = ? AND sample_id = ?"
     if selection.from_summary:
@@ -186,9 +231,9 @@ async def post_selections(task_index: int, selection: Selection):
 
     chunk_id_and_text = database.db.execute(sql_cmd, [text_type, task_index]).fetchall()
     search_chunk_ids = [row[0] for row in chunk_id_and_text]
-    vecter_db_row_ids = [str(x+1) for x in search_chunk_ids] # rowid starts from 1 while chunk_id starts from 0
+    vecter_db_row_ids = [str(x + 1) for x in search_chunk_ids]  # rowid starts from 1 while chunk_id starts from 0
 
-    if len(search_chunk_ids) == 1: # no need for vector search
+    if len(search_chunk_ids) == 1:  # no need for vector search
         selections = [{
             "score": 1.0,
             "offset": 0,
@@ -204,13 +249,13 @@ async def post_selections(task_index: int, selection: Selection):
         SELECT  \
             rowid, \
             distance \
-        FROM embeddings "  \
-        " WHERE rowid IN ({0})" \
-        "AND embedding MATCH '{1}'  \
-        ORDER BY distance \
-        LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
+        FROM embeddings " \
+              " WHERE rowid IN ({0})" \
+              "AND embedding MATCH '{1}'  \
+              ORDER BY distance \
+              LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
     # print ("SQL_CMD", sql_cmd)
-    
+
     # vector_search_result = database.db.execute(sql_cmd, [*search_chunk_ids, serialize_f32(embedding)]).fetchall()
     vector_search_result = database.db.execute(sql_cmd).fetchall()
     # [(2, 0.20000001788139343), (1, 0.40000003576278687)]
@@ -219,7 +264,8 @@ async def post_selections(task_index: int, selection: Selection):
     chunk_ids_of_top_k = [row[0] for row in vector_search_result]
 
     # get the char_offset and len from the chunks table based on the chunk_ids
-    sql_cmd = "SELECT chunk_id, text, char_offset FROM chunks WHERE chunk_id in ({0});".format(', '.join('?' for _ in chunk_ids_of_top_k))
+    sql_cmd = "SELECT chunk_id, text, char_offset FROM chunks WHERE chunk_id in ({0});".format(
+        ', '.join('?' for _ in chunk_ids_of_top_k))
     search_chunk_ids = [row[0] for row in vector_search_result]
     response = database.db.execute(sql_cmd, search_chunk_ids).fetchall()
     # [(1, 'This is a test.', 0, 14), (2, 'This is a test.', 15, 14)]
@@ -233,7 +279,7 @@ async def post_selections(task_index: int, selection: Selection):
         text = i[1]
         selections.append(
             {
-                "score": 1 - score, # semantic similarity is 1 - distance
+                "score": 1 - score,  # semantic similarity is 1 - distance
                 "offset": offset,
                 "len": len(text),
                 "to_doc": selection.from_summary,
@@ -269,32 +315,39 @@ async def delete_annotation(record_id: str, user_key: Annotated[str, Header()]):
     database.delete_annotation(record_id, user_key)
     return {"message": f"delete anntation {record_id} success"}
 
+
 @app.get("/labels")
 async def get_labels():
     return database.dump_annotation(dump_file=None)
+
 
 @app.get("/history")  # redirect route to history.html
 async def history():
     return FileResponse("dist/history.html")
 
+
 @app.get("/viewer")
 async def viewer():
     return FileResponse("dist/viewer.html")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     app.mount("/", StaticFiles(directory="dist", html=True), name="dist")
 
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--sqlite_db", type=str, default="./mercury.sqlite")
+    parser.add_argument("--mercury_db", type=str, required=True, default="./mercury.sqlite")
+    parser.add_argument("--user_db", type=str, required=True, default="./user.sqlite")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--jwt_secret", type=str, required=True)
     args = parser.parse_args()
 
-    print ("Using sqlite db: ", args.sqlite_db)
+    print("Using Mercury SQLite db: ", args.mercury_db)
+    print("Using User SQLite db: ", args.user_db)
+    SECRET_KEY = args.jwt_secret
 
-    database = Database(args.sqlite_db)
+    database = Database(args.mercury_db, args.user_db)
 
     # TODO: the name 'tasks' can be misleading. It should be changed to something more descriptive.
     tasks = database.fetch_data_for_labeling()
