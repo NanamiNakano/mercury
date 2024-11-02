@@ -55,5 +55,6 @@ mercury_annotations.json
 .venv
 .idea
 mercury.sqlite
+users.sqlite
 
 test.jsonl
