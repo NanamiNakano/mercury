@@ -363,15 +363,13 @@ class Database:
     @database_lock()
     def change_user_name(self, user_id: str, user_name: str):
         self.user_db.execute("UPDATE users SET user_name = ? WHERE user_id = ?", (user_name, user_id))
-        self.mercury_db.commit()
+        self.user_db.commit()
 
     @database_lock()
-    def get_user_name(self, user_id: str) -> str:
-        res = self.user_db.execute("SELECT user_name FROM users WHERE user_id = ?", (user_id,))
-        user_name = res.fetchone()
-        if user_name is None:
-            return None
-        return user_name[0]
+    def get_user_by_id(self, user_id: str):
+        res = self.user_db.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+        user = res.fetchone()
+        return user
 
     def get_user_name_without_lock(self, user_id: str) -> str:
         res = self.user_db.execute("SELECT user_name FROM users WHERE user_id = ?", (user_id,))
@@ -560,11 +558,11 @@ class Database:
 
     @database_lock()
     def auth_user(self, email: str, password: str):
-        res = self.user_db.execute("SELECT hashed_password FROM users WHERE email = ?", (email,))
-        hashed_password = res.fetchone()
-        if hashed_password is None:
+        res = self.user_db.execute("SELECT * FROM users WHERE email = ?", (email,))
+        user = res.fetchone()
+        if user is None:
             return False
-        return self.ph.verify(hashed_password[0], password)
+        return self.ph.verify(user[3], password), user[0]
 
 if __name__ == "__main__":
     import argparse

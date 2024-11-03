@@ -60,3 +60,9 @@ export type LabelData = {
   user_id: string
   note: string
 }
+
+export type User = {
+  id: string
+  name: string
+  email: string
+}

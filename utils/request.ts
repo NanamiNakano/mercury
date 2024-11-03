@@ -1,55 +1,82 @@
-import type { AllTasksLength, LabelData, LabelRequest, Normal, SectionResponse, SelectionRequest, Task } from "./types"
+import type {
+  AllTasksLength,
+  LabelData,
+  LabelRequest,
+  Normal,
+  SectionResponse,
+  SelectionRequest,
+  Task,
+  User,
+} from "./types"
 
 const backend = process.env.NEXT_PUBLIC_BACKEND || ""
 
-const getKey = async (): Promise<string> => {
-  const hasUserMe = await checkUserMe()
-
-  const key = localStorage.getItem("key")
-  if (key === "" || key === null) {
-    const response = await fetch(`${backend}/user/new`)
-    const data = await response.json()
-    localStorage.setItem("key", data.key)
-    if (hasUserMe) {
-      localStorage.setItem("name", data.name)
-    }
-    return data.key
+// const getKey = async (): Promise<string> => {
+//   const hasUserMe = await checkUserMe()
+//
+//   const key = localStorage.getItem("key")
+//   if (key === "" || key === null) {
+//     const response = await fetch(`${backend}/user/new`)
+//     const data = await response.json()
+//     localStorage.setItem("key", data.key)
+//     if (hasUserMe) {
+//       localStorage.setItem("name", data.name)
+//     }
+//     return data.key
+//   }
+//
+//   if (hasUserMe) {
+//     const nameResponse = await fetch(`${backend}/user/me`, {
+//       headers: {
+//         "User-Key": key,
+//       },
+//     })
+//
+//     const data = await nameResponse.json()
+//     if ("error" in data) {
+//       localStorage.removeItem("key")
+//       localStorage.removeItem("name")
+//       return getKey()
+//     }
+//     localStorage.setItem("name", data.name)
+//     return Promise.resolve(key)
+//   }
+// }
+const getAccessToken = (): string => {
+  const accessToken = localStorage.getItem("access_token")
+  if (accessToken === "" || accessToken === null) {
+    console.log("Please login")
   }
+  return accessToken
+}
 
-  if (hasUserMe) {
-    const nameResponse = await fetch(`${backend}/user/me`, {
-      headers: {
-        "User-Key": key,
-      },
-    })
-
-    const data = await nameResponse.json()
-    if ("error" in data) {
-      localStorage.removeItem("key")
-      localStorage.removeItem("name")
-      return getKey()
-    }
-    localStorage.setItem("name", data.name)
-    return Promise.resolve(key)
-  }
+const getUserMe = async (): Promise<User> => {
+  const access_token = getAccessToken()
+  const response = await fetch(`${backend}/user/me`, {
+    headers: {
+      "Authorization": `Bearer ${access_token}`,
+    },
+  })
+  return response.json()
 }
 
 const checkUserMe = async (): Promise<boolean> => {
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/me`, {
     headers: {
-      "User-Key": "OK_CHECK",
+      "Authorization": `Bearer ${access_token}`,
     },
   })
   return response.ok
 }
 
 const changeName = async (name: string): Promise<Normal> => {
-  const key = await getKey()
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/name`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "User-Key": key,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify({ name }),
   })
@@ -89,12 +116,12 @@ const selectText = async (taskIndex: number, req: SelectionRequest): Promise<Sec
 }
 
 const labelText = async (taskIndex: number, req: LabelRequest): Promise<Normal> => {
-  const key = await getKey()
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/label`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "User-Key": key,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify(req),
   })
@@ -103,10 +130,10 @@ const labelText = async (taskIndex: number, req: LabelRequest): Promise<Normal> 
 }
 
 const exportLabel = async (): Promise<LabelData[]> => {
-  const key = await getKey()
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/export`, {
     headers: {
-      "User-Key": key,
+      "Authorization": `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
@@ -114,10 +141,10 @@ const exportLabel = async (): Promise<LabelData[]> => {
 }
 
 const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
-  const key = await getKey()
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/history`, {
     headers: {
-      "User-Key": key,
+      "Authorization": `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
@@ -125,11 +152,11 @@ const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
 }
 
 const deleteRecord = async (recordId: string): Promise<Normal> => {
-  const key = await getKey()
+  const access_token = getAccessToken()
   const response = await fetch(`${backend}/record/${recordId}`, {
     method: "DELETE",
     headers: {
-      "User-Key": key,
+      "Authorization": `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
@@ -137,13 +164,13 @@ const deleteRecord = async (recordId: string): Promise<Normal> => {
 }
 
 const login = async (email: string, password: string): Promise<Normal> => {
-const response = await fetch(`${backend}/login`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/x-www-form-urlencoded",
-  },
-  body: new URLSearchParams({ "username": email, "password": password }),
-})
+  const response = await fetch(`${backend}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ "username": email, "password": password }),
+  })
   const data = await response.json()
   if ("access_token" in data) {
     localStorage.setItem("access_token", data.access_token)
@@ -162,5 +189,6 @@ export {
   getAllLabels,
   changeName,
   checkUserMe,
+  getUserMe,
   login,
 }

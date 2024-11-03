@@ -71,6 +71,12 @@ class Token(BaseModel):
     token_type: str
 
 
+class User(BaseModel):
+    id: str
+    name: str
+    email: str
+
+
 SECRET_KEY = ""
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 10080
@@ -78,9 +84,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 10080
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
-def create_access_token(email: str):
-    to_encode = {"email": email}
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -88,12 +97,16 @@ def create_access_token(email: str):
 
 @app.post("/login")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
-    if not database.auth_user(form_data.username, form_data.password):
+    auth_success, user_id = database.auth_user(form_data.username,
+                                               form_data.password)
+    if not auth_success:  # username here is actually email, since OAuth2 requires key be username
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    access_token = create_access_token(form_data.username)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token({"user_id": user_id}, access_token_expires)
     return Token(access_token=access_token, token_type="bearer")
+
 
 @app.get("/candidate_labels")
 async def get_labels() -> list:  # get all candidate labels for human annotators to choose from
@@ -110,30 +123,35 @@ async def create_new_user():
     return {"key": user_id, "name": user_name}
 
 
+@app.get("/user/me")
+async def get_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], verify=True)
+        user_id: str = payload.get("user_id")
+        if user_id is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+    user = database.get_user_by_id(user_id)
+    if user is None:
+        raise credentials_exception
+    return User(id=user[0], name=user[1], email=user[2])
+
+
 @app.post("/user/name")
-async def update_user_name(name: Name, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    database.change_user_name(user_key, name.name)
+async def update_user_name(name: Name, user: Annotated[User, Depends(get_user)]):
+    database.change_user_name(user.id, name.name)
     return {"message": "success"}
 
 
-@app.get("/user/me")
-async def get_user_name(user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    username = database.get_user_name(user_key)
-    if username is None:
-        return {"error": "User not found"}
-    else:
-        return {"name": username}
-
-
 @app.get("/user/export")  # please update the route name to be more meaningful, e.g., /user/export_user_data
-async def export_user_data(user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    return database.dump_annotator_labels(user_key)
+async def export_user_data(user: Annotated[User, Depends(get_user)]):
+    return database.dump_annotator_labels(user.id)
 
 
 @app.get("/task")
@@ -150,17 +168,12 @@ async def get_task(task_index: int = 0):
 
 
 @app.get("/task/{task_index}/history")
-async def get_task_history(task_index: int, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    return database.export_task_history(task_index, user_key)
+async def get_task_history(task_index: int,  user: Annotated[User, Depends(get_user)]):
+    return database.export_task_history(task_index, user.id)
 
 
 @app.post("/task/{task_index}/label")
-async def post_task(task_index: int, label: Label, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-
+async def post_task(task_index: int, label: Label,  user: Annotated[User, Depends(get_user)]):
     # label_data = LabelData(
     #     record_id="not assigned",
     #     sample_id=tasks[task_index]["_id"],
@@ -180,7 +193,7 @@ async def post_task(task_index: int, label: Label, user_key: Annotated[str, Head
     if label.source_start != -1:
         annot_spans["source"] = (label.source_start, label.source_end)
 
-    annotator = user_key
+    annotator = user.id
 
     label_string = json.dumps(label.consistent)
 
@@ -309,10 +322,8 @@ async def post_selections(task_index: int, selection: Selection):
 
 
 @app.delete("/record/{record_id}")
-async def delete_annotation(record_id: str, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    database.delete_annotation(record_id, user_key)
+async def delete_annotation(record_id: str,  user: Annotated[User, Depends(get_user)]):
+    database.delete_annotation(record_id, user.id)
     return {"message": f"delete anntation {record_id} success"}
 
 
