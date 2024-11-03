@@ -60,8 +60,7 @@ const getUserMe = async (): Promise<User> => {
   return response.json()
 }
 
-const checkUserMe = async (): Promise<boolean> => {
-  const access_token = getAccessToken()
+const checkUserMe = async (access_token: string): Promise<boolean> => {
   const response = await fetch(`${backend}/user/me`, {
     headers: {
       "Authorization": `Bearer ${access_token}`,
@@ -148,7 +147,11 @@ const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
     },
   })
   const data = await response.json()
-  return data as LabelData[]
+  if (Array.isArray(data)) {
+    return data as LabelData[]
+  } else {
+    return []
+  }
 }
 
 const deleteRecord = async (recordId: string): Promise<Normal> => {
@@ -163,7 +166,7 @@ const deleteRecord = async (recordId: string): Promise<Normal> => {
   return data as Normal
 }
 
-const login = async (email: string, password: string): Promise<Normal> => {
+const login = async (email: string, password: string): Promise<boolean> => {
   const response = await fetch(`${backend}/login`, {
     method: "POST",
     headers: {
@@ -174,8 +177,10 @@ const login = async (email: string, password: string): Promise<Normal> => {
   const data = await response.json()
   if ("access_token" in data) {
     localStorage.setItem("access_token", data.access_token)
+    return true
+  } else {
+    return false
   }
-  return data as Normal
 }
 
 export {

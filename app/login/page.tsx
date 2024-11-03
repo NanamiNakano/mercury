@@ -13,7 +13,10 @@ const useStackClassName = makeResetStyles({
 export default function Login() {
   async function formAction(formData) {
     if (formData.get("email") && formData.get("password")) {
-      await login(formData.get("email"), formData.get("password"))
+      const success = await login(formData.get("email"), formData.get("password"))
+      if (success) {
+        window.location.href = "/"
+      }
     }
   }
 

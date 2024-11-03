@@ -341,6 +341,10 @@ async def history():
 async def viewer():
     return FileResponse("dist/viewer.html")
 
+@app.get("/login")
+async def login():
+    return FileResponse("dist/login.html")
+
 
 if __name__ == "__main__":
     app.mount("/", StaticFiles(directory="dist", html=True), name="dist")
