@@ -561,8 +561,12 @@ class Database:
         res = self.user_db.execute("SELECT * FROM users WHERE email = ?", (email,))
         user = res.fetchone()
         if user is None:
-            return False
-        return self.ph.verify(user[3], password), user[0]
+            return False, None
+        try:
+            success = self.ph.verify(user[3], password)
+        except argon2.exceptions.VerifyMismatchError:
+            success = False
+        return success, user[0]
 
 if __name__ == "__main__":
     import argparse
