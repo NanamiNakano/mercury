@@ -1,19 +1,15 @@
 "use client"
 
 import {
-  Avatar,
   Body1,
   Button,
   Card,
   CardHeader,
   Field,
-  Popover,
-  PopoverSurface,
-  PopoverTrigger,
   ProgressBar, Table, TableBody, TableCell,
   TableHeader, TableHeaderCell, TableRow,
   Text,
-  Title1, Toast, ToastBody, Toaster, ToastFooter, ToastTitle, useId, useToastController,
+  Title1, Toast, Toaster, ToastTitle, useId, useToastController,
 } from "@fluentui/react-components"
 import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
@@ -31,7 +27,7 @@ import {
   selectText,
   deleteRecord,
   getAllLabels,
-  changeName, getUserMe, checkUserMe,
+  checkUserMe,
 } from "../utils/request"
 import { type LabelData, type SectionResponse, type Task, userSectionResponse } from "../utils/types"
 import {
@@ -49,6 +45,7 @@ import { Allotment } from "allotment"
 import "allotment/dist/style.css"
 import ColumnResize from "react-table-column-resizer"
 import "./page.css"
+import UserPopover from "../components/userPopover"
 
 const labelIndexAtom = atomWithStorage("labelIndex", 0)
 
@@ -132,19 +129,9 @@ export default function Index() {
   const [history, setHistory] = useState<LabelData[]>(null)
   const [viewingRecord, setViewingRecord] = useState<LabelData | null>(null)
   const [labels, setLabels] = useState<(string | object)[]>([])
-  const [userName, setUserName] = useState<string>("No Name")
-  const [tempUserName, setTempUserName] = useState<string>(userName)
 
   const toasterId = useId("toaster")
   const { dispatchToast } = useToastController(toasterId)
-
-  const historyColumns = [
-    { columnKey: "summary", label: "Summary" },
-    { columnKey: "source", label: "Source" },
-    { columnKey: "consistent", label: "Consistent" },
-    { columnKey: "actions", label: "Actions" },
-  ]
-
   useEffect(() => {
     const access_token = localStorage.getItem("access_token")
     if (access_token == "" || access_token == null) {
@@ -173,16 +160,13 @@ export default function Index() {
 
   useEffect(() => {
     if (getLock.current) return
-    setUserName(localStorage.getItem("name") || "No Name")
     Promise.all([
       getAllTasksLength(),
       getAllLabels(),
-      getUserMe(),
     ])
-        .then(([tasks, labels, user]) => {
+        .then(([tasks, labels]) => {
           setMaxIndex(tasks.all)
           setLabels(labels)
-          setUserName(user.name)
           getLock.current = true
         })
         .then(() => {
@@ -516,45 +500,7 @@ export default function Index() {
           }}>
             Share Link
           </Button>
-          <Popover trapFocus>
-            <PopoverTrigger disableButtonEnhancement>
-              <Button icon={<Avatar size={20} name={userName} />}>
-                {userName}
-              </Button>
-            </PopoverTrigger>
-
-            <PopoverSurface>
-              <div>
-                <Field style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1em",
-                }}
-                >
-                  <Body1>
-                    <strong>Change Name</strong>
-                  </Body1>
-                  <input
-                      type="text"
-                      value={tempUserName}
-                      onChange={event => {
-                        setTempUserName(event.target.value)
-                      }}
-                  />
-                  <Button
-                      appearance="primary"
-                      onClick={() => {
-                        changeName(tempUserName).then(() => {
-                          setUserName(tempUserName)
-                        })
-                      }}
-                  >
-                    Change
-                  </Button>
-                </Field>
-              </div>
-            </PopoverSurface>
-          </Popover>
+          <UserPopover />
 
 
           {/* <Link href="/history/" rel="noopener noreferrer" target="_blank">
@@ -760,7 +706,7 @@ export default function Index() {
                                       if (c === 0) c = a.summary_start - b.summary_start
                                       return c
                                     })
-                                    .map((record, index) => (
+                                    .map((record, _) => (
                                         <TableRow key={record.record_id}>
                                           <TableCell>{currentTask.doc.slice(record.source_start, record.source_end)}</TableCell>
                                           <TableCell className="column_resizer_body" />

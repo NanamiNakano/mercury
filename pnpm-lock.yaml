@@ -41,6 +41,12 @@ importers:
       react-table-column-resizer:
         specifier: ^1.2.3
         version: 1.2.4(react@18.2.0)
+      react-tracked:
+        specifier: ^2.0.1
+        version: 2.0.1(react@18.2.0)(scheduler@0.23.0)
+      zustand:
+        specifier: ^5.0.1
+        version: 5.0.1(@types/react@18.2.33)(react@18.2.0)
     devDependencies:
       '@biomejs/biome':
         specifier: 1.6.4
@@ -787,6 +793,9 @@ packages:
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
 
+  proxy-compare@3.0.0:
+    resolution: {integrity: sha512-y44MCkgtZUCT9tZGuE278fB7PWVf7fRYy0vbRXAts2o5F0EfC4fIQrvQQGBJo1WJbFcVLXzApOscyJuZqHQc1w==}
+
   react-dom@18.2.0:
     resolution: {integrity: sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==}
     peerDependencies:
@@ -802,6 +811,12 @@ packages:
     resolution: {integrity: sha512-G2zm4n0dbGmSdMCcvUIhctUX7WZ2qdGYmN7fk3oNApsRxXBFTCt3JPbtyEgSxSmltSweTfVTK7ZApYQ9Qz/TRw==}
     peerDependencies:
       react: ^18.2.0
+
+  react-tracked@2.0.1:
+    resolution: {integrity: sha512-qjbmtkO2IcW+rB2cFskRWDTjKs/w9poxvNnduacjQA04LWxOoLy9J8WfIEq1ahifQ/tVJQECrQPBm+UEzKRDtg==}
+    peerDependencies:
+      react: '>=18.0.0'
+      scheduler: '>=0.19.0'
 
   react-transition-group@4.4.5:
     resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
@@ -863,6 +878,12 @@ packages:
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
+  use-context-selector@2.0.0:
+    resolution: {integrity: sha512-owfuSmUNd3eNp3J9CdDl0kMgfidV+MkDvHPpvthN5ThqM+ibMccNE0k+Iq7TWC6JPFvGZqanqiGCuQx6DyV24g==}
+    peerDependencies:
+      react: '>=18.0.0'
+      scheduler: '>=0.19.0'
+
   use-disposable@1.0.2:
     resolution: {integrity: sha512-UMaXVlV77dWOu4GqAFNjRzHzowYKUKbJBQfCexvahrYeIz4OkUYUjna4Tjjdf92NH8Nm8J7wEfFRgTIwYjO5jg==}
     peerDependencies:
@@ -876,6 +897,24 @@ packages:
     peerDependencies:
       react: 16.8.0 - 18
       react-dom: 16.8.0 - 18
+
+  zustand@5.0.1:
+    resolution: {integrity: sha512-pRET7Lao2z+n5R/HduXMio35TncTlSW68WsYBq2Lg1ASspsNGjpwLAsij3RpouyV6+kHMwwwzP0bZPD70/Jx/w==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
 snapshots:
 
@@ -2069,6 +2108,8 @@ snapshots:
       object-assign: 4.1.1
       react-is: 16.13.1
 
+  proxy-compare@3.0.0: {}
+
   react-dom@18.2.0(react@18.2.0):
     dependencies:
       loose-envify: 1.4.0
@@ -2082,6 +2123,13 @@ snapshots:
   react-table-column-resizer@1.2.4(react@18.2.0):
     dependencies:
       react: 18.2.0
+
+  react-tracked@2.0.1(react@18.2.0)(scheduler@0.23.0):
+    dependencies:
+      proxy-compare: 3.0.0
+      react: 18.2.0
+      scheduler: 0.23.0
+      use-context-selector: 2.0.0(react@18.2.0)(scheduler@0.23.0)
 
   react-transition-group@4.4.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
@@ -2130,6 +2178,11 @@ snapshots:
 
   undici-types@5.26.5: {}
 
+  use-context-selector@2.0.0(react@18.2.0)(scheduler@0.23.0):
+    dependencies:
+      react: 18.2.0
+      scheduler: 0.23.0
+
   use-disposable@1.0.2(@types/react-dom@18.2.14)(@types/react@18.2.33)(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
       '@types/react': 18.2.33
@@ -2142,3 +2195,8 @@ snapshots:
       '@juggle/resize-observer': 3.4.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
+
+  zustand@5.0.1(@types/react@18.2.33)(react@18.2.0):
+    optionalDependencies:
+      '@types/react': 18.2.33
+      react: 18.2.0
