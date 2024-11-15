@@ -73,10 +73,18 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
 3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical
    labels.
-4. Migrate existing user data if you have used old version of mercury: `python3 migrate.py`.
-   This script will generate random email and password for each user. You can change them later with `user_utils.py`.
-5. Generate a jwt secret key: `openssl rand -base64 32`.
+4. Migrate existing user data if you have used old version of mercury:
+    1. `python3 migrator.py export`. This will export the existing user data to a dict csv file.
+    2. Edit the exported csv file to specify new email and password for each user. If you leave the email or password
+       empty, the script will generate random email or password for the user.
+    3. `python3 migrator.py migrate`. This will migrate the user data to the new database.
+5. Generate a jwt secret key: `openssl rand -base64 32`. This will be used to sign the jwt token for authentication. You
+   should keep it secret. You can do this at any time, such as when the key is compromised and then all users are logged
+   out.
 6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `server.py` file.
+
+Admin who has access to the SQLite file can modify user data (e.g. reset user password) via `user_utils.py`. For more details, run
+`python3 user_utils.py -h`.
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
@@ -132,7 +140,9 @@ Terminology:
 > [!NOTE] SQLite uses 1-indexed for `autoincrement` columns while the rest of the code uses 0-indexed.
 
 ### Tables
+
 Mercury uses two database. Seperated user database can be used across projects.
+
 #### Mercury main database:
 
 `chunks`, `embeddings`, `annotations`, `config`.
@@ -223,10 +233,19 @@ For example:
 
 #### `users` table: the annotators
 
-| user_id                          | user_name | email         | password    |
-|----------------------------------|-----------|---------------|-------------|
-| add93a266ab7484abdc623ddc3bf6441 | Alice     | a@example.com | super_safe  |
-| 68d41e465458473c8ca1959614093da7 | Bob       | b@example.com | my_password |
+| user_id                          | user_name | email         | hashed_password |
+|----------------------------------|-----------|---------------|-----------------|
+| add93a266ab7484abdc623ddc3bf6441 | Alice     | a@example.com | super_safe      |
+| 68d41e465458473c8ca1959614093da7 | Bob       | b@example.com | my_password     |
+
+- The column`user_name` in users table are not unique and are not used as part of login credentials. Instead `email` is
+  used.
+- Password is hashed by `argon2` with parameters `time_cost=2, memory_cost=19456, parallelism=1`.
+
+### Authentication
+
+Mercury implemented a simple OAuth2 authentication. The user logs in with email and password. The server will return a
+signed JWT token. The server will verify the token for each request. The token will expire in 7 days.
 
 ### How to do vector search
 
@@ -257,7 +276,7 @@ OpenAI and Sentence-Bert's embeddings are already normalized.
 Here is a running example (using the data [above](#chunks-table-chunks-and-metadata)):
 
 1. Suppose the data has been ingested. The embedder is `openai/`text-embedding-3-small` and the embedding dimension is
-   4.
+    4.
 2. Suppose the user selects `sample_id = 1` and `chunk_id = 5`: "The U.S. Constitution." The `text_type` of
    `chunk_id = 5` is `summary` -- the opposite document is the source.
 3. Let's get the chunk IDs of the source document:
