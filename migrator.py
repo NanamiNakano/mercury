@@ -1,55 +1,82 @@
-if __name__ == "__main__":
-    import argparse
+import argparse
+import sqlite3
+import argon2
+import random
+import string
+import csv
 
-    parser = argparse.ArgumentParser(description="Migrate data from source to output")
-    parser.add_argument("--source", type=str, required=True, help="Path to the source SQLite file")
-    parser.add_argument("--output", type=str, required=True, help="Path to the output SQLite file")
-    args = parser.parse_args()
 
-    import sqlite3
+def generate_random_string(length=16):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for _ in range(length))
 
-    conn_source = sqlite3.connect(args.source)
+
+def generate_random_example_email():
+    return f"{generate_random_string(8)}@changeme.com"
+
+
+def export(source, output):
+    conn_source = sqlite3.connect(source)
     cursor_source = conn_source.cursor()
 
-    cursor_source.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-    if cursor_source.fetchone() is None:
-        print("Table `user` does not exist in the source database.")
-        exit(1)
+    cursor_source.execute("SELECT * FROM users")
+    with open(output, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["user_id", "user_name", "email", "password"])
+        writer.writeheader()
+        for row in cursor_source.fetchall():
+            writer.writerow({"user_id": row[0], "user_name": row[1]})
 
-    conn_output = sqlite3.connect(args.output)
-    cursor_output = conn_output.cursor()
-    cursor_output.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            user_id TEXT PRIMARY KEY,
-            user_name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            hashed_password TEXT NOT NULL
-        )
-    """)
 
-    import argon2
-    import random
-    import string
+def migrate(source, target, output):
+    conn_target = sqlite3.connect(target)
+    cursor_target = conn_target.cursor()
+    cursor_target.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                user_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                hashed_password TEXT NOT NULL
+            )
+        """)
 
     ph = argon2.PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)
-
-
-    def generate_random_string(length=16):
-        characters = string.ascii_letters + string.digits + string.punctuation
-        return ''.join(random.choice(characters) for _ in range(length))
-
-
-    def generate_random_example_email():
-        return f"{generate_random_string(8)}@changeme.com"
-
-
-    cursor_source.execute("SELECT user_id, user_name FROM users")
-    for row in cursor_source.fetchall():
-        user_id, user_name = row
-        password = generate_random_string()
+    source_file = open(source, newline="")
+    output_file = open(output, "w", newline="")
+    reader = csv.DictReader(source_file)
+    writer = csv.DictWriter(output_file, fieldnames=["user_id", "user_name", "email", "password"])
+    writer.writeheader()
+    for row in reader:
+        password = row["password"]
+        if password is None or password == "":
+            password = generate_random_string()
         hashed_password = ph.hash(password)
-        email = generate_random_example_email()
-        cursor_output.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
-                              (user_id, user_name, email, hashed_password))
+        email = row["email"]
+        if email is None or email == "":
+            email = generate_random_example_email()
+        cursor_target.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
+                              (row["user_id"], row["user_name"], email, hashed_password))
+        writer.writerow({"user_id": row["user_id"], "user_name": row["user_name"], "email": email, "password": password})
+    conn_target.commit()
 
-    conn_output.commit()
+
+if __name__ == "__main__":
+    main_parser = argparse.ArgumentParser(description="Migrate data from source to output")
+    commands_parser = main_parser.add_subparsers(dest="command", required=True)
+
+    export_parser = commands_parser.add_parser("export", help="Export user_id from source for labeling")
+    export_parser.add_argument("--source", type=str, required=True, help="Path to the source SQLite file")
+    export_parser.add_argument("--output", type=str, help="Path to the output csv", default="output.csv")
+
+    migrate_parser = commands_parser.add_parser("migrate", help="Migrate data from source to output")
+    migrate_parser.add_argument("--source", type=str, required=True, help="Path to the source csv file")
+    migrate_parser.add_argument("--target", type=str, help="Path to the output SQLite file", default="output.db")
+    migrate_parser.add_argument("--output", type=str, help="Path to the output csv file", default="log.csv")
+    args = main_parser.parse_args()
+
+    if args.command == "migrate":
+        migrate(args.source, args.target, args.output)
+    elif args.command == "export":
+        export(args.source, args.output)
+    else:
+        print("Invalid command")
+        exit(1)
