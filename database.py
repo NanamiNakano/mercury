@@ -355,6 +355,19 @@ class Database:
         self.mercury_db.commit()
 
     @database_lock()
+    def update_annotation(self, label_data: OldLabelData, annotator: str):
+        record_id = label_data["record_id"]
+        sql_cmd = "UPDATE annotations SET annot_spans = ?, label = ?, note = ? WHERE annot_id = ? and annotator = ?"
+        self.mercury_db.execute(sql_cmd, (
+            json.dumps(label_data["annot_spans"]),
+            label_data["label"],
+            label_data["note"],
+            record_id,
+            annotator,
+        ))
+
+
+    @database_lock()
     def add_user(self, user_id: str, user_name: str): #TODO: remove this method since now only admin can add user
         sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
         self.mercury_db.execute(sql_cmd, (user_id, user_name))
