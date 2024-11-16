@@ -9,7 +9,7 @@ import {
   Title1, Toast, Toaster, ToastTitle, useId, useToastController,
 } from "@fluentui/react-components"
 import _ from "lodash"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import Tooltip from "../components/tooltip"
 import { updateSliceArray } from "../utils/mergeArray"
 import getRangeTextHandleableRange from "../utils/rangeTextNodes"
@@ -71,17 +71,17 @@ const getColor = (score: number) => {
 // Function to determine if a color is light or dark
 const isLightColor = (color: string) => {
   // Remove the hash if present
-  let newcolor = color.replace("#", "")
+  let newColor = color.replace("#", "")
 
   // Convert 3-digit hex to 6-digit hex
-  if (newcolor.length === 3) {
-    newcolor = newcolor.split("").map(char => char + char).join("")
+  if (newColor.length === 3) {
+    newColor = newColor.split("").map(char => char + char).join("")
   }
 
   // Convert hex to RGB
-  const r = Number.parseInt(newcolor.substring(0, 2), 16)
-  const g = Number.parseInt(newcolor.substring(2, 4), 16)
-  const b = Number.parseInt(newcolor.substring(4, 6), 16)
+  const r = Number.parseInt(newColor.substring(0, 2), 16)
+  const g = Number.parseInt(newColor.substring(2, 4), 16)
+  const b = Number.parseInt(newColor.substring(4, 6), 16)
 
   // Calculate luminance
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -106,7 +106,6 @@ export default function Index() {
   const indexStore = useTrackedIndexStore()
   const historyStore = useHistoryStore()
   const taskStore = useTaskStore()
-  const getLock = useRef(false)
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
   const [serverSelection, setServerSelection] = useState<SectionResponse | null>(null)
@@ -164,7 +163,6 @@ export default function Index() {
   useEffect(() => {
     getAllLabels().then((labels) => {
       setLabels(labels)
-      getLock.current = true
     })
   }, [])
 
@@ -463,8 +461,8 @@ export default function Index() {
           <Button icon={<ArrowExportRegular />} onClick={exportJSON}>
             Export Labels
           </Button>
-          <Button icon={<ShareRegular />} onClick={() => {
-            navigator.clipboard.writeText(
+          <Button icon={<ShareRegular />} onClick={async () => {
+            await navigator.clipboard.writeText(
                 `${window.location.origin}${window.location.pathname}?sample=${indexStore.index}`,
             )
           }}>
