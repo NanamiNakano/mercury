@@ -5,14 +5,11 @@ import {
   Button,
   Card,
   CardHeader,
-  Field,
-  ProgressBar, Table, TableBody, TableCell,
+  Table, TableBody, TableCell,
   TableHeader, TableHeaderCell, TableRow,
   Text,
   Title1, Toast, Toaster, ToastTitle, useId, useToastController,
 } from "@fluentui/react-components"
-import { useAtom } from "jotai"
-import { atomWithStorage } from "jotai/utils"
 import _ from "lodash"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Tooltip from "../components/tooltip"
@@ -21,7 +18,6 @@ import getRangeTextHandleableRange from "../utils/rangeTextNodes"
 import {
   exportLabel,
   getTaskHistory,
-  getAllTasksLength,
   getSingleTask,
   labelText,
   selectText,
@@ -33,12 +29,10 @@ import { type LabelData, type SectionResponse, type Task, userSectionResponse } 
 import {
   ArrowExportRegular,
   ArrowSyncRegular,
-  ChevronLeftRegular,
   DeleteRegular,
   EyeOffRegular,
   EyeRegular,
   HandRightRegular,
-  IosChevronRightRegular,
   ShareRegular,
 } from "@fluentui/react-icons"
 import { Allotment } from "allotment"
@@ -46,8 +40,8 @@ import "allotment/dist/style.css"
 import ColumnResize from "react-table-column-resizer"
 import "./page.css"
 import UserPopover from "../components/userPopover"
-
-const labelIndexAtom = atomWithStorage("labelIndex", 0)
+import LabelPagination from "../components/labelPagination"
+import { useTrackedIndexStore } from "../store/useIndexStore"
 
 enum Stage {
   None = 0,
@@ -116,8 +110,7 @@ const exportJSON = () => {
 }
 
 export default function Index() {
-  const [labelIndex, setLabelIndex] = useAtom(labelIndexAtom)
-  const [maxIndex, setMaxIndex] = useState(1)
+  const indexStore = useTrackedIndexStore()
   const [currentTask, setCurrentTask] = useState<Task | null>(null)
   const getLock = useRef(false)
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
@@ -132,6 +125,7 @@ export default function Index() {
 
   const toasterId = useId("toaster")
   const { dispatchToast } = useToastController(toasterId)
+
   useEffect(() => {
     const access_token = localStorage.getItem("access_token")
     if (access_token == "" || access_token == null) {
@@ -159,32 +153,30 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    if (getLock.current) return
-    Promise.all([
-      getAllTasksLength(),
-      getAllLabels(),
-    ])
-        .then(([tasks, labels]) => {
-          setMaxIndex(tasks.all)
-          setLabels(labels)
-          getLock.current = true
-        })
-        .then(() => {
-          // get query of url
-          const url = new URL(window.location.href)
-          const index = url.searchParams.get("sample")
-          if (index !== null) {
-            washHand()
-            const indexNumber = Number.parseInt(index)
-            if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= maxIndex) {
-              setLabelIndex(indexNumber)
-            }
-          }
-        })
+    indexStore.fetchMaxIndex().then(() => {})
   }, [])
 
   useEffect(() => {
-    getSingleTask(labelIndex)
+      const url = new URL(window.location.href)
+      const index = url.searchParams.get("sample")
+      if (index !== null) {
+        washHand()
+        const indexNumber = Number.parseInt(index)
+        if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max) {
+          indexStore.setIndex(indexNumber)
+        }
+      }
+  }, [indexStore.max])
+
+  useEffect(() => {
+    getAllLabels().then((labels) => {
+      setLabels(labels)
+      getLock.current = true
+    })
+  }, [])
+
+  useEffect(() => {
+    getSingleTask(indexStore.index)
         .then(task => {
           if ("doc" in task) {
             setCurrentTask(task)
@@ -194,10 +186,10 @@ export default function Index() {
           setCurrentTask(null)
           console.error(error)
         })
-  }, [labelIndex])
+  }, [indexStore.index])
 
   const updateHistory = () => {
-    getTaskHistory(labelIndex)
+    getTaskHistory(indexStore.index)
         .then(data => {
           setHistory(data)
           setViewingRecord(null)
@@ -290,7 +282,7 @@ export default function Index() {
     _.debounce(() => {
       if (DISABLE_QUERY || viewingRecord != null) return
       setWaiting(rangeId === "summary" ? "doc" : "summary")
-      selectText(labelIndex, {
+      selectText(indexStore.index, {
         start: firstRange[0],
         end: firstRange[1],
         from_summary: rangeId === "summary",
@@ -311,7 +303,7 @@ export default function Index() {
             console.error(error)
           })
     }, 100)()
-  }, [firstRange, rangeId, labelIndex])
+  }, [firstRange, rangeId, indexStore.index])
 
   const washHand = () => {
     setFirstRange(null)
@@ -344,7 +336,7 @@ export default function Index() {
                 if (firstRange === null || rangeId === null) {
                   return Promise.resolve()
                 }
-                await labelText(labelIndex, {
+                await labelText(indexStore.index, {
                   source_start: rangeId === "summary" ? -1 : firstRange[0],
                   source_end: rangeId === "summary" ? -1 + 1 : firstRange[1],
                   summary_start: rangeId === "summary" ? firstRange[0] : -1,
@@ -403,7 +395,7 @@ export default function Index() {
                       if (firstRange === null || rangeId === null) {
                         return Promise.resolve()
                       }
-                      await labelText(labelIndex, {
+                      await labelText(indexStore.index, {
                         source_start: rangeId === "summary" ? slice[0] : firstRange[0],
                         source_end: rangeId === "summary" ? slice[1] + 1 : firstRange[1],
                         summary_start: rangeId === "summary" ? firstRange[0] : slice[0],
@@ -495,7 +487,7 @@ export default function Index() {
           </Button>
           <Button icon={<ShareRegular />} onClick={() => {
             navigator.clipboard.writeText(
-                `${window.location.origin}${window.location.pathname}?sample=${labelIndex}`,
+                `${window.location.origin}${window.location.pathname}?sample=${indexStore.index}`,
             )
           }}>
             Share Link
@@ -532,44 +524,7 @@ export default function Index() {
         </Button> */}
         </div>
         <br />
-        <div
-            style={{
-              marginTop: "1em",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "1em",
-            }}
-        >
-          <Button
-              disabled={labelIndex === 0}
-              appearance="primary"
-              icon={<ChevronLeftRegular />}
-              iconPosition="before"
-              onClick={() => {
-                washHand()
-                setLabelIndex(labelIndex - 1)
-              }}
-          >
-            Previous
-          </Button>
-          <Field style={{ flexGrow: 1 }} validationMessage={`${labelIndex + 1} / ${maxIndex}`} validationState="none">
-            <ProgressBar value={labelIndex + 1} max={maxIndex} thickness="large" />
-          </Field>
-          <Button
-              disabled={labelIndex === maxIndex - 1}
-              appearance="primary"
-              icon={<IosChevronRightRegular />}
-              iconPosition="after"
-              onClick={() => {
-                washHand()
-                setLabelIndex(labelIndex + 1)
-              }}
-          >
-            Next
-          </Button>
-        </div>
+        <LabelPagination beforeChangeIndex={washHand} />
         <br />
         {currentTask === null ? (
             <p>Loading...</p>
