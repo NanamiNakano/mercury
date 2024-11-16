@@ -8,7 +8,7 @@ type Props = {
   beforeChangeIndex?: Function,
 }
 
-export default function LabelPagination({ beforeChangeIndex = () => {} }: Props) {
+export default function LabelPagination({ beforeChangeIndex = Function() }: Props) {
   const indexStore = useTrackedIndexStore()
 
   return (
@@ -34,7 +34,8 @@ export default function LabelPagination({ beforeChangeIndex = () => {} }: Props)
         >
           Previous
         </Button>
-        <Field style={{ flexGrow: 1 }} validationMessage={`${indexStore.index + 1} / ${indexStore.max + 1}`} validationState="none">
+        <Field style={{ flexGrow: 1 }} validationMessage={`${indexStore.index + 1} / ${indexStore.max + 1}`}
+               validationState="none">
           <ProgressBar value={indexStore.index + 1} max={indexStore.max + 1} thickness="large" />
         </Field>
         <Button
