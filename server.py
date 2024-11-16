@@ -242,7 +242,7 @@ async def post_selections(task_index: int, selection: Selection):
     else:
         text_type = "summary"
 
-    chunk_id_and_text = database.db.execute(sql_cmd, [text_type, task_index]).fetchall()
+    chunk_id_and_text = database.mercury_db.execute(sql_cmd, [text_type, task_index]).fetchall()
     search_chunk_ids = [row[0] for row in chunk_id_and_text]
     vecter_db_row_ids = [str(x + 1) for x in search_chunk_ids]  # rowid starts from 1 while chunk_id starts from 0
 
@@ -270,7 +270,7 @@ async def post_selections(task_index: int, selection: Selection):
     # print ("SQL_CMD", sql_cmd)
 
     # vector_search_result = database.db.execute(sql_cmd, [*search_chunk_ids, serialize_f32(embedding)]).fetchall()
-    vector_search_result = database.db.execute(sql_cmd).fetchall()
+    vector_search_result = database.mercury_db.execute(sql_cmd).fetchall()
     # [(2, 0.20000001788139343), (1, 0.40000003576278687)]
     # turn this into a dict from chunk__id to distance/score
     chunk_id_to_score = {row[0]: row[1] for row in vector_search_result}
@@ -280,7 +280,7 @@ async def post_selections(task_index: int, selection: Selection):
     sql_cmd = "SELECT chunk_id, text, char_offset FROM chunks WHERE chunk_id in ({0});".format(
         ', '.join('?' for _ in chunk_ids_of_top_k))
     search_chunk_ids = [row[0] for row in vector_search_result]
-    response = database.db.execute(sql_cmd, search_chunk_ids).fetchall()
+    response = database.mercury_db.execute(sql_cmd, search_chunk_ids).fetchall()
     # [(1, 'This is a test.', 0, 14), (2, 'This is a test.', 15, 14)]
 
     # organize into a dict of keys "score", "offset", "len", "to_doc"
