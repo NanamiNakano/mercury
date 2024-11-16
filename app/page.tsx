@@ -18,7 +18,7 @@ import {
   labelText,
   selectText,
   getAllLabels,
-  checkUserMe,
+  checkUserMe, getAllTasksLength,
 } from "../utils/request"
 import { type SectionResponse, userSectionResponse } from "../utils/types"
 import {
@@ -33,8 +33,9 @@ import UserPopover from "../components/userPopover"
 import LabelPagination from "../components/labelPagination"
 import { useTrackedIndexStore } from "../store/useIndexStore"
 import ExistingPane from "../components/editor/existing"
-import { useHistoryStore } from "../store/useHistoryStore"
-import { useTaskStore } from "../store/useTaskStore"
+import { useTrackedHistoryStore } from "../store/useHistoryStore"
+import { useTrackedTaskStore } from "../store/useTaskStore"
+import { useTrackedUserStore } from "../store/useUserStore"
 
 enum Stage {
   None = 0,
@@ -104,8 +105,9 @@ const exportJSON = () => {
 
 export default function Index() {
   const indexStore = useTrackedIndexStore()
-  const historyStore = useHistoryStore()
-  const taskStore = useTaskStore()
+  const historyStore = useTrackedHistoryStore()
+  const taskStore = useTrackedTaskStore()
+  const userStore = useTrackedUserStore()
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
   const [serverSelection, setServerSelection] = useState<SectionResponse | null>(null)
@@ -144,8 +146,10 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    indexStore.fetchMaxIndex().then(() => {
+    getAllTasksLength().then((task) => {
+      indexStore.setMaxIndex(task.all - 1)
     })
+    userStore.fetch()
   }, [])
 
   useEffect(() => {
@@ -349,7 +353,6 @@ export default function Index() {
     const normalColor = normalizationColor(allScore)
     return (
         <>
-          <Toaster toasterId={toasterId} />
           {sliceArray.map(slice => {
             const isBackendSlice = slice[2]
             const score = slice[3]
@@ -440,6 +443,7 @@ export default function Index() {
 
   return (
       <>
+        <Toaster toasterId={toasterId} />
         <Title1>Mercury Label</Title1>
         <br />
         <br />

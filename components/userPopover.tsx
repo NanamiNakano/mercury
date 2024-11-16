@@ -11,17 +11,12 @@ import {
 } from "@fluentui/react-components"
 import { changeName } from "../utils/request"
 import { useTrackedUserStore } from "../store/useUserStore"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 export default function UserPopover() {
   const userState = useTrackedUserStore()
   const [open, setOpen] = useState(false)
   const handleOpenChange: PopoverProps["onOpenChange"] = (_, data) => setOpen(data.open || false)
-
-  useEffect(() => {
-    userState.fetch().then(() => {
-    })
-  }, [])
 
   async function formSetName(formData) {
     changeName(formData.get("newName")).then(() => {

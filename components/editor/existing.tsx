@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Body1,
   Button,
