@@ -13,10 +13,9 @@ import {
   createTableColumn,
   useTableFeatures,
   useTableColumnSizing_unstable,
-  TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList, TableCellLayout,
+  TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList,
 } from "@fluentui/react-components"
 import { ArrowSyncRegular, DeleteRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
-import ColumnResize from "react-table-column-resizer"
 import { deleteRecord } from "../../utils/request"
 import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
@@ -175,34 +174,34 @@ export default function ExistingPane({ onRefresh = Function() }: Props) {
                       {item.note}
                     </TableCell>
                     <TableCell>
-                          {historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id ? (
-                              <Button icon={<EyeOffRegular />} appearance="primary"
-                                      onClick={() => {
-                                        historyStore.setViewingRecord(null)
-                                        onRefresh()
-                                      }}>
-                                Restore
-                              </Button>
-                          ) : (
-                              <Button
-                                  icon={<EyeRegular />}
+                      {historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id ? (
+                          <Button icon={<EyeOffRegular />} appearance="primary"
                                   onClick={() => {
-                                    historyStore.setViewingRecord(item)
-                                  }}
-                              >
-                                Show
-                              </Button>
-                          )}
+                                    historyStore.setViewingRecord(null)
+                                    onRefresh()
+                                  }}>
+                            Restore
+                          </Button>
+                      ) : (
                           <Button
-                              icon={<DeleteRegular />}
-                              onClick={async () => {
-                                await deleteRecord(item.record_id)
-                                onRefresh()
+                              icon={<EyeRegular />}
+                              onClick={() => {
+                                historyStore.setViewingRecord(item)
                               }}
                           >
-                            Delete
+                            Show
                           </Button>
-                        </TableCell>
+                      )}
+                      <Button
+                          icon={<DeleteRegular />}
+                          onClick={async () => {
+                            await deleteRecord(item.record_id)
+                            onRefresh()
+                          }}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
               ))}
             </TableBody>

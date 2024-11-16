@@ -145,19 +145,20 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    indexStore.fetchMaxIndex().then(() => {})
+    indexStore.fetchMaxIndex().then(() => {
+    })
   }, [])
 
   useEffect(() => {
-      const url = new URL(window.location.href)
-      const index = url.searchParams.get("sample")
-      if (index !== null) {
-        washHand()
-        const indexNumber = Number.parseInt(index)
-        if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max) {
-          indexStore.setIndex(indexNumber)
-        }
+    const url = new URL(window.location.href)
+    const index = url.searchParams.get("sample")
+    if (index !== null) {
+      washHand()
+      const indexNumber = Number.parseInt(index)
+      if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max) {
+        indexStore.setIndex(indexNumber)
       }
+    }
   }, [indexStore.max])
 
   useEffect(() => {
@@ -168,11 +169,13 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    taskStore.fetch(indexStore.index).then(() => {})
+    taskStore.fetch(indexStore.index).then(() => {
+    })
   }, [indexStore.index])
 
   useEffect(() => {
-    historyStore.updateHistory(indexStore.index).then(() => {})
+    historyStore.updateHistory(indexStore.index).then(() => {
+    })
   }, [taskStore.current])
 
   useEffect(() => {
@@ -317,7 +320,8 @@ export default function Index() {
                   consistent: label,
                   note: note,
                 })
-                historyStore.updateHistory(indexStore.index).then(() => {})
+                historyStore.updateHistory(indexStore.index).then(() => {
+                })
               }}
               message="Check all types that apply below."
           />
@@ -376,7 +380,8 @@ export default function Index() {
                         consistent: label,
                         note: note,
                       })
-                      historyStore.updateHistory(indexStore.index).then(() => {})
+                      historyStore.updateHistory(indexStore.index).then(() => {
+                      })
                     }}
                     message="Select the type(s) of hallucinatin below."
                 />

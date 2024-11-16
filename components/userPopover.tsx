@@ -2,7 +2,6 @@
 
 import {
   Avatar,
-  Body1,
   Button,
   Field,
   Input,
@@ -17,10 +16,11 @@ import { useEffect, useState } from "react"
 export default function UserPopover() {
   const userState = useTrackedUserStore()
   const [open, setOpen] = useState(false)
-  const handleOpenChange: PopoverProps["onOpenChange"] = (e, data) => setOpen(data.open || false)
+  const handleOpenChange: PopoverProps["onOpenChange"] = (_, data) => setOpen(data.open || false)
 
   useEffect(() => {
-    userState.fetch().then(() => {})
+    userState.fetch().then(() => {
+    })
   }, [])
 
   async function formSetName(formData) {
