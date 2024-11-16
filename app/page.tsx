@@ -5,8 +5,6 @@ import {
   Button,
   Card,
   CardHeader,
-  Table, TableBody, TableCell,
-  TableHeader, TableHeaderCell, TableRow,
   Text,
   Title1, Toast, Toaster, ToastTitle, useId, useToastController,
 } from "@fluentui/react-components"
@@ -17,31 +15,26 @@ import { updateSliceArray } from "../utils/mergeArray"
 import getRangeTextHandleableRange from "../utils/rangeTextNodes"
 import {
   exportLabel,
-  getTaskHistory,
-  getSingleTask,
   labelText,
   selectText,
-  deleteRecord,
   getAllLabels,
   checkUserMe,
 } from "../utils/request"
-import { type LabelData, type SectionResponse, type Task, userSectionResponse } from "../utils/types"
+import { type SectionResponse, userSectionResponse } from "../utils/types"
 import {
   ArrowExportRegular,
-  ArrowSyncRegular,
-  DeleteRegular,
-  EyeOffRegular,
-  EyeRegular,
   HandRightRegular,
   ShareRegular,
 } from "@fluentui/react-icons"
 import { Allotment } from "allotment"
 import "allotment/dist/style.css"
-import ColumnResize from "react-table-column-resizer"
 import "./page.css"
 import UserPopover from "../components/userPopover"
 import LabelPagination from "../components/labelPagination"
 import { useTrackedIndexStore } from "../store/useIndexStore"
+import ExistingPane from "../components/editor/existing"
+import { useHistoryStore } from "../store/useHistoryStore"
+import { useTaskStore } from "../store/useTaskStore"
 
 enum Stage {
   None = 0,
@@ -111,7 +104,8 @@ const exportJSON = () => {
 
 export default function Index() {
   const indexStore = useTrackedIndexStore()
-  const [currentTask, setCurrentTask] = useState<Task | null>(null)
+  const historyStore = useHistoryStore()
+  const taskStore = useTaskStore()
   const getLock = useRef(false)
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
@@ -119,8 +113,6 @@ export default function Index() {
   const [userSelection, setUserSelection] = useState<[number, number] | null>(null)
   const [waiting, setWaiting] = useState<string | null>(null)
   const [stage, setStage] = useState<Stage>(Stage.None)
-  const [history, setHistory] = useState<LabelData[]>(null)
-  const [viewingRecord, setViewingRecord] = useState<LabelData | null>(null)
   const [labels, setLabels] = useState<(string | object)[]>([])
 
   const toasterId = useId("toaster")
@@ -176,41 +168,22 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    getSingleTask(indexStore.index)
-        .then(task => {
-          if ("doc" in task) {
-            setCurrentTask(task)
-          }
-        })
-        .catch(error => {
-          setCurrentTask(null)
-          console.error(error)
-        })
+    taskStore.fetch(indexStore.index).then(() => {})
   }, [indexStore.index])
 
-  const updateHistory = () => {
-    getTaskHistory(indexStore.index)
-        .then(data => {
-          setHistory(data)
-          setViewingRecord(null)
-        }).catch(error => {
-      setHistory(null)
-      setViewingRecord(null)
-      console.error(error)
-    })
-  }
-
-  useEffect(updateHistory, [currentTask])
+  useEffect(() => {
+    historyStore.updateHistory(indexStore.index).then(() => {})
+  }, [taskStore.current])
 
   useEffect(() => {
-    if (viewingRecord === null || currentTask === null) {
+    if (historyStore.viewingRecord === null || taskStore.current === null) {
       washHand()
       return
     }
-    setFirstRange([viewingRecord.source_start, viewingRecord.source_end])
+    setFirstRange([historyStore.viewingRecord.source_start, historyStore.viewingRecord.source_end])
     setRangeId("doc")
-    setServerSelection([userSectionResponse(viewingRecord.summary_start, viewingRecord.summary_end, true)])
-  }, [viewingRecord])
+    setServerSelection([userSectionResponse(historyStore.viewingRecord.summary_start, historyStore.viewingRecord.summary_end, true)])
+  }, [historyStore.viewingRecord])
 
   useLayoutEffect(() => {
     const func = (event) => {
@@ -280,7 +253,7 @@ export default function Index() {
       return
     }
     _.debounce(() => {
-      if (DISABLE_QUERY || viewingRecord != null) return
+      if (DISABLE_QUERY || historyStore.viewingRecord != null) return
       setWaiting(rangeId === "summary" ? "doc" : "summary")
       selectText(indexStore.index, {
         start: firstRange[0],
@@ -344,7 +317,7 @@ export default function Index() {
                   consistent: label,
                   note: note,
                 })
-                updateHistory()
+                historyStore.updateHistory(indexStore.index).then(() => {})
               }}
               message="Check all types that apply below."
           />
@@ -381,7 +354,7 @@ export default function Index() {
             const bg_color = isBackendSlice ? score === 2 ? "#85e834" : getColor(normalColor[slice[4]]) : "#ffffff"
             const textColor = isLightColor(bg_color) ? "black" : "white"
             // const textColor= 'red'
-            return isBackendSlice && viewingRecord == null ? (
+            return isBackendSlice && historyStore.viewingRecord == null ? (
                 <Tooltip
                     start={slice[0]}
                     end={slice[1]}
@@ -403,7 +376,7 @@ export default function Index() {
                         consistent: label,
                         note: note,
                       })
-                      updateHistory()
+                      historyStore.updateHistory(indexStore.index).then(() => {})
                     }}
                     message="Select the type(s) of hallucinatin below."
                 />
@@ -473,7 +446,7 @@ export default function Index() {
               gap: "1em",
             }}
         >
-          {JSON.stringify(firstRange) === "[-1,-1]" || viewingRecord != null ? (
+          {JSON.stringify(firstRange) === "[-1,-1]" || historyStore.viewingRecord != null ? (
               <Button appearance="primary" icon={<HandRightRegular />} onClick={washHand}>
                 De-select/highlight
               </Button>
@@ -526,7 +499,7 @@ export default function Index() {
         <br />
         <LabelPagination beforeChangeIndex={washHand} />
         <br />
-        {currentTask === null ? (
+        {taskStore.current === null ? (
             <p>Loading...</p>
         ) : (
             <div
@@ -560,17 +533,17 @@ export default function Index() {
                           id="doc"
                           as="p"
                           data-mercury-label-start={0}
-                          data-mercury-label-end={currentTask.doc.length}
+                          data-mercury-label-end={taskStore.current.doc.length}
                           onMouseUp={event => {
                             checkSelection(event.target as HTMLSpanElement)
                           }}
                       >
                         {serverSelection !== null && serverSelection.length > 0 && rangeId === "summary" ? (
-                            <SliceText text={currentTask.doc} slices={serverSelection} user={userSelection} />
+                            <SliceText text={taskStore.current.doc} slices={serverSelection} user={userSelection} />
                         ) : rangeId === "doc" ? (
-                            <JustSliceText text={currentTask.doc} startAndEndOffset={firstRange} />
+                            <JustSliceText text={taskStore.current.doc} startAndEndOffset={firstRange} />
                         ) : (
-                            currentTask.doc
+                            taskStore.current.doc
                         )}
                       </Text>
                     </Card>
@@ -601,109 +574,20 @@ export default function Index() {
                             id="summary"
                             as="p"
                             data-mercury-label-start={0}
-                            data-mercury-label-end={currentTask.sum.length}
+                            data-mercury-label-end={taskStore.current.sum.length}
                             onMouseUp={event => checkSelection(event.target as HTMLSpanElement)}
                         >
                           {serverSelection !== null && rangeId === "doc" ? (
-                              <SliceText text={currentTask.sum} slices={serverSelection} user={userSelection} />
+                              <SliceText text={taskStore.current.sum} slices={serverSelection} user={userSelection} />
                           ) : rangeId === "summary" ? (
-                              <JustSliceText text={currentTask.sum} startAndEndOffset={firstRange} />
+                              <JustSliceText text={taskStore.current.sum} startAndEndOffset={firstRange} />
                           ) : (
-                              currentTask.sum
+                              taskStore.current.sum
                           )}
                         </Text>
                       </Card>
                     </div>
-                    <div
-                        style={{
-                          overflowY: "scroll",
-                          height: "100%",
-                        }}
-                    >
-                      <Card>
-                        <CardHeader
-                            header={
-                              <Body1>
-                                <strong>Existing annotations</strong>
-                                <Button icon={<ArrowSyncRegular />} style={{ marginLeft: "1em" }}
-                                        onClick={updateHistory}>
-                                  Refresh
-                                </Button>
-                              </Body1>
-                            }
-                        />
-                        {history === null ? (
-                            <p>Loading...</p>
-                        ) : (
-                            <Table className="column_resize_table">
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHeaderCell key="source">Source</TableHeaderCell>
-                                  {/* @ts-ignore */}
-                                  <ColumnResize id={1} className="columnResizer" />
-                                  <TableHeaderCell key="summary">Summary</TableHeaderCell>
-                                  {/* @ts-ignore */}
-                                  <ColumnResize id={2} className="columnResizer" />
-                                  <TableHeaderCell key="consistent">Label(s)</TableHeaderCell>
-                                  {/* @ts-ignore */}
-                                  <ColumnResize id={3} className="columnResizer" />
-                                  <TableHeaderCell key="note">Note</TableHeaderCell>
-                                  {/* @ts-ignore */}
-                                  <ColumnResize id={4} className="columnResizer" />
-                                  {/* TODO: Display the resizer. Now they are invisible. */}
-                                  <TableHeaderCell key="actions">Actions</TableHeaderCell>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {history
-                                    .sort((a, b) => {
-                                      let c = a.source_start - b.source_start
-                                      if (c === 0) c = a.summary_start - b.summary_start
-                                      return c
-                                    })
-                                    .map((record, _) => (
-                                        <TableRow key={record.record_id}>
-                                          <TableCell>{currentTask.doc.slice(record.source_start, record.source_end)}</TableCell>
-                                          <TableCell className="column_resizer_body" />
-                                          <TableCell>{currentTask.sum.slice(record.summary_start, record.summary_end)}</TableCell>
-                                          <TableCell className="column_resizer_body" />
-                                          <TableCell>{record.consistent.join(", ")}</TableCell>
-                                          <TableCell className="column_resizer_body" />
-                                          <TableCell>{record.note}</TableCell>
-                                          <TableCell className="column_resizer_body" />
-                                          <TableCell>
-                                            {viewingRecord != null && viewingRecord.record_id === record.record_id ? (
-                                                <Button icon={<EyeOffRegular />} appearance="primary"
-                                                        onClick={washHand}>
-                                                  Restore
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    icon={<EyeRegular />}
-                                                    onClick={() => {
-                                                      setViewingRecord(record)
-                                                    }}
-                                                >
-                                                  Show
-                                                </Button>
-                                            )}
-                                            <Button
-                                                icon={<DeleteRegular />}
-                                                onClick={() => {
-                                                  deleteRecord(record.record_id).then(updateHistory)
-                                                }}
-                                            >
-                                              Delete
-                                            </Button>
-                                          </TableCell>
-                                          <TableCell className="column_resizer_body" />
-                                        </TableRow>
-                                    ))}
-                              </TableBody>
-                            </Table>
-                        )}
-                      </Card>
-                    </div>
+                    <ExistingPane onRefresh={washHand} />
                   </Allotment>
                 </Allotment.Pane>
               </Allotment>
