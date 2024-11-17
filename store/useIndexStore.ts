@@ -8,7 +8,7 @@ interface IndexStore {
   previous: () => void
   next: () => void
   setIndex: (index: number) => void
-  setMaxIndex: (max: number) => void
+  fetchMax: () => Promise<void>
 }
 
 export const useIndexStore = create<IndexStore>()((set) => ({
@@ -17,7 +17,10 @@ export const useIndexStore = create<IndexStore>()((set) => ({
   previous: () => set((state) => ({ index: state.index - 1})),
   next: () => set((state) => ({ index: state.index + 1})),
   setIndex: (index: number) => set({ index }),
-  setMaxIndex: (max: number) => set({ max })
+  fetchMax: async () => {
+    const task = await getAllTasksLength()
+    set({ max: task.all - 1 })
+  }
 }))
 
 export const useTrackedIndexStore = createTrackedSelector(useIndexStore)

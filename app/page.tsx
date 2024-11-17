@@ -36,7 +36,8 @@ import ExistingPane from "../components/editor/existing"
 import { useTrackedHistoryStore } from "../store/useHistoryStore"
 import { useTrackedTaskStore } from "../store/useTaskStore"
 import { useTrackedUserStore } from "../store/useUserStore"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useTrackedLabelsStore } from "../store/useLabelsStore"
 
 enum Stage {
   None = 0,
@@ -108,16 +109,18 @@ export default function Index() {
   const indexStore = useTrackedIndexStore()
   const [prevIndex, setPrevIndex] = useState(indexStore.index)
   const historyStore = useTrackedHistoryStore()
+  const [prevViewingRecord, setPrevViewingRecord] = useState(historyStore.viewingRecord)
   const taskStore = useTrackedTaskStore()
   const userStore = useTrackedUserStore()
+  const labelsStore = useTrackedLabelsStore()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
   const [serverSelection, setServerSelection] = useState<SectionResponse | null>(null)
   const [userSelection, setUserSelection] = useState<[number, number] | null>(null)
   const [waiting, setWaiting] = useState<string | null>(null)
   const [stage, setStage] = useState<Stage>(Stage.None)
-  const [labels, setLabels] = useState<(string | object)[]>([])
 
   const toasterId = useId("toaster")
   const { dispatchToast } = useToastController(toasterId)
@@ -129,9 +132,23 @@ export default function Index() {
     setServerSelection(null)
     setStage(Stage.None)
     setUserSelection(null)
-    historyStore.setViewingRecord(null)
     window.getSelection()?.removeAllRanges()
   }
+
+  indexStore.fetchMax()
+  labelsStore.fetch()
+
+  if (searchParams.has("sample")) {
+    const index = searchParams.get("sample")
+    const indexNumber = Number.parseInt(index)
+    if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max && indexNumber !== prevIndex) {
+      setPrevIndex(indexNumber)
+      washHand()
+      indexStore.setIndex(indexNumber)
+    }
+  }
+
+  taskStore.fetch(indexStore.index)
 
   useEffect(() => {
     const access_token = localStorage.getItem("access_token")
@@ -158,40 +175,15 @@ export default function Index() {
       }
       return
     })
+    userStore.fetch()
   }, [])
 
-  getAllTasksLength().then((task) => {
-    indexStore.setMaxIndex(task.all - 1)
-  })
-  userStore.fetch()
-
-  console.log("Re-rendered")
-
-  const url = new URL(window.location.href)
-  const index = url.searchParams.get("sample")
-  if (index !== null) {
-    const indexNumber = Number.parseInt(index)
-    if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max && indexNumber !== prevIndex) {
-      setPrevIndex(indexNumber)
-      washHand()
-      indexStore.setIndex(indexNumber)
-    }
-  }
-
   useEffect(() => {
-    getAllLabels().then((labels) => {
-      setLabels(labels)
-    })
-  }, [])
-
-  taskStore.fetch(indexStore.index)
-
-  useEffect(() => {
-    historyStore.updateHistory(indexStore.index).then(() => {
-    })
+    historyStore.updateHistory(indexStore.index)
   }, [taskStore.current])
 
-  useEffect(() => {
+  if (historyStore.viewingRecord !== prevViewingRecord) {
+    setPrevViewingRecord(historyStore.viewingRecord)
     if (historyStore.viewingRecord === null || taskStore.current === null) {
       washHand()
       return
@@ -199,7 +191,7 @@ export default function Index() {
     setFirstRange([historyStore.viewingRecord.source_start, historyStore.viewingRecord.source_end])
     setRangeId("doc")
     setServerSelection([userSectionResponse(historyStore.viewingRecord.summary_start, historyStore.viewingRecord.summary_end, true)])
-  }, [historyStore.viewingRecord])
+  }
 
   useLayoutEffect(() => {
     const func = (event) => {
@@ -310,7 +302,7 @@ export default function Index() {
               backgroundColor="#79c5fb"
               textColor="black"
               text={props.text.slice(slice[0], slice[1] + 1)}
-              labels={labels}
+              labels={labelsStore.labels}
               onLabel={async (label, note) => {
                 if (firstRange === null || rangeId === null) {
                   return Promise.resolve()
@@ -369,7 +361,7 @@ export default function Index() {
                     textColor={textColor}
                     text={props.text.slice(slice[0], slice[1] + 1)}
                     score={score}
-                    labels={labels}
+                    labels={labelsStore.labels}
                     onLabel={async (label, note) => {
                       if (firstRange === null || rangeId === null) {
                         return Promise.resolve()
