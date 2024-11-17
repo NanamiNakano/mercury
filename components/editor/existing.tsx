@@ -68,19 +68,15 @@ export default function ExistingPane({ onRefresh = Function() }: Props) {
   const [columnSizingOptions] = useState<TableColumnSizingOptions>({
     source: {
       idealWidth: 300,
-      minWidth: 150,
     },
     summary: {
       idealWidth: 300,
-      minWidth: 150,
     },
     consistent: {
-      idealWidth: 150,
-      minWidth: 100,
+      idealWidth: 100,
     },
     note: {
-      idealWidth: 300,
-      minWidth: 150,
+      idealWidth: 150,
     },
     actions: {
       idealWidth: 120,

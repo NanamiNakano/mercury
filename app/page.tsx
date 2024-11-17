@@ -36,6 +36,7 @@ import ExistingPane from "../components/editor/existing"
 import { useTrackedHistoryStore } from "../store/useHistoryStore"
 import { useTrackedTaskStore } from "../store/useTaskStore"
 import { useTrackedUserStore } from "../store/useUserStore"
+import { useRouter } from "next/navigation"
 
 enum Stage {
   None = 0,
@@ -105,9 +106,11 @@ const exportJSON = () => {
 
 export default function Index() {
   const indexStore = useTrackedIndexStore()
+  const [prevIndex, setPrevIndex] = useState(indexStore.index)
   const historyStore = useTrackedHistoryStore()
   const taskStore = useTrackedTaskStore()
   const userStore = useTrackedUserStore()
+  const router = useRouter()
   const [firstRange, setFirstRange] = useState<[number, number] | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
   const [serverSelection, setServerSelection] = useState<SectionResponse | null>(null)
@@ -119,6 +122,17 @@ export default function Index() {
   const toasterId = useId("toaster")
   const { dispatchToast } = useToastController(toasterId)
 
+  function washHand() {
+    setFirstRange(null)
+    setRangeId(null)
+    setWaiting(null)
+    setServerSelection(null)
+    setStage(Stage.None)
+    setUserSelection(null)
+    historyStore.setViewingRecord(null)
+    window.getSelection()?.removeAllRanges()
+  }
+
   useEffect(() => {
     const access_token = localStorage.getItem("access_token")
     if (access_token == "" || access_token == null) {
@@ -128,7 +142,7 @@ export default function Index() {
           </Toast>,
           { intent: "error" },
       )
-      window.location.href = "/login"
+      router.push("/login")
       return
     }
     checkUserMe(access_token).then(valid => {
@@ -140,29 +154,29 @@ export default function Index() {
             </Toast>,
             { intent: "error" },
         )
+        router.push("/login")
       }
       return
     })
   }, [])
 
-  useEffect(() => {
-    getAllTasksLength().then((task) => {
-      indexStore.setMaxIndex(task.all - 1)
-    })
-    userStore.fetch()
-  }, [])
+  getAllTasksLength().then((task) => {
+    indexStore.setMaxIndex(task.all - 1)
+  })
+  userStore.fetch()
 
-  useEffect(() => {
-    const url = new URL(window.location.href)
-    const index = url.searchParams.get("sample")
-    if (index !== null) {
+  console.log("Re-rendered")
+
+  const url = new URL(window.location.href)
+  const index = url.searchParams.get("sample")
+  if (index !== null) {
+    const indexNumber = Number.parseInt(index)
+    if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max && indexNumber !== prevIndex) {
+      setPrevIndex(indexNumber)
       washHand()
-      const indexNumber = Number.parseInt(index)
-      if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= indexStore.max) {
-        indexStore.setIndex(indexNumber)
-      }
+      indexStore.setIndex(indexNumber)
     }
-  }, [indexStore.max])
+  }
 
   useEffect(() => {
     getAllLabels().then((labels) => {
@@ -170,10 +184,7 @@ export default function Index() {
     })
   }, [])
 
-  useEffect(() => {
-    taskStore.fetch(indexStore.index).then(() => {
-    })
-  }, [indexStore.index])
+  taskStore.fetch(indexStore.index)
 
   useEffect(() => {
     historyStore.updateHistory(indexStore.index).then(() => {
@@ -282,16 +293,6 @@ export default function Index() {
           })
     }, 100)()
   }, [firstRange, rangeId, indexStore.index])
-
-  const washHand = () => {
-    setFirstRange(null)
-    setRangeId(null)
-    setWaiting(null)
-    setServerSelection(null)
-    setStage(Stage.None)
-    setUserSelection(null)
-    window.getSelection()?.removeAllRanges()
-  }
 
   const JustSliceText = (props: { text: string; startAndEndOffset: [number, number] }) => {
     const fakeResponse = userSectionResponse(
