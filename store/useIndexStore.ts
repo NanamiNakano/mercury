@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { createTrackedSelector } from "react-tracked"
 import { getAllTasksLength } from "../utils/request"
 
-interface IndexStore {
+interface IndexState {
   index: number
   max: number
   previous: () => void
@@ -11,7 +11,7 @@ interface IndexStore {
   fetchMax: () => Promise<void>
 }
 
-export const useIndexStore = create<IndexStore>()((set) => ({
+export const useIndexStore = create<IndexState>()((set) => ({
   index: 0,
   max: 0,
   previous: () => set((state) => ({ index: state.index - 1})),

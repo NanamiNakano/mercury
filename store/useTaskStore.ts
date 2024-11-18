@@ -3,12 +3,12 @@ import { Task } from "../utils/types"
 import { getSingleTask } from "../utils/request"
 import { createTrackedSelector } from "react-tracked"
 
-interface TaskStore {
+interface TaskState {
   current: Task | null,
   fetch: (index: number) => Promise<void>
 }
 
-export const useTaskStore = create<TaskStore>()((set) => ({
+export const useTaskStore = create<TaskState>()((set) => ({
   current: null,
   fetch: async (index: number) => {
     try {

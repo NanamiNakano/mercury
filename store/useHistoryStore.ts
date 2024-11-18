@@ -3,7 +3,7 @@ import { create } from "zustand"
 import { getTaskHistory } from "../utils/request"
 import { createTrackedSelector } from "react-tracked"
 
-interface HistoryStore {
+interface HistoryState {
   history: LabelData[],
   viewingRecord: LabelData | null,
   setHistory: (history: LabelData[]) => void,
@@ -11,7 +11,7 @@ interface HistoryStore {
   updateHistory: (labelIndex: number) => Promise<void>,
 }
 
-export const useHistoryStore = create<HistoryStore>()((set) => ({
+export const useHistoryStore = create<HistoryState>()((set) => ({
   history: [],
   viewingRecord: null,
   setHistory: (history: LabelData[]) => set({ history }),
