@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { User } from "../utils/types"
 import { getUserMe } from "../utils/request"
 import { createTrackedSelector } from "react-tracked"
+import { produce } from "immer"
 
 interface UserStore {
   user: User
@@ -15,7 +16,7 @@ export const useUserStore = create<UserStore>()((set) => ({
     const user = await getUserMe()
     set({ user })
   },
-  setName: (name: string) => set((state) => ({ user: { ...state.user, name } })),
+  setName: (name: string) => set(produce((state: UserStore) => { state.user.name = name })),
 }))
 
 export const useTrackedUserStore = createTrackedSelector(useUserStore)
