@@ -326,24 +326,6 @@ async def delete_annotation(record_id: str,  user: Annotated[User, Depends(get_u
     database.delete_annotation(record_id, user.id)
     return {"message": f"delete anntation {record_id} success"}
 
-@app.patch("/record/{record_id}")
-async def update_annotation(record_id: str, label: Label,  user: Annotated[User, Depends(get_user)]):
-    annot_spans = {}
-    if label.summary_start != -1:
-        annot_spans["summary"] = (label.summary_start, label.summary_end)
-    if label.source_start != -1:
-        annot_spans["source"] = (label.source_start, label.source_end)
-
-    label_string = json.dumps(label.consistent)
-
-    database.update_annotation({
-        "record_id": record_id,
-        "label": label_string,
-        "annot_spans": annot_spans,
-        "note": label.note
-    }, user.id)
-    return {"message": "success"}
-
 
 @app.get("/labels")
 async def get_labels():
