@@ -14,13 +14,18 @@ interface IndexState {
 export const useIndexStore = create<IndexState>()((set) => ({
   index: 0,
   max: 0,
-  previous: () => set((state) => ({ index: state.index - 1})),
-  next: () => set((state) => ({ index: state.index + 1})),
+  previous: () => set((state) => ({ index: state.index - 1 })),
+  next: () => set((state) => ({ index: state.index + 1 })),
   setIndex: (index: number) => set({ index }),
   fetchMax: async () => {
-    const task = await getAllTasksLength()
-    set({ max: task.all - 1 })
-  }
+    try {
+      const task = await getAllTasksLength()
+      set({ max: task.all - 1 })
+    } catch (e) {
+      console.log(e)
+      throw e
+    }
+  },
 }))
 
 export const useTrackedIndexStore = createTrackedSelector(useIndexStore)

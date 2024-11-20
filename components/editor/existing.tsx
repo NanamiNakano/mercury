@@ -22,7 +22,9 @@ import { deleteRecord } from "../../utils/request"
 import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
 import { LabelData } from "../../utils/types"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTrackedIndexStore } from "../../store/useIndexStore"
+import { HasError, Loading } from "./fallback"
 
 const columnsDef: TableColumnDefinition<LabelData>[] = [
   createTableColumn({
@@ -48,12 +50,40 @@ const columnsDef: TableColumnDefinition<LabelData>[] = [
 ]
 
 type Props = {
-  onRefresh?: Function,
+  onRestore?: Function,
 }
 
-export default function ExistingPane({ onRefresh = Function() }: Props) {
+export default function ExistingPane({ onRestore = Function() }: Props) {
   const historyStore = useTrackedHistoryStore()
+  const indexStore = useTrackedIndexStore()
   const taskStore = useTrackedTaskStore()
+
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
+  const onRefreshHistory = useCallback(async () => {
+    setHasError(false)
+    setIsLoading(true)
+    try {
+      await historyStore.updateHistory(indexStore.index)
+    }
+    catch (e) {
+      setHasError(true)
+    }
+    setIsLoading(false)
+  }, [indexStore.index])
+
+  useEffect(() => {
+    let ignore = false
+
+    if (!ignore) {
+      onRefreshHistory()
+    }
+
+    return () => {
+      ignore = true
+    }
+  }, [indexStore.index])
 
   const sortedHistory = useMemo(() => {
     return historyStore.history
@@ -105,105 +135,108 @@ export default function ExistingPane({ onRefresh = Function() }: Props) {
                 <Body1>
                   <strong>Existing annotations</strong>
                   <Button icon={<ArrowSyncRegular />} style={{ marginLeft: "1em" }}
-                          onClick={() => {
-                            onRefresh()
-                          }}>
+                          onClick={onRefreshHistory}>
                     Refresh
                   </Button>
                 </Body1>
               }
           />
-          {/*@ts-ignore*/}
-          <Table
-              sortable
-              ref={tableRef}
-              {...columnSizing_unstable.getTableProps()}
-          >
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                    <Menu openOnContext key={column.columnId}>
-                      <MenuTrigger>
-                        <TableHeaderCell
-                            key={column.columnId}
-                            {...columnSizing_unstable.getTableHeaderCellProps(
-                                column.columnId,
-                            )}
+          {isLoading && <Loading />}
+          {hasError && <HasError />}
+          {!isLoading && !hasError && taskStore.current && (
+              // @ts-ignore
+              <Table
+                  sortable
+                  ref={tableRef}
+                  {...columnSizing_unstable.getTableProps()}
+              >
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((column) => (
+                        <Menu openOnContext key={column.columnId}>
+                          <MenuTrigger>
+                            <TableHeaderCell
+                                key={column.columnId}
+                                {...columnSizing_unstable.getTableHeaderCellProps(
+                                    column.columnId,
+                                )}
+                            >
+                              {column.renderHeaderCell()}
+                            </TableHeaderCell>
+                          </MenuTrigger>
+                          <MenuPopover>
+                            <MenuList>
+                              <MenuItem
+                                  onClick={columnSizing_unstable.enableKeyboardMode(
+                                      column.columnId,
+                                  )}
+                              >
+                                Keyboard Column Resizing
+                              </MenuItem>
+                            </MenuList>
+                          </MenuPopover>
+                        </Menu>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map(({ item }) => (
+                      <TableRow key={item.record_id}>
+                        <TableCell
+                            {...columnSizing_unstable.getTableCellProps("source")}
                         >
-                          {column.renderHeaderCell()}
-                        </TableHeaderCell>
-                      </MenuTrigger>
-                      <MenuPopover>
-                        <MenuList>
-                          <MenuItem
-                              onClick={columnSizing_unstable.enableKeyboardMode(
-                                  column.columnId,
-                              )}
-                          >
-                            Keyboard Column Resizing
-                          </MenuItem>
-                        </MenuList>
-                      </MenuPopover>
-                    </Menu>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(({ item }) => (
-                  <TableRow key={item.record_id}>
-                    <TableCell
-                        {...columnSizing_unstable.getTableCellProps("source")}
-                    >
-                      {taskStore.current.doc.slice(item.source_start, item.source_end)}
-                    </TableCell>
-                    <TableCell
-                        {...columnSizing_unstable.getTableCellProps("summary")}
-                    >
-                      {taskStore.current.sum.slice(item.summary_start, item.summary_end)}
-                    </TableCell>
-                    <TableCell
-                        {...columnSizing_unstable.getTableCellProps("consistent")}
-                    >
-                      {item.consistent.join(", ")}
-                    </TableCell>
-                    <TableCell
-                        {...columnSizing_unstable.getTableCellProps("note")}
-                    >
-                      {item.note}
-                    </TableCell>
-                    <TableCell>
-                      {historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id ? (
-                          <Button icon={<EyeOffRegular />} appearance="primary"
+                          {taskStore.current.doc.slice(item.source_start, item.source_end)}
+                        </TableCell>
+                        <TableCell
+                            {...columnSizing_unstable.getTableCellProps("summary")}
+                        >
+                          {taskStore.current.sum.slice(item.summary_start, item.summary_end)}
+                        </TableCell>
+                        <TableCell
+                            {...columnSizing_unstable.getTableCellProps("consistent")}
+                        >
+                          {item.consistent.join(", ")}
+                        </TableCell>
+                        <TableCell
+                            {...columnSizing_unstable.getTableCellProps("note")}
+                        >
+                          {item.note}
+                        </TableCell>
+                        <TableCell>
+                          {historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id ? (
+                              <Button icon={<EyeOffRegular />} appearance="primary"
+                                      onClick={() => {
+                                        historyStore.setViewingRecord(null)
+                                        onRestore()
+                                      }}>
+                                Restore
+                              </Button>
+                          ) : (
+                              <Button
+                                  icon={<EyeRegular />}
                                   onClick={() => {
-                                    historyStore.setViewingRecord(null)
-                                    onRefresh()
-                                  }}>
-                            Restore
-                          </Button>
-                      ) : (
+                                    historyStore.setViewingRecord(item)
+                                  }}
+                              >
+                                Show
+                              </Button>
+                          )}
                           <Button
-                              icon={<EyeRegular />}
-                              onClick={() => {
-                                historyStore.setViewingRecord(item)
+                              icon={<DeleteRegular />}
+                              onClick={async () => {
+                                await deleteRecord(item.record_id)
+                                onRestore()
+                                await onRefreshHistory()
                               }}
                           >
-                            Show
+                            Delete
                           </Button>
-                      )}
-                      <Button
-                          icon={<DeleteRegular />}
-                          onClick={async () => {
-                            await deleteRecord(item.record_id)
-                            onRefresh()
-                          }}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        </TableCell>
+                      </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+          )}
         </Card>
       </div>
   )

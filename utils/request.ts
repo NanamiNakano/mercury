@@ -2,7 +2,7 @@ import type {
   AllTasksLength,
   LabelData,
   LabelRequest,
-  Normal,
+  Normal, RequestError,
   SectionResponse,
   SelectionRequest,
   Task,
@@ -96,13 +96,13 @@ const getAllTasksLength = async (): Promise<AllTasksLength> => {
   return data as AllTasksLength
 }
 
-const getSingleTask = async (taskIndex: number): Promise<Task | Error> => {
+const getSingleTask = async (taskIndex: number): Promise<Task | RequestError> => {
   const response = await fetch(`${backend}/task/${taskIndex}`)
   const data = await response.json()
-  return data as Task | Error
+  return data as Task | RequestError
 }
 
-const selectText = async (taskIndex: number, req: SelectionRequest): Promise<SectionResponse | Error> => {
+const selectText = async (taskIndex: number, req: SelectionRequest): Promise<SectionResponse | RequestError> => {
   const response = await fetch(`${backend}/task/${taskIndex}/select`, {
     method: "POST",
     headers: {
@@ -111,7 +111,7 @@ const selectText = async (taskIndex: number, req: SelectionRequest): Promise<Sec
     body: JSON.stringify(req),
   })
   const data = await response.json()
-  return data as SectionResponse | Error
+  return data as SectionResponse | RequestError
 }
 
 const labelText = async (taskIndex: number, req: LabelRequest): Promise<Normal> => {

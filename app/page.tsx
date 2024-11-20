@@ -135,8 +135,12 @@ export default function Index() {
     window.getSelection()?.removeAllRanges()
   }
 
-  indexStore.fetchMax()
-  labelsStore.fetch()
+  indexStore.fetchMax().catch(e => {
+    console.log(e)
+  })
+  labelsStore.fetch().catch(e => {
+    console.log(e)
+  })
 
   if (searchParams.has("sample")) {
     const index = searchParams.get("sample")
@@ -148,7 +152,9 @@ export default function Index() {
     }
   }
 
-  taskStore.fetch(indexStore.index)
+  taskStore.fetch(indexStore.index).catch(error => {
+    console.log(error)
+  })
 
   useEffect(() => {
     const access_token = localStorage.getItem("access_token")
@@ -175,12 +181,10 @@ export default function Index() {
       }
       return
     })
-    userStore.fetch()
+    userStore.fetch().catch(e => {
+      console.log(e)
+    })
   }, [])
-
-  useEffect(() => {
-    historyStore.updateHistory(indexStore.index)
-  }, [taskStore.current])
 
   if (historyStore.viewingRecord !== prevViewingRecord) {
     setPrevViewingRecord(historyStore.viewingRecord)
@@ -587,7 +591,7 @@ export default function Index() {
                         </Text>
                       </Card>
                     </div>
-                    <ExistingPane onRefresh={washHand} />
+                    <ExistingPane onRestore={washHand} />
                   </Allotment>
                 </Allotment.Pane>
               </Allotment>

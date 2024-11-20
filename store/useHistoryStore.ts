@@ -22,7 +22,8 @@ export const useHistoryStore = create<HistoryState>()((set) => ({
       set({ history, viewingRecord: null })
     } catch (e) {
       set({ history: [], viewingRecord: null })
-      console.error(e)
+      console.log(e)
+      throw e
     }
   },
 }))

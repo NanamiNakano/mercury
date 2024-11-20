@@ -40,8 +40,16 @@ export function userSectionResponse(start: number, end: number, toDoc: boolean):
   }
 }
 
-export type Error = {
+export type RequestError = {
   error: string
+}
+
+export function isRequestError(obj: any): obj is RequestError {
+    return typeof obj.error === "string";
+}
+
+export function handleRequestError(e: RequestError) {
+  throw Error(e.error)
 }
 
 export type Normal = {

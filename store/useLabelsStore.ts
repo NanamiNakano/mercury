@@ -10,8 +10,13 @@ interface LabelsState {
 export const useLabelsStore = create<LabelsState>()((set) => ({
   labels: [],
   fetch: async () => {
-    const labels = await getAllLabels()
-    set({ labels })
+    try {
+      const labels = await getAllLabels()
+      set({ labels })
+    } catch (e) {
+      console.log(e)
+      throw e
+    }
   },
 }))
 

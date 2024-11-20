@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { Task } from "../utils/types"
+import { handleRequestError, isRequestError, Task } from "../utils/types"
 import { getSingleTask } from "../utils/request"
 import { createTrackedSelector } from "react-tracked"
 
@@ -13,14 +13,18 @@ export const useTaskStore = create<TaskState>()((set) => ({
   fetch: async (index: number) => {
     try {
       const task = await getSingleTask(index)
-      if ("doc" in task) {
-        set({ current: task })
+      if (isRequestError(task)) {
+        handleRequestError(task)
+        return
       }
-    } catch (e) {
+      set({ current: task })
+    }
+    catch (e) {
       set({ current: null })
-      console.error(e)
+      console.log(e)
+      throw e
     }
   },
 }))
 
-export const useTrackedTaskStore= createTrackedSelector(useTaskStore)
+export const useTrackedTaskStore = createTrackedSelector(useTaskStore)

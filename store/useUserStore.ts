@@ -13,8 +13,13 @@ interface UserState {
 export const useUserStore = create<UserState>()((set) => ({
   user: {} as User,
   fetch: async () => {
-    const user = await getUserMe()
-    set({ user })
+    try {
+      const user = await getUserMe()
+      set({ user })
+    } catch (e) {
+      console.log(e)
+      throw e
+    }
   },
   setName: (name: string) => set(produce((state: UserState) => { state.user.name = name })),
 }))
