@@ -19,12 +19,12 @@ export function HasError({ onRetry = null }: hasErrorProps) {
       <div>
         <p>
           Error loading data.
-          { onRetry != null &&
+        </p>
+        {onRetry != null &&
           <Button onClick={async () => {
             await onRetry()
           }}>Retry</Button>
-          }
-        </p>
+        }
       </div>
   )
 }
