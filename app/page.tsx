@@ -28,7 +28,6 @@ import {
 } from "@fluentui/react-icons"
 import { Allotment } from "allotment"
 import "allotment/dist/style.css"
-import "./page.css"
 import UserPopover from "../components/userPopover"
 import LabelPagination from "../components/labelPagination"
 import { useTrackedIndexStore } from "../store/useIndexStore"
