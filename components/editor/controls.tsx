@@ -15,7 +15,7 @@ export default function Controls() {
   const historyStore = useTrackedHistoryStore()
 
   const onReset = useCallback(() => {
-    editorStore.clearSelection()
+    editorStore.clearAllSelection()
     historyStore.setViewingRecord(null)
   }, [])
 

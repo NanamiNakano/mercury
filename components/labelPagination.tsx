@@ -17,7 +17,7 @@ export default function LabelPagination({ beforeChangeIndex = Function() }: Prop
   const historyStore = useTrackedHistoryStore()
 
   const onReset = useCallback(() => {
-    editorStore.clearSelection()
+    editorStore.clearAllSelection()
     historyStore.setViewingRecord(null)
   }, [])
 
