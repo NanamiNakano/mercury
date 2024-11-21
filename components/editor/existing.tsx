@@ -25,6 +25,7 @@ import { LabelData } from "../../utils/types"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { HasError, Loading } from "./fallback"
+import _ from "lodash"
 
 const columnsDef: TableColumnDefinition<LabelData>[] = [
   createTableColumn({
@@ -61,16 +62,18 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
 
+  const debounceSetIsLoading = _.debounce(setIsLoading, 500)
+
   const onRefreshHistory = useCallback(async () => {
     setHasError(false)
-    setIsLoading(true)
+    debounceSetIsLoading(true)
     try {
       await historyStore.updateHistory(indexStore.index)
     }
     catch (e) {
       setHasError(true)
     }
-    setIsLoading(false)
+    debounceSetIsLoading(false)
   }, [indexStore.index])
 
   useEffect(() => {

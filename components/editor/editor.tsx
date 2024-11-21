@@ -10,6 +10,7 @@ import ExistingPane from "./existing"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 import { HasError, Loading } from "./fallback"
+import _ from "lodash"
 
 export default function Editor() {
   const editorStore = useTrackedEditorStore()
@@ -21,6 +22,8 @@ export default function Editor() {
   const [suspendSummary, setSuspendSummary] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+
+  const debounceSetIsLoading = _.debounce(setIsLoading, 500)
 
   const handleMouseUp = useCallback((element: HTMLSpanElement) => {
     const selection = window.getSelection()
@@ -44,14 +47,14 @@ export default function Editor() {
 
   const onFetchTask = useCallback(async () => {
     setHasError(false)
-    setIsLoading(true)
+    debounceSetIsLoading(true)
     try {
       await taskStore.fetch(indexStore.index)
     }
     catch (e) {
       setHasError(true)
     }
-    setIsLoading(false)
+    debounceSetIsLoading(false)
   }, [indexStore.index])
 
   useEffect(() => {
@@ -73,74 +76,73 @@ export default function Editor() {
             margin: "auto",
           }}
       >
-        <Allotment>
-          <Allotment.Pane>
-            <div
+        {isLoading && <Loading />}
+        {hasError && <HasError />}
+        {!isLoading && !hasError && taskStore.current &&
+          <Allotment>
+            <Allotment.Pane>
+              <div
                 style={{
                   overflowY: "scroll",
                   height: "100%",
                 }}
-            >
-              <Card
+              >
+                <Card
                   style={{
                     userSelect: suspendSource ? "none" : "auto",
                     color: suspendSource ? "gray" : "black",
                   }}
-              >
-                <CardHeader
+                >
+                  <CardHeader
                     header={
                       <Body1>
                         <strong>Source</strong>
                       </Body1>
                     }
-                />
-                {isLoading && <Loading />}
-                {hasError && <HasError onRetry={onFetchTask} />}
-                {!isLoading && !hasError && taskStore.current && (
-                    suspendSource ?
-                        <Text
-                            id="source"
-                            as="p">
-                          {taskStore.current.doc}
-                        </Text>
-                        :
-                        <Text
-                            id="source"
-                            as="p"
-                            onMouseUp={event => {
-                              handleMouseUp(event.target as HTMLSpanElement)
-                            }}
-                        >
-                          {taskStore.current.doc}
-                        </Text>
-                )}
-              </Card>
-            </div>
-          </Allotment.Pane>
-          <Allotment.Pane>
-            <Allotment vertical>
-              <div
+                  />
+                  {(
+                      suspendSource ?
+                          <Text
+                              id="source"
+                              as="p">
+                            {taskStore.current.doc}
+                          </Text>
+                          :
+                          <Text
+                              id="source"
+                              as="p"
+                              onMouseUp={event => {
+                                handleMouseUp(event.target as HTMLSpanElement)
+                              }}
+                          >
+                            {taskStore.current.doc}
+                          </Text>
+                  )}
+                </Card>
+              </div>
+            </Allotment.Pane>
+            <Allotment.Pane>
+              <Allotment vertical>
+                <div
                   style={{
                     overflowY: "scroll",
                     height: "100%",
                   }}
-              >
-                <Card
+                >
+                  <Card
                     style={{
                       userSelect: suspendSummary ? "none" : "auto",
                       color: suspendSummary ? "gray" : "black",
                     }}
-                >
-                  <CardHeader
+                  >
+                    <CardHeader
                       header={
                         <Body1>
                           <strong>Summary</strong>
                         </Body1>
                       }
-                  />
-                  {isLoading && <Loading />}
-                  {hasError && <HasError />}
-                  {!isLoading && !hasError && taskStore.current && (
+                    />
+                    {
                       suspendSummary ?
                           <Text
                               id="summary"
@@ -157,13 +159,14 @@ export default function Editor() {
                           >
                             {taskStore.current.sum}
                           </Text>
-                  )}
-                </Card>
-              </div>
-              <ExistingPane onRestore={onRestoreViewingHistory} />
-            </Allotment>
-          </Allotment.Pane>
-        </Allotment>
+                    }
+                  </Card>
+                </div>
+                <ExistingPane onRestore={onRestoreViewingHistory} />
+              </Allotment>
+            </Allotment.Pane>
+          </Allotment>
+        }
       </div>
   )
 }
