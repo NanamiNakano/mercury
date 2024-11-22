@@ -144,7 +144,7 @@ export default function New() {
         <br />
         <LabelPagination />
         <br />
-        <Editor />
+        <Editor dispatchToast={dispatchToast}/>
       </>
   )
 }

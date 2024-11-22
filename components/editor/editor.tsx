@@ -11,8 +11,6 @@ import {
   Text,
   Toast,
   ToastTitle, ToastTrigger,
-  useId,
-  useToastController,
 } from "@fluentui/react-components"
 import ExistingPane from "./existing"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
@@ -27,7 +25,7 @@ import "rangy/lib/rangy-textrange"
 import { getColor, normalizationScore } from "../../utils/color"
 import { processServerSection } from "../../utils/processServerSection"
 
-export default function Editor() {
+export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
   const editorStore = useTrackedEditorStore()
   const taskStore = useTrackedTaskStore()
   const indexStore = useTrackedIndexStore()
@@ -44,9 +42,6 @@ export default function Editor() {
   const isSuspendingSummary = useMemo(() => {
     return isLoadingServerSection && editorStore.initiator === "source"
   }, [isLoadingServerSection, editorStore.initiator])
-
-  const toasterId = useId("toaster")
-  const { dispatchToast } = useToastController(toasterId)
 
   const debounceSetIsLoading = _.debounce(setIsLoading, 500)
 
