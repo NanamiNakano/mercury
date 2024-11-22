@@ -16,6 +16,12 @@ class DatabaseUtils:
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
         self.ph = argon2.PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)
+        self.conn.execute("""CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            user_name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            hashed_password TEXT NOT NULL)""")
+        self.conn.commit()
 
     def reset_user_password(self, user_id, new_password=generate_random_string()):
         hashed_password = self.ph.hash(new_password)

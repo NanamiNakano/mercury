@@ -83,8 +83,8 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
    out.
 6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `server.py` file.
 
-Admin who has access to the SQLite file can modify user data (e.g. reset user password) via `user_utils.py`. For more details, run
-`python3 user_utils.py -h`.
+Admin who has access to the SQLite file can modify user data (e.g. reset user password), register new users, and delete users
+via `user_utils.py`. For more details, run `python3 user_utils.py -h`.
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
