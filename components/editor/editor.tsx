@@ -91,32 +91,32 @@ export default function Editor() {
     }
   }, [indexStore.index])
 
-  const handleMouseUp = useCallback((element: HTMLElement) => {
+  const handleMouseUp = useCallback((target: "source" | "summary") => {
     const selection = rangy.getSelection()
     if (!selection || selection.rangeCount <= 0) return
     const range = selection.getRangeAt(0)
 
     if (range.toString().trim() == "") {
-      if (element.id == "source") {
+      if (target == "source") {
         editorStore.clearSourceSelection()
       }
-      else if (element.id == "summary") {
+      else {
         editorStore.clearSummarySelection()
       }
       return
     }
 
+    const element = document.getElementById(target)
     const { start, end } = range.toCharacterRange(element)
-    console.log("Mouse up", start, end)
 
-    if (element.id == "source") {
+    if (target == "source") {
       editorStore.setSourceSelection(start, end)
     }
-    else if (element.id == "summary") {
+    else {
       editorStore.setSummarySelection(start, end)
     }
 
-    if (editorStore.initiator == element.id || editorStore.initiator == null) {
+    if (editorStore.initiator == target || editorStore.initiator == null) {
       startTransition(async () => {
         await onFetchServerSection()
       })
@@ -224,7 +224,6 @@ export default function Editor() {
   }
 
   function render(target: "source" | "summary") {
-    console.log("Render", target)
     const selection = target === "source" ? editorStore.sourceSelection : editorStore.summarySelection
     if (selection.start != -1 || editorStore.serverSection.length == 0) {
       return renderHighlight(target)
@@ -274,8 +273,8 @@ export default function Editor() {
                               style={{
                                 whiteSpace: "pre-wrap",
                               }}
-                              onMouseUp={event => {
-                                handleMouseUp(event.target as HTMLSpanElement)
+                              onMouseUp={_ => {
+                                handleMouseUp("source")
                               }}
                           >
                             {render("source")}
@@ -315,8 +314,8 @@ export default function Editor() {
                               style={{
                                 whiteSpace: "pre-wrap",
                               }}
-                              onMouseUp={event => {
-                                handleMouseUp(event.target as HTMLSpanElement)
+                              onMouseUp={_ => {
+                                handleMouseUp("summary")
                               }}
                           >
                             {render("summary")}
