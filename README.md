@@ -81,7 +81,7 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 5. Generate a jwt secret key: `openssl rand -base64 32`. This will be used to sign the jwt token for authentication. You
    should keep it secret. You can do this at any time, such as when the key is compromised and then all users are logged
    out.
-6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `server.py` file.
+6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
 
 Admin who has access to the SQLite file can modify user data (e.g. reset user password), register new users, and delete users
 via `user_utils.py`. For more details, run `python3 user_utils.py -h`.
@@ -90,9 +90,6 @@ The annotations are stored in the `annotations` table in a SQLite database (hard
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
 
 The dumped human annotations are stored in a JSON format like this:
-
-class Any:
-pass
 
 ```python
 [
