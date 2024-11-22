@@ -39,15 +39,21 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   })),
   clearSourceSelection: () => set(produce((state: EditorState) => {
     state.sourceSelection = { start: -1, end: -1, from_summary: false }
-    if (state.initiator === "source") state.initiator = null
+    if (state.initiator === "source") {
+      state.initiator = null
+      if (state.serverSection.length > 0) state.serverSection = []
+    }
   })),
   clearSummarySelection: () => set(produce((state: EditorState) => {
     state.summarySelection = { start: -1, end: -1, from_summary: true }
-    if (state.initiator === "summary") state.initiator = null
+    if (state.initiator === "summary") {
+      state.initiator = null
+      if (state.serverSection.length > 0) state.serverSection = []
+    }
   })),
   fetchServerSection: async (index: number) => {
     try {
-      if (get().initiator == "source") {
+      if (get().initiator === "source") {
         const response = await selectText(index, get().sourceSelection)
         if (isRequestError(response)) {
           handleRequestError(response)
@@ -55,7 +61,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
         set({ serverSection: response })
       }
-      else if (get().initiator == "summary") {
+      else if (get().initiator === "summary") {
         const response = await selectText(index, get().summarySelection)
         if (isRequestError(response)) {
           handleRequestError(response)

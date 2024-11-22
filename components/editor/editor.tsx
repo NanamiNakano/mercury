@@ -2,10 +2,18 @@
 
 import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { Allotment } from "allotment"
 import "allotment/dist/style.css"
-import { Body1, Card, CardHeader, Text } from "@fluentui/react-components"
+import {
+  Body1, Button, Card,
+  CardHeader,
+  Text,
+  Toast,
+  ToastTitle, ToastTrigger,
+  useId,
+  useToastController,
+} from "@fluentui/react-components"
 import ExistingPane from "./existing"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { useTrackedHistoryStore } from "../../store/useHistoryStore"
@@ -16,6 +24,8 @@ import Tooltip from "../tooltip"
 import { useTrackedLabelsStore } from "../../store/useLabelsStore"
 import rangy from "rangy"
 import "rangy/lib/rangy-textrange"
+import { getColor, normalizationScore } from "../../utils/color"
+import { processServerSection } from "../../utils/processServerSection"
 
 export default function Editor() {
   const editorStore = useTrackedEditorStore()
@@ -24,37 +34,21 @@ export default function Editor() {
   const historyStore = useTrackedHistoryStore()
   const labelsStore = useTrackedLabelsStore()
 
-  const [suspendSource, setSuspendSource] = useState(false)
-  const [suspendSummary, setSuspendSummary] = useState(false)
+  const [isLoadingServerSection, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
 
+  const isSuspendingSource = useMemo(() => {
+    return isLoadingServerSection && editorStore.initiator === "summary"
+  }, [isLoadingServerSection, editorStore.initiator])
+  const isSuspendingSummary = useMemo(() => {
+    return isLoadingServerSection && editorStore.initiator === "source"
+  }, [isLoadingServerSection, editorStore.initiator])
+
+  const toasterId = useId("toaster")
+  const { dispatchToast } = useToastController(toasterId)
+
   const debounceSetIsLoading = _.debounce(setIsLoading, 500)
-
-  const handleMouseUp = useCallback((element: HTMLElement) => {
-    const selection = rangy.getSelection()
-    if (!selection || selection.rangeCount <= 0) return
-    const range = selection.getRangeAt(0)
-
-    if (range.toString().trim() == "") {
-      if (element.id == "source") {
-        editorStore.clearSourceSelection()
-      }
-      else if (element.id == "summary") {
-        editorStore.clearSummarySelection()
-      }
-      return
-    }
-
-    const { start, end } = range.toCharacterRange(element)
-
-    if (element.id == "source") {
-      editorStore.setSourceSelection(start, end)
-    }
-    else if (element.id == "summary") {
-      editorStore.setSummarySelection(start, end)
-    }
-  }, [])
 
   const onRestoreViewingHistory = useCallback(() => {
     editorStore.clearAllSelection()
@@ -72,6 +66,62 @@ export default function Editor() {
     }
     debounceSetIsLoading(false)
   }, [indexStore.index])
+
+  const onFetchServerSection = useCallback(async () => {
+    try {
+      await editorStore.fetchServerSection(indexStore.index)
+    }
+    catch (e) {
+      dispatchToast(
+          <Toast>
+            <ToastTitle
+                action={
+                  <ToastTrigger>
+                    <Button onClick={onFetchServerSection}>
+                      Retry
+                    </Button>
+                  </ToastTrigger>
+                }
+            >
+              Fail fetching server section
+            </ToastTitle>
+          </Toast>,
+          { intent: "error" },
+      )
+    }
+  }, [indexStore.index])
+
+  const handleMouseUp = useCallback((element: HTMLElement) => {
+    const selection = rangy.getSelection()
+    if (!selection || selection.rangeCount <= 0) return
+    const range = selection.getRangeAt(0)
+
+    if (range.toString().trim() == "") {
+      if (element.id == "source") {
+        editorStore.clearSourceSelection()
+      }
+      else if (element.id == "summary") {
+        editorStore.clearSummarySelection()
+      }
+      return
+    }
+
+    const { start, end } = range.toCharacterRange(element)
+    console.log("Mouse up", start, end)
+
+    if (element.id == "source") {
+      editorStore.setSourceSelection(start, end)
+    }
+    else if (element.id == "summary") {
+      editorStore.setSummarySelection(start, end)
+    }
+
+    if (editorStore.initiator == element.id || editorStore.initiator == null) {
+      startTransition(async () => {
+        await onFetchServerSection()
+      })
+    }
+  }, [editorStore.initiator])
 
   useEffect(() => {
     let ignore = false
@@ -122,6 +172,67 @@ export default function Editor() {
     return segments
   }
 
+  function renderServerSection(target: "source" | "summary") {
+    const toDoc = target == "source"
+    const text = target === "source" ? taskStore.current.doc : taskStore.current.sum
+    const processedServerSection = processServerSection(editorStore.serverSection, toDoc)
+
+    const normalizedColors = normalizationScore(editorStore.serverSection.map(
+        (section) => section.score,
+    ))
+
+    const segments = []
+    let lastIndex = 0
+    for (const section of processedServerSection) {
+      if (section.offset > lastIndex) {
+        segments.push(text.slice(lastIndex, section.offset))
+      }
+
+      const sectionStart = section.offset
+      const sectionEnd = section.offset + section.len
+
+      segments.push(
+          <Tooltip
+              start={sectionStart}
+              end={sectionEnd}
+              key={`slice-${sectionStart}-${sectionEnd}`}
+              backgroundColor={getColor(normalizedColors[section.index])}
+              textColor="black"
+              text={text.slice(sectionStart, sectionEnd)}
+              score={section.score}
+              labels={labelsStore.labels}
+              onLabel={async (label, note) => {
+                await labelText(indexStore.index, {
+                  source_start: editorStore.initiator == "source" ? editorStore.sourceSelection.start : sectionStart,
+                  source_end: editorStore.initiator == "source" ? editorStore.sourceSelection.end : sectionEnd,
+                  summary_start: editorStore.initiator == "summary" ? editorStore.summarySelection.start : sectionStart,
+                  summary_end: editorStore.initiator == "summary" ? editorStore.summarySelection.end : sectionEnd,
+                  consistent: label,
+                  note: note,
+                })
+                historyStore.updateHistory(indexStore.index).then(() => {
+                  editorStore.clearAllSelection()
+                })
+              }}
+              message="Check all types that apply below."
+          />,
+      )
+      lastIndex = section.offset + section.len
+    }
+    if (lastIndex < text.length) segments.push(text.slice(lastIndex))
+    return segments
+  }
+
+  function render(target: "source" | "summary") {
+    console.log("Render", target)
+    const selection = target === "source" ? editorStore.sourceSelection : editorStore.summarySelection
+    if (selection.start != -1 || editorStore.serverSection.length == 0) {
+      return renderHighlight(target)
+    }
+
+    return renderServerSection(target)
+  }
+
   return (
       <div
           style={{
@@ -142,8 +253,8 @@ export default function Editor() {
               >
                 <Card
                   style={{
-                    userSelect: suspendSource ? "none" : "auto",
-                    color: suspendSource ? "gray" : "black",
+                    userSelect: isSuspendingSource ? "none" : "auto",
+                    color: isSuspendingSource ? "gray" : "black",
                   }}
                 >
                   <CardHeader
@@ -154,12 +265,8 @@ export default function Editor() {
                     }
                   />
                   {(
-                      suspendSource ?
-                          <Text
-                              id="source"
-                              as="p">
-                            {taskStore.current.doc}
-                          </Text>
+                      isSuspendingSource ?
+                          <SuspendText text={taskStore.current.doc} />
                           :
                           <Text
                               id="source"
@@ -171,7 +278,7 @@ export default function Editor() {
                                 handleMouseUp(event.target as HTMLSpanElement)
                               }}
                           >
-                            {renderHighlight("source")}
+                            {render("source")}
                           </Text>
                   )}
                 </Card>
@@ -187,8 +294,8 @@ export default function Editor() {
                 >
                   <Card
                     style={{
-                      userSelect: suspendSummary ? "none" : "auto",
-                      color: suspendSummary ? "gray" : "black",
+                      userSelect: isSuspendingSummary ? "none" : "auto",
+                      color: isSuspendingSummary ? "gray" : "black",
                     }}
                   >
                     <CardHeader
@@ -199,12 +306,8 @@ export default function Editor() {
                       }
                     />
                     {
-                      suspendSummary ?
-                          <Text
-                              id="summary"
-                              as="p">
-                            {taskStore.current.sum}
-                          </Text>
+                      isSuspendingSummary ?
+                          <SuspendText text={taskStore.current.sum} />
                           :
                           <Text
                               id="summary"
@@ -216,7 +319,7 @@ export default function Editor() {
                                 handleMouseUp(event.target as HTMLSpanElement)
                               }}
                           >
-                            {renderHighlight("summary")}
+                            {render("summary")}
                           </Text>
                     }
                   </Card>
@@ -227,5 +330,15 @@ export default function Editor() {
           </Allotment>
         }
       </div>
+  )
+}
+
+function SuspendText({ text }: { text: string }) {
+  return (
+      <Text
+          id="summary"
+          as="p">
+        {text}
+      </Text>
   )
 }

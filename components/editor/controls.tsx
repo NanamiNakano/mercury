@@ -43,7 +43,7 @@ export default function Controls() {
           }}
       >
         <Button icon={<HandRightRegular />} onClick={onReset} appearance={
-          editorStore.initiator !== null
+          editorStore.sourceSelection.start != -1 || editorStore.summarySelection.start != -1
               ? "primary"
               : null
         }>
