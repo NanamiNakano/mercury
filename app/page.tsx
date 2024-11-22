@@ -37,6 +37,7 @@ import { useTrackedTaskStore } from "../store/useTaskStore"
 import { useTrackedUserStore } from "../store/useUserStore"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTrackedLabelsStore } from "../store/useLabelsStore"
+import { getColor, normalizationScore } from "../utils/color"
 
 enum Stage {
   None = 0,
@@ -44,30 +45,6 @@ enum Stage {
 }
 
 const DISABLE_QUERY = false
-
-const normalizationColor = (score: number[]) => {
-  if (score.length === 0) return []
-  if (score.length === 1) return [1]
-  const minScore = Math.min(...score)
-  const maxScore = Math.max(...score)
-  const normalScores = []
-  for (const single of score) {
-    normalScores.push((single - minScore) / (maxScore - minScore))
-  }
-  return normalScores
-}
-
-const colors = [
-  "#c4ebff",
-  "#a8e1ff",
-  "#70cdff",
-  "#38baff",
-  "#1cb0ff",
-  "#00a6ff",
-]
-const getColor = (score: number) => {
-  return colors[Math.floor(score * (colors.length - 1))]
-}
 
 
 // Function to determine if a color is light or dark
@@ -346,7 +323,7 @@ export default function Index() {
     for (const slice of newSlices) {
       allScore.push(slice.score)
     }
-    const normalColor = normalizationColor(allScore)
+    const normalColor = normalizationScore(allScore)
     return (
         <>
           {sliceArray.map(slice => {
