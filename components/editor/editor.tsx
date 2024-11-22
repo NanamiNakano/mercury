@@ -113,8 +113,9 @@ export default function Editor() {
                   summary_end: editorStore.summarySelection.end,
                   consistent: label,
                   note: note,
-                })
+                }, editorStore.initiator == "source" ? "source" : null)
                 historyStore.updateHistory(indexStore.index).then(() => {
+                  editorStore.clearAllSelection()
                 })
               }}
               message="Check all types that apply below."
@@ -148,14 +149,15 @@ export default function Editor() {
               labels={labelsStore.labels}
               onLabel={async (label, note) => {
                 await labelText(indexStore.index, {
-                  source_start: editorStore.summarySelection.start,
-                  source_end: editorStore.summarySelection.end,
+                  source_start: editorStore.sourceSelection.start,
+                  source_end: editorStore.sourceSelection.end,
                   summary_start: editorStore.summarySelection.start,
                   summary_end: editorStore.summarySelection.end,
                   consistent: label,
                   note: note,
-                })
+                }, editorStore.initiator == "summary" ? "summary" : null)
                 historyStore.updateHistory(indexStore.index).then(() => {
+                  editorStore.clearAllSelection()
                 })
               }}
               message="Check all types that apply below."

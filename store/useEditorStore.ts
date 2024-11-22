@@ -37,8 +37,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     state.initiator = null
     window.getSelection()?.removeAllRanges()
   })),
-  clearSourceSelection: () => set({ sourceSelection: null }),
-  clearSummarySelection: () => set({ summarySelection: null }),
+  clearSourceSelection: () => set(produce((state: EditorState) => {
+    state.sourceSelection = { start: -1, end: -1, from_summary: false }
+    if (state.initiator === "source") state.initiator = null
+  })),
+  clearSummarySelection: () => set(produce((state: EditorState) => {
+    state.summarySelection = { start: -1, end: -1, from_summary: true }
+    if (state.initiator === "summary") state.initiator = null
+  })),
   fetchServerSection: async (index: number) => {
     try {
       if (get().initiator == "source") {

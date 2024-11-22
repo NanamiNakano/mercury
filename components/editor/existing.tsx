@@ -228,7 +228,9 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                               icon={<DeleteRegular />}
                               onClick={async () => {
                                 await deleteRecord(item.record_id)
-                                onRestore()
+                                if (historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id) {
+                                  onRestore()
+                                }
                                 await onRefreshHistory()
                               }}
                           >

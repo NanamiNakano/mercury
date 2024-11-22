@@ -8,6 +8,7 @@ import type {
   Task,
   User,
 } from "./types"
+import { produce } from "immer"
 
 const backend = process.env.NEXT_PUBLIC_BACKEND || ""
 
@@ -114,7 +115,18 @@ const selectText = async (taskIndex: number, req: SelectionRequest): Promise<Sec
   return data as SectionResponse | RequestError
 }
 
-const labelText = async (taskIndex: number, req: LabelRequest): Promise<Normal> => {
+const labelText = async (taskIndex: number, req: LabelRequest, single?: "source" | "summary"): Promise<Normal> => {
+  const processedReq = produce(req, draft => {
+    if (single) {
+      if (single == "source") {
+        draft.summary_start = -1
+        draft.summary_end = -1
+      } else {
+        draft.source_start = -1
+        draft.source_end = -1
+      }
+    }
+  })
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/label`, {
     method: "POST",
@@ -122,7 +134,7 @@ const labelText = async (taskIndex: number, req: LabelRequest): Promise<Normal> 
       "Content-Type": "application/json",
       "Authorization": `Bearer ${access_token}`,
     },
-    body: JSON.stringify(req),
+    body: JSON.stringify(processedReq),
   })
   const data = await response.json()
   return data as Normal
