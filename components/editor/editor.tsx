@@ -86,90 +86,40 @@ export default function Editor() {
   }, [indexStore.index])
 
   function renderHighlight(target: "source" | "summary") {
-    if (target == "source") {
-      if (editorStore.sourceSelection.start == -1) return taskStore.current.doc
+    const selection = target === "source" ? editorStore.sourceSelection : editorStore.summarySelection
+    const text = target === "source" ? taskStore.current.doc : taskStore.current.sum
+    if (selection.start === -1) return text
 
-      const segments = []
-
-      if (editorStore.sourceSelection.start > 0) {
-        segments.push(taskStore.current.doc.slice(0, editorStore.sourceSelection.start))
-      }
-
-      segments.push(
-          <Tooltip
-              start={editorStore.sourceSelection.start}
-              end={editorStore.sourceSelection.end}
-              key={`slice-${editorStore.sourceSelection.start}-${editorStore.sourceSelection.end}`}
-              backgroundColor={editorStore.initiator == "source" ? "#79c5fb" : "#85e834"}
-              textColor="black"
-              text={taskStore.current.doc.slice(editorStore.sourceSelection.start, editorStore.sourceSelection.end)}
-              score={editorStore.initiator == "source" ? null : 2}
-              labels={labelsStore.labels}
-              onLabel={async (label, note) => {
-                await labelText(indexStore.index, {
-                  source_start: editorStore.sourceSelection.start,
-                  source_end: editorStore.sourceSelection.end,
-                  summary_start: editorStore.summarySelection.start,
-                  summary_end: editorStore.summarySelection.end,
-                  consistent: label,
-                  note: note,
-                }, editorStore.initiator == "source" ? "source" : null)
-                historyStore.updateHistory(indexStore.index).then(() => {
-                  editorStore.clearAllSelection()
-                })
-              }}
-              message="Check all types that apply below."
-          />,
-      )
-
-      if (editorStore.sourceSelection.end < taskStore.current.doc.length) {
-        segments.push(taskStore.current.doc.slice(editorStore.sourceSelection.end))
-      }
-
-      return segments
-    }
-    else {
-      if (editorStore.summarySelection.start == -1) return taskStore.current.sum
-
-      const segments = []
-
-      if (editorStore.summarySelection.start > 0) {
-        segments.push(taskStore.current.sum.slice(0, editorStore.summarySelection.start))
-      }
-
-      segments.push(
-          <Tooltip
-              start={editorStore.summarySelection.start}
-              end={editorStore.summarySelection.end}
-              key={`slice-${editorStore.summarySelection.start}-${editorStore.summarySelection.end}`}
-              backgroundColor={editorStore.initiator == "summary" ? "#79c5fb" : "#85e834"}
-              textColor="black"
-              text={taskStore.current.sum.slice(editorStore.summarySelection.start, editorStore.summarySelection.end)}
-              score={editorStore.initiator == "summary" ? null : 2}
-              labels={labelsStore.labels}
-              onLabel={async (label, note) => {
-                await labelText(indexStore.index, {
-                  source_start: editorStore.sourceSelection.start,
-                  source_end: editorStore.sourceSelection.end,
-                  summary_start: editorStore.summarySelection.start,
-                  summary_end: editorStore.summarySelection.end,
-                  consistent: label,
-                  note: note,
-                }, editorStore.initiator == "summary" ? "summary" : null)
-                historyStore.updateHistory(indexStore.index).then(() => {
-                  editorStore.clearAllSelection()
-                })
-              }}
-              message="Check all types that apply below."
-          />,
-      )
-
-      if (editorStore.summarySelection.end < taskStore.current.sum.length) {
-        segments.push(taskStore.current.sum.slice(editorStore.summarySelection.end))
-      }
-
-      return segments
-    }
+    const segments = []
+    if (selection.start > 0) segments.push(text.slice(0, selection.start))
+    segments.push(
+        <Tooltip
+            start={selection.start}
+            end={selection.end}
+            key={`slice-${selection.start}-${selection.end}`}
+            backgroundColor={editorStore.initiator === target ? "#79c5fb" : "#85e834"}
+            textColor="black"
+            text={text.slice(selection.start, selection.end)}
+            score={editorStore.initiator === target ? null : 2}
+            labels={labelsStore.labels}
+            onLabel={async (label, note) => {
+              await labelText(indexStore.index, {
+                source_start: editorStore.sourceSelection.start,
+                source_end: editorStore.sourceSelection.end,
+                summary_start: editorStore.summarySelection.start,
+                summary_end: editorStore.summarySelection.end,
+                consistent: label,
+                note: note,
+              }, editorStore.initiator === target ? target : null)
+              historyStore.updateHistory(indexStore.index).then(() => {
+                editorStore.clearAllSelection()
+              })
+            }}
+            message="Check all types that apply below."
+        />,
+    )
+    if (selection.end < text.length) segments.push(text.slice(selection.end))
+    return segments
   }
 
   return (
