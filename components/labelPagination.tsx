@@ -4,7 +4,6 @@ import { Button, Field, ProgressBar } from "@fluentui/react-components"
 import { ChevronLeftRegular, IosChevronRightRegular } from "@fluentui/react-icons"
 import { useTrackedIndexStore } from "../store/useIndexStore"
 import { useCallback } from "react"
-import { useTrackedHistoryStore } from "../store/useHistoryStore"
 import { useTrackedEditorStore } from "../store/useEditorStore"
 
 type Props = {
@@ -14,11 +13,10 @@ type Props = {
 export default function LabelPagination({ beforeChangeIndex = Function() }: Props) {
   const indexStore = useTrackedIndexStore()
   const editorStore = useTrackedEditorStore()
-  const historyStore = useTrackedHistoryStore()
 
   const onReset = useCallback(() => {
     editorStore.clearAllSelection()
-    historyStore.setViewingRecord(null)
+    editorStore.setViewing(null)
   }, [])
 
   return (

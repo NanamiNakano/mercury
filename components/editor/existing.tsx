@@ -19,13 +19,13 @@ import {
 } from "@fluentui/react-components"
 import { ArrowSyncRegular, DeleteRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
 import { deleteRecord } from "../../utils/request"
-import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
 import { LabelData } from "../../utils/types"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { HasError, Loading } from "./fallback"
 import _ from "lodash"
+import { useTrackedEditorStore } from "../../store/useEditorStore"
 
 const columnsDef: TableColumnDefinition<LabelData>[] = [
   createTableColumn({
@@ -55,7 +55,7 @@ type Props = {
 }
 
 export default function ExistingPane({ onRestore = Function() }: Props) {
-  const historyStore = useTrackedHistoryStore()
+  const editorStore = useTrackedEditorStore()
   const indexStore = useTrackedIndexStore()
   const taskStore = useTrackedTaskStore()
 
@@ -68,7 +68,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
     setHasError(false)
     debounceSetIsLoading(true)
     try {
-      await historyStore.updateHistory(indexStore.index)
+      await editorStore.updateHistory(indexStore.index)
     }
     catch (e) {
       setHasError(true)
@@ -89,13 +89,13 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
   }, [indexStore.index])
 
   const sortedHistory = useMemo(() => {
-    return historyStore.history
+    return editorStore.history
         .sort((a, b) => {
           let c = a.source_start - b.source_start
           if (c === 0) c = a.summary_start - b.summary_start
           return c
         })
-  }, [historyStore.history])
+  }, [editorStore.history])
 
   const [columns] = useState<TableColumnDefinition<LabelData>[]>(columnsDef)
   const [columnSizingOptions] = useState<TableColumnSizingOptions>({
@@ -206,10 +206,10 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                           {item.note}
                         </TableCell>
                         <TableCell>
-                          {historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id ? (
+                          {editorStore.viewing != null && editorStore.viewing.record_id === item.record_id ? (
                               <Button icon={<EyeOffRegular />} appearance="primary"
                                       onClick={() => {
-                                        historyStore.setViewingRecord(null)
+                                        editorStore.setViewing(null)
                                         onRestore()
                                       }}>
                                 Restore
@@ -218,7 +218,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                               <Button
                                   icon={<EyeRegular />}
                                   onClick={() => {
-                                    historyStore.setViewingRecord(item)
+                                    editorStore.setViewing(item)
                                   }}
                               >
                                 Show
@@ -228,7 +228,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                               icon={<DeleteRegular />}
                               onClick={async () => {
                                 await deleteRecord(item.record_id)
-                                if (historyStore.viewingRecord != null && historyStore.viewingRecord.record_id === item.record_id) {
+                                if (editorStore.viewing != null && editorStore.viewing.record_id === item.record_id) {
                                   onRestore()
                                 }
                                 await onRefreshHistory()

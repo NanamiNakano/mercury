@@ -7,16 +7,14 @@ import UserPopover from "../userPopover"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useCallback } from "react"
-import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 
 export default function Controls() {
   const indexStore = useTrackedIndexStore()
   const editorStore = useTrackedEditorStore()
-  const historyStore = useTrackedHistoryStore()
 
   const onReset = useCallback(() => {
     editorStore.clearAllSelection()
-    historyStore.setViewingRecord(null)
+    editorStore.setViewing(null)
   }, [])
 
   const onExportJSON = useCallback(async () => {

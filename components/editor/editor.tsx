@@ -14,7 +14,6 @@ import {
 } from "@fluentui/react-components"
 import ExistingPane from "./existing"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
-import { useTrackedHistoryStore } from "../../store/useHistoryStore"
 import { HasError, Loading } from "./fallback"
 import _ from "lodash"
 import { labelText } from "../../utils/request"
@@ -29,7 +28,6 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
   const editorStore = useTrackedEditorStore()
   const taskStore = useTrackedTaskStore()
   const indexStore = useTrackedIndexStore()
-  const historyStore = useTrackedHistoryStore()
   const labelsStore = useTrackedLabelsStore()
 
   const [isLoadingServerSection, startTransition] = useTransition()
@@ -47,7 +45,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
 
   const onRestoreViewingHistory = useCallback(() => {
     editorStore.clearAllSelection()
-    historyStore.setViewingRecord(null)
+    editorStore.setViewing(null)
   }, [])
 
   const onFetchTask = useCallback(async () => {
@@ -156,7 +154,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
                 consistent: label,
                 note: note,
               }, editorStore.initiator === target ? target : null)
-              historyStore.updateHistory(indexStore.index).then(() => {
+              editorStore.updateHistory(indexStore.index).then(() => {
                 editorStore.clearAllSelection()
               })
             }}
@@ -205,7 +203,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
                   consistent: label,
                   note: note,
                 })
-                historyStore.updateHistory(indexStore.index).then(() => {
+                editorStore.updateHistory(indexStore.index).then(() => {
                   editorStore.clearAllSelection()
                 })
               }}

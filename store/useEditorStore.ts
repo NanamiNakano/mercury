@@ -1,8 +1,8 @@
 import { create } from "zustand"
 import { createTrackedSelector } from "react-tracked"
-import { handleRequestError, isRequestError, SectionResponse, SelectionRequest } from "../utils/types"
+import { handleRequestError, isRequestError, type LabelData, SectionResponse, SelectionRequest } from "../utils/types"
 import { produce } from "immer"
-import { selectText } from "../utils/request"
+import { getTaskHistory, selectText } from "../utils/request"
 
 interface EditorState {
   sourceSelection: SelectionRequest
@@ -15,6 +15,11 @@ interface EditorState {
   clearSourceSelection: () => void
   clearSummarySelection: () => void
   fetchServerSection: (index: number) => Promise<void>
+
+  history: LabelData[],
+  viewing: LabelData | null
+  updateHistory: (labelIndex: number) => Promise<void>
+  setViewing: (viewingRecord: LabelData) => void
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -75,6 +80,21 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       throw e
     }
   },
+
+  history: [],
+  viewing: null,
+  updateHistory: async (labelIndex: number) => {
+    try {
+      const history = await getTaskHistory(labelIndex)
+      set({ history })
+    }
+    catch (e) {
+      set({ history: [] })
+      console.log(e)
+      throw e
+    }
+  },
+  setViewing: (viewing: LabelData) => set({ viewing: viewing }),
 }))
 
 export const useTrackedEditorStore = createTrackedSelector(useEditorStore)
