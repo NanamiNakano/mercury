@@ -24,7 +24,7 @@ import "rangy/lib/rangy-textrange"
 import { getColor, normalizationScore } from "../../utils/color"
 import { processServerSection } from "../../utils/processServerSection"
 
-export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
+export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   const editorStore = useTrackedEditorStore()
   const taskStore = useTrackedTaskStore()
   const indexStore = useTrackedIndexStore()
@@ -87,6 +87,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
   const handleMouseUp = useCallback((target: "source" | "summary") => {
     const selection = rangy.getSelection()
     if (!selection || selection.rangeCount <= 0) return
+    if (!editorStore.editable) return
     const range = selection.getRangeAt(0)
 
     if (range.toString().trim() == "") {
@@ -114,7 +115,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
         await onFetchServerSection()
       })
     }
-  }, [editorStore.initiator])
+  }, [editorStore.initiator, editorStore.editable])
 
   useEffect(() => {
     let ignore = false
@@ -135,32 +136,42 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function}) {
 
     const segments = []
     if (selection.start > 0) segments.push(text.slice(0, selection.start))
-    segments.push(
-        <Tooltip
-            start={selection.start}
-            end={selection.end}
-            key={`slice-${selection.start}-${selection.end}`}
-            backgroundColor={editorStore.initiator === target ? "#79c5fb" : "#85e834"}
-            textColor="black"
-            text={text.slice(selection.start, selection.end)}
-            score={editorStore.initiator === target ? null : 2}
-            labels={labelsStore.labels}
-            onLabel={async (label, note) => {
-              await labelText(indexStore.index, {
-                source_start: editorStore.sourceSelection.start,
-                source_end: editorStore.sourceSelection.end,
-                summary_start: editorStore.summarySelection.start,
-                summary_end: editorStore.summarySelection.end,
-                consistent: label,
-                note: note,
-              }, editorStore.initiator === target ? target : null)
-              editorStore.updateHistory(indexStore.index).then(() => {
-                editorStore.clearAllSelection()
-              })
-            }}
-            message="Check all types that apply below."
-        />,
-    )
+    if (editorStore.editable) {
+      segments.push(
+          <Tooltip
+              start={selection.start}
+              end={selection.end}
+              key={`slice-${selection.start}-${selection.end}`}
+              backgroundColor={editorStore.initiator === target ? "#79c5fb" : "#85e834"}
+              textColor="black"
+              text={text.slice(selection.start, selection.end)}
+              score={editorStore.initiator === target ? null : 2}
+              labels={labelsStore.labels}
+              onLabel={async (label, note) => {
+                await labelText(indexStore.index, {
+                  source_start: editorStore.sourceSelection.start,
+                  source_end: editorStore.sourceSelection.end,
+                  summary_start: editorStore.summarySelection.start,
+                  summary_end: editorStore.summarySelection.end,
+                  consistent: label,
+                  note: note,
+                }, editorStore.initiator === target ? target : null)
+                editorStore.updateHistory(indexStore.index).then(() => {
+                  editorStore.clearAllSelection()
+                })
+              }}
+              message="Check all types that apply below."
+          />,
+      )
+    } else {
+      segments.push(
+      <span style={{
+        backgroundColor: "#79c5fb"
+      }}>
+        {text.slice(selection.start, selection.end)}
+      </span>
+      )
+    }
     if (selection.end < text.length) segments.push(text.slice(selection.end))
     return segments
   }

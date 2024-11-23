@@ -90,7 +90,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
 
   const sortedHistory = useMemo(() => {
     return editorStore.history
-        .sort((a, b) => {
+        .toSorted((a, b) => {
           let c = a.source_start - b.source_start
           if (c === 0) c = a.summary_start - b.summary_start
           return c
@@ -206,7 +206,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                           {item.note}
                         </TableCell>
                         <TableCell>
-                          {editorStore.viewing != null && editorStore.viewing.record_id === item.record_id ? (
+                          {editorStore.viewingID != null && editorStore.viewingID === item.record_id ? (
                               <Button icon={<EyeOffRegular />} appearance="primary"
                                       onClick={() => {
                                         editorStore.setViewing(null)
@@ -228,7 +228,7 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                               icon={<DeleteRegular />}
                               onClick={async () => {
                                 await deleteRecord(item.record_id)
-                                if (editorStore.viewing != null && editorStore.viewing.record_id === item.record_id) {
+                                if (editorStore.viewingID != null && editorStore.viewingID === item.record_id) {
                                   onRestore()
                                 }
                                 await onRefreshHistory()

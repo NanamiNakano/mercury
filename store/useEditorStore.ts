@@ -9,6 +9,7 @@ interface EditorState {
   summarySelection: SelectionRequest
   initiator: "source" | "summary" | null
   serverSection: SectionResponse
+  editable: boolean
   setSourceSelection: (start: number, end: number) => void
   setSummarySelection: (start: number, end: number) => void
   clearAllSelection: () => void
@@ -17,7 +18,7 @@ interface EditorState {
   fetchServerSection: (index: number) => Promise<void>
 
   history: LabelData[],
-  viewing: LabelData | null
+  viewingID: string | null
   updateHistory: (labelIndex: number) => Promise<void>
   setViewing: (viewingRecord: LabelData) => void
 }
@@ -27,6 +28,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   summarySelection: { start: -1, end: -1, from_summary: true },
   initiator: null,
   serverSection: [],
+  editable: true,
   setSourceSelection: (start: number, end: number) => set(produce((state: EditorState) => {
     state.sourceSelection = { start, end, from_summary: false }
     if (state.initiator === null) state.initiator = "source"
@@ -82,7 +84,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   history: [],
-  viewing: null,
+  viewingID: null,
   updateHistory: async (labelIndex: number) => {
     try {
       const history = await getTaskHistory(labelIndex)
@@ -94,7 +96,19 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       throw e
     }
   },
-  setViewing: (viewing: LabelData) => set({ viewing: viewing }),
+  setViewing: (viewing: LabelData | null) => set(produce((state: EditorState) => {
+    if (viewing === null) {
+      state.editable = true
+      state.viewingID = null
+    } else {
+      state.sourceSelection.start = viewing.source_start
+      state.sourceSelection.end = viewing.source_end
+      state.summarySelection.start = viewing.summary_start
+      state.summarySelection.end = viewing.summary_end
+      state.editable = false
+      state.viewingID = viewing.record_id
+    }
+  })),
 }))
 
 export const useTrackedEditorStore = createTrackedSelector(useEditorStore)
