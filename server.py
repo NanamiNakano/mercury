@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import uuid
+from functools import lru_cache
 from typing import Annotated
 import struct
 
@@ -77,34 +78,40 @@ class User(BaseModel):
     email: str
 
 
-SECRET_KEY = ""
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10080
+@lru_cache
+class Config(BaseModel):
+    secret_key: str
+    expire: int
+
+
+def get_config():
+    raise NotImplementedError("This should be overridden.")
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, secret_key: str, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm="HS256")
     return encoded_jwt
 
 
 @app.post("/login")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], config: Config = Depends(get_config)) -> Token:
     auth_success, user_id = database.auth_user(form_data.username,
                                                form_data.password)
     if not auth_success:  # username here is actually email, since OAuth2 requires key be username
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token({"user_id": user_id}, access_token_expires)
+    access_token_expires = timedelta(minutes=config.expire)
+    access_token = create_access_token({"user_id": user_id}, config.secret_key, access_token_expires)
     return Token(access_token=access_token, token_type="bearer")
 
 
@@ -124,14 +131,14 @@ async def create_new_user():
 
 
 @app.get("/user/me")
-async def get_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+async def get_user(token: Annotated[str, Depends(oauth2_scheme)], config: Config = Depends(get_config)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], verify=True)
+        payload = jwt.decode(token, config.secret_key, algorithms=["HS256"], verify=True)
         user_id: str = payload.get("user_id")
         if user_id is None:
             raise credentials_exception
@@ -168,12 +175,12 @@ async def get_task(task_index: int = 0):
 
 
 @app.get("/task/{task_index}/history")
-async def get_task_history(task_index: int,  user: Annotated[User, Depends(get_user)]):
+async def get_task_history(task_index: int, user: Annotated[User, Depends(get_user)]):
     return database.export_task_history(task_index, user.id)
 
 
 @app.post("/task/{task_index}/label")
-async def post_task(task_index: int, label: Label,  user: Annotated[User, Depends(get_user)]):
+async def post_task(task_index: int, label: Label, user: Annotated[User, Depends(get_user)]):
     # label_data = LabelData(
     #     record_id="not assigned",
     #     sample_id=tasks[task_index]["_id"],
@@ -322,7 +329,7 @@ async def post_selections(task_index: int, selection: Selection):
 
 
 @app.delete("/record/{record_id}")
-async def delete_annotation(record_id: str,  user: Annotated[User, Depends(get_user)]):
+async def delete_annotation(record_id: str, user: Annotated[User, Depends(get_user)]):
     database.delete_annotation(record_id, user.id)
     return {"message": f"delete anntation {record_id} success"}
 
@@ -341,6 +348,7 @@ async def history():
 async def viewer():
     return FileResponse("dist/viewer.html")
 
+
 @app.get("/login")
 async def login():
     return FileResponse("dist/login.html")
@@ -355,14 +363,20 @@ if __name__ == "__main__":
     parser.add_argument("--mercury_db", type=str, required=True, default="./mercury.sqlite")
     parser.add_argument("--user_db", type=str, required=True, default="./user.sqlite")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--jwt_secret", type=str, required=True)
     args = parser.parse_args()
+
+    env_secret_key = os.getenv("SECRET_KEY")
+    if env_secret_key is None:
+        print("SECRET_KEY is not set in the environment")
+        exit(1)
+    expire = int(os.getenv("EXPIRE_MINUTES", 10080))
+    env_config = Config(secret_key=env_secret_key, expire=expire)
 
     print("Using Mercury SQLite db: ", args.mercury_db)
     print("Using User SQLite db: ", args.user_db)
-    SECRET_KEY = args.jwt_secret
 
     database = Database(args.mercury_db, args.user_db)
+    app.dependency_overrides[get_config] = lambda: env_config
 
     # TODO: the name 'tasks' can be misleading. It should be changed to something more descriptive.
     tasks = database.fetch_data_for_labeling()
