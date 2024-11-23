@@ -56,5 +56,6 @@ mercury_annotations.json
 .idea
 mercury.sqlite
 users.sqlite
+output.csv
 
 test.jsonl

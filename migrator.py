@@ -6,15 +6,6 @@ import string
 import csv
 
 
-def generate_random_string(length=16):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(random.choice(characters) for _ in range(length))
-
-
-def generate_random_example_email():
-    return f"{generate_random_string(8)}@changeme.com"
-
-
 def export(source, output):
     conn_source = sqlite3.connect(source)
     cursor_source = conn_source.cursor()
@@ -27,7 +18,7 @@ def export(source, output):
             writer.writerow({"user_id": row[0], "user_name": row[1]})
 
 
-def migrate(source, target, output):
+def migrate(source, target):
     conn_target = sqlite3.connect(target)
     cursor_target = conn_target.cursor()
     cursor_target.execute("""
@@ -41,21 +32,19 @@ def migrate(source, target, output):
 
     ph = argon2.PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)
     source_file = open(source, newline="")
-    output_file = open(output, "w", newline="")
     reader = csv.DictReader(source_file)
-    writer = csv.DictWriter(output_file, fieldnames=["user_id", "user_name", "email", "password"])
-    writer.writeheader()
     for row in reader:
         password = row["password"]
         if password is None or password == "":
-            password = generate_random_string()
+            print("Password is missing for user_id: %s", row["user_id"])
+            exit(1)
         hashed_password = ph.hash(password)
         email = row["email"]
         if email is None or email == "":
-            email = generate_random_example_email()
+            print("Email is missing for user_id: %s", row["user_id"])
+            exit(1)
         cursor_target.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
                               (row["user_id"], row["user_name"], email, hashed_password))
-        writer.writerow({"user_id": row["user_id"], "user_name": row["user_name"], "email": email, "password": password})
     conn_target.commit()
 
 
@@ -69,12 +58,11 @@ if __name__ == "__main__":
 
     migrate_parser = commands_parser.add_parser("migrate", help="Migrate data from source to output")
     migrate_parser.add_argument("--source", type=str, required=True, help="Path to the source csv file")
-    migrate_parser.add_argument("--target", type=str, help="Path to the output SQLite file", default="output.db")
-    migrate_parser.add_argument("--output", type=str, help="Path to the output csv file", default="log.csv")
+    migrate_parser.add_argument("--target", type=str, help="Path to the output SQLite file", default="users.sqlite")
     args = main_parser.parse_args()
 
     if args.command == "migrate":
-        migrate(args.source, args.target, args.output)
+        migrate(args.source, args.target)
     elif args.command == "export":
         export(args.source, args.output)
     else:

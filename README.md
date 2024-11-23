@@ -115,12 +115,13 @@ The dumped human annotations are stored in a JSON format like this:
 You can view exported data in `http://[your_host]/viewer`
 
 ### Migrating data from old version
+
 If you have annotation data before Mercury had user login, you need to migrate. Here is how to do it:
 
-1. `python3 migrator.py export`. This will export the existing user data to a CSV file.
+1. `python3 migrator.py export --source mercury.sqlite`. This will export the existing user data to a CSV file (default
+   is output.csv in the same directory,use --output to specify the path).
 2. Open the exported CSV file and add an email and a password for each user. Do not leave any field empty.
-3. `python3 migrator.py migrate`. This will migrate the user data to the new database.
-
+3. `python3 migrator.py migrate --source output.csv --target users.sqlite `. This will migrate the user data to the new database.
 
 ## Technical details
 
