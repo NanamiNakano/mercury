@@ -2,13 +2,10 @@
 
 Mercury is a semantic-assisted, cross-text text labeling tool.
 
-1. semantic-assisted: when you select a text span, semantically related text segments will be highlighted -- so you
-   don't have to eyebal through lengthy texts.
+1. semantic-assisted: when you select a text span, semantically related text segments will be highlighted -- so you don't have to eyeball through lengthy texts.
 2. cross-text: you are labeling text spans from two different texts.
 
-Therefore, Mercury is very efficient for the labeling of NLP tasks that involve comparing texts between two documents
-which are also lengthy, such as hallucination detection or factual consistency/faithfulness in RAG systems. Semantic
-assistance not only saves time and reduces fatigues but also avoids mistakes.
+Therefore, Mercury is very efficient for the labeling of NLP tasks that involve comparing texts between two documents which are also lengthy, such as hallucination detection or factual consistency/faithfulness in RAG systems. Semantic assistance not only saves time and reduces fatigues but also avoids mistakes.
 
 Currently, Mercury only supports labeling inconsistencies between the source and summary for summarization in RAG.
 
@@ -23,16 +20,13 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 
 1. `pip3 install -r requirements.txt && python3 -m spacy download en_core_web_sm`
 
-2. If you don't have `pnpm` installed: `npm install -g pnpm`, you may need sudo. If you don't have `npm`, try
-   `sudo apt install npm`.
+2. If you don't have `pnpm` installed, please install with `npm install -g pnpm` - you may need `sudo`. If you don't have `npm`, try `sudo apt install npm`.
 
-3. To use `sqlite-vec` via Python's built-in `sqlite3` module, you must have SQLite>3.41 (otherwise `LIMIT` or `k=?`
-   will not work properly with `rowid IN (?)` for vector search) installed and set Python's built-in `sqlite3` module to
-   use it. Python's built-in `sqlite3` module uses its own binary library that is independent of the OS's SQLite. So
-   upgrading the OS's SQLite will not affect Python's `sqlite3` module. You need to follow the steps below:
+3. To use `sqlite-vec` via Python's built-in `sqlite3` module, you must have SQLite>3.41 (otherwise `LIMIT` or `k=?` will not work properly with `rowid IN (?)` for vector search) installed and ensure Python's built-in `sqlite3` module is built for SQLite>3.41. Note that Python's built-in `sqlite3` module uses its own binary library that is independent of the OS's SQLite. So upgrading the OS's SQLite will not upgrade Python's `sqlite3` module.
+   To manually upgrade Python's `sqlite3` module to use SQLite>3.41, here are the steps: 
     * Download and compile SQLite>3.41.0 from source
          ```bash
-         wget https://www.sqlite.org/2024/sqlite-autoconf-3460100.tar.gz
+         wget https://www.sqlite.org/2024/sqlite-autoconf-3460100.tar.gz 
          tar -xvf sqlite-autoconf-3460100.tar.gz
          cd sqlite-autoconf-3460100
          ./configure
@@ -45,7 +39,6 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
         ```bash
         export LD_PRELAOD=$SQLITE_Compile/.libs/libsqlite3.so
         ```
-
       You may add the above line to `~.bashrc` to make it permanent.
     * Verify that Python's `sqlite3` module is using the correct SQLite, run this Python code:
       ```shell
@@ -57,7 +50,7 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 
 4. To use `sqlite-vec` directly in `sqlite` prompt, simply [compile
    `sqlite-vec` from source](https://alexgarcia.xyz/sqlite-vec/compiling.html) and load the compiled `vec0.o`. The usage
-   can be found in the [README](https://github.com/asg017/sqlite-vec?tab=readme-ov-file#sample-usage) of SQLite-vec.
+   can be found in the SQLite-vec's [README](https://github.com/asg017/sqlite-vec?tab=readme-ov-file#sample-usage).
 
 ## Usage
 
@@ -73,15 +66,10 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
 3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical
    labels.
-4. Migrate existing user data if you have used old version of mercury:
-    1. `python3 migrator.py export`. This will export the existing user data to a dict csv file.
-    2. Edit the exported csv file to specify new email and password for each user. If you leave the email or password
-       empty, the script will generate random email or password for the user.
-    3. `python3 migrator.py migrate`. This will migrate the user data to the new database.
-5. Generate a jwt secret key: `openssl rand -base64 32`. This will be used to sign the jwt token for authentication. You
+4. Generate a JWT secret key: `openssl rand -base64 32`. This will be used to sign the JWT token for authentication. You
    should keep it secret. You can do this at any time, such as when the key is compromised and then all users are logged
    out.
-6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
+5. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
 
 Admin who has access to the SQLite file can modify user data (e.g. reset user password), register new users, and delete users
 via `user_utils.py`. For more details, run `python3 user_utils.py -h`.
@@ -125,6 +113,14 @@ The dumped human annotations are stored in a JSON format like this:
 ```
 
 You can view exported data in `http://[your_host]/viewer`
+
+### Migrating data from old version
+If you have annotation data before Mercury had user login, you need to migrate. Here is how to do it:
+
+1. `python3 migrator.py export`. This will export the existing user data to a CSV file.
+2. Open the exported CSV file and add an email and a password for each user. Do not leave any field empty.
+3. `python3 migrator.py migrate`. This will migrate the user data to the new database.
+
 
 ## Technical details
 
