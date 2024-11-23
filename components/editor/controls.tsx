@@ -33,6 +33,32 @@ export default function Controls() {
     }
   }, [])
 
+  const onShare = useCallback(async () => {
+    const url = `${window.location.origin}${window.location.pathname}?sample=${indexStore.index}`
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url)
+    }
+    else {
+      const textArea = document.createElement("textarea")
+      textArea.value = url
+      textArea.style.position = "absolute"
+      textArea.style.left = "-999999px"
+
+      document.body.prepend(textArea)
+      textArea.select()
+
+      try {
+        document.execCommand("copy")
+      }
+      catch (error) {
+        console.error(error)
+      }
+      finally {
+        textArea.remove()
+      }
+    }
+  }, [indexStore.index])
+
   return (
       <div
           style={{
@@ -50,11 +76,7 @@ export default function Controls() {
         <Button icon={<ArrowExportRegular />} onClick={onExportJSON}>
           Export Labels
         </Button>
-        <Button icon={<ShareRegular />} onClick={async () => {
-          await navigator.clipboard.writeText(
-              `${window.location.origin}${window.location.pathname}?sample=${indexStore.index}`,
-          )
-        }}>
+        <Button icon={<ShareRegular />} onClick={onShare}>
           Share Link
         </Button>
         <UserPopover />

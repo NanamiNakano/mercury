@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { createTrackedSelector } from "react-tracked"
 import { getAllTasksLength } from "../utils/request"
+import { produce } from "immer"
 
 interface IndexState {
   index: number
@@ -20,7 +21,10 @@ export const useIndexStore = create<IndexState>()((set) => ({
   fetchMax: async () => {
     try {
       const task = await getAllTasksLength()
-      set({ max: task.all - 1 })
+      set(produce((state: IndexState) => {
+        state.max = task.all - 1
+        if (state.index > state.max) state.index = 0
+      }))
     } catch (e) {
       console.log(e)
       throw e

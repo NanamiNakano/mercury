@@ -85,6 +85,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   }, [indexStore.index])
 
   const handleMouseUp = useCallback((target: "source" | "summary") => {
+    if (typeof window === "undefined") return
     const selection = rangy.getSelection()
     if (!selection || selection.rangeCount <= 0) return
     if (!editorStore.editable) return
