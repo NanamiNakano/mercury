@@ -13,7 +13,7 @@ import {
 import Controls from "../components/editor/controls"
 import LabelPagination from "../components/labelPagination"
 import Editor from "../components/editor/editor"
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect } from "react"
 import { useTrackedIndexStore } from "../store/useIndexStore"
 import { useTrackedLabelsStore } from "../store/useLabelsStore"
 import { useRouter, useSearchParams } from "next/navigation"
