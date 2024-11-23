@@ -66,10 +66,11 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
 3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical
    labels.
-4. Generate a JWT secret key: `openssl rand -base64 32`. This will be used to sign the JWT token for authentication. You
-   should keep it secret. You can do this at any time, such as when the key is compromised and then all users are logged
+4. Generate a JWT secret key: `openssl rand -base64 32`. This will be passed as an environment variable later and be used to sign the JWT token for authentication . You
+   should keep it secret and safely store it (e.g. using HSMs). You can change secret key at any time, especially when the key is compromised, and then all users are logged
    out.
-5. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
+5. Set environment variables: `export SECRET_KEY=your_secret`. You can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
+6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
 
 Admin who has access to the SQLite file can modify user data (e.g. reset user password), register new users, and delete users
 via `user_utils.py`. For more details, run `python3 user_utils.py -h`.
