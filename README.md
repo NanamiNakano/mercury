@@ -58,22 +58,13 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 
    Run `python3 ingester.py -h` to see the options.
 
-   The ingester takes a CSV, JSON, or JSONL file and loads texts from two text columns (configurable via option
-   `ingest_column_1` and `ingest_column_2` which default to `source` and `summary`) of the file. Mercury uses three
-   Vectara corpora to store the sources, the summaries, and the human annotations. You can provide the corpus IDs to
-   overwrite or append data to existing corpora.
+   The ingester takes a CSV, JSON, or JSONL file and loads texts from two text columns (configurable via option `ingest_column_1` and `ingest_column_2` which default to `source` and `summary`) of the file. After ingestion, the data will be stored in the SQLite database, denoted as `MERCURY_DB` in the following steps.
 
 2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
-3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical
-   labels.
-4. Generate a JWT secret key: `openssl rand -base64 32`. This will be passed as an environment variable later and be used to sign the JWT token for authentication . You
-   should keep it secret and safely store it (e.g. using HSMs). You can change secret key at any time, especially when the key is compromised, and then all users are logged
-   out.
-5. Set environment variables: `export SECRET_KEY=your_secret`. You can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
-6. `python3 server.py`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
-
-Admin who has access to the SQLite file can modify user data (e.g. reset user password), register new users, and delete users
-via `user_utils.py`. For more details, run `python3 user_utils.py -h`.
+3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical labels.
+4. Generate and set a JWT secret key: `export SECRET_KEY=$(openssl rand -base64 32)`. You can rerun the command above to generate a new secret key when needed, especially when the old one is compromised. Note that changing the JWT token will log out all users. Optionally, you can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
+5. Administer the users: `python3 user_utils.py -h`. You need to create users before they can work on the annotation task. You can register new users, reset passwords, and delete users. User credentials are stored in a separate SQLite database, denoted as `USER_DB` in the following steps. 
+6. Start the Mercury annotation server: `python3 server.py --mercury_db {MERCURY_DB} --user_db {USER_DB}`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
@@ -117,11 +108,11 @@ You can view exported data in `http://[your_host]/viewer`
 
 ### Migrating data from old version
 
-If you have annotation data before Mercury had user login, you need to migrate. Here is how to do it:
+If you have annotation data before Mercury supports user login, you need to migrate. Here is how to do it:
 
-1. `python3 migrator.py export --source mercury.sqlite`. This will export the existing user data to a CSV file (default
-   is output.csv in the same directory,use --output to specify the path).
-2. Open the exported CSV file and add an email and a password for each user. Do not leave any field empty.
+1. `python3 migrator.py export --source mercury.sqlite`. This will export the existing user data to a CSV file. Default destination
+   is `output.csv` in the same directory. To specify the output file, use the `--output` flag.
+2. Open the exported CSV file and add an email and a password (plain) for each user. Do not leave any field empty.
 3. `python3 migrator.py migrate --source output.csv --target users.sqlite `. This will migrate the user data to the new database.
 
 ## Technical details
@@ -136,15 +127,23 @@ Terminology:
 
 ### Tables
 
-Mercury uses two database. Seperated user database can be used across projects.
+Mercury needs two SQLite databases, denoted as `MERCURY_DB`, which stores a corpus for annotation, and `USER_DB`, which stores login credentials. One `USER_DB` can be reused for multiple `MERCURY_DB`s for the same group of users to annotation different corpora. 
 
-#### Mercury main database:
+#### User database (`USER_DB`)
 
-`chunks`, `embeddings`, `annotations`, `config`.
+#### `users` table: the annotators
 
-#### User database:
+| user_id                          | user_name | email         | hashed_password |
+|----------------------------------|-----------|---------------|-----------------|
+| add93a266ab7484abdc623ddc3bf6441 | Alice     | a@example.com | super_safe      |
+| 68d41e465458473c8ca1959614093da7 | Bob       | b@example.com | my_password     |
 
-`users`.
+- The column`user_name` in `users` table is not unique and are not used as part of login credentials. An annotator logs in using a combination of  `email` and `hashed_password`.
+- Password is hashed by `argon2` with parameters `time_cost=2, memory_cost=19456, parallelism=1`.
+
+#### Mercury main database (`MERCURY_DB`)
+
+Tables: `chunks`, `embeddings`, `annotations`, `config`.
 
 All powered by SQLite. In particular, `embeddings` is powered by `sqlite-vec`.
 
@@ -226,17 +225,6 @@ For example:
 0-indexed, the `sample_id` column is the `sample_id` in the `chunks` table. It is local to the ingestion file. The
 `json_meta` is whatever info other than ingestion columns (source and summary) in the ingestion file.
 
-#### `users` table: the annotators
-
-| user_id                          | user_name | email         | hashed_password |
-|----------------------------------|-----------|---------------|-----------------|
-| add93a266ab7484abdc623ddc3bf6441 | Alice     | a@example.com | super_safe      |
-| 68d41e465458473c8ca1959614093da7 | Bob       | b@example.com | my_password     |
-
-- The column`user_name` in users table are not unique and are not used as part of login credentials. Instead `email` is
-  used.
-- Password is hashed by `argon2` with parameters `time_cost=2, memory_cost=19456, parallelism=1`.
-
 ### Authentication
 
 Mercury implemented a simple OAuth2 authentication. The user logs in with email and password. The server will return a
@@ -312,7 +300,7 @@ Here is a running example (using the data [above](#chunks-table-chunks-and-metad
 
 ### Embedding speed and/or embedding dimension
 
-1. `multi-qa-mpnet-base-dot-v1` takes about 0.219 second on a x86 CPU to embed one sentence when batch_size is 1. The
+1. `multi-qa-mpnet-base-dot-v1` takes about 0.219 second on an x86 CPU to embed one sentence when batch_size is 1. The
    embedding dimension is 768.
-2. `BAAI/bge-small-en-v1.5` takes also about 0.202 second on a x86 CPU to embed one sentence when batch_size is 1. The
+2. `BAAI/bge-small-en-v1.5` takes also about 0.202 second on an x86 CPU to embed one sentence when batch_size is 1. The
    embedding dimension is 384.

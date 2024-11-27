@@ -21,8 +21,11 @@ def export(source, output):
 def migrate(source, target):
     conn_target = sqlite3.connect(target)
     cursor_target = conn_target.cursor()
+
+    cursor_target.execute("DROP TABLE IF EXISTS users")
+
     cursor_target.execute("""
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 user_id TEXT PRIMARY KEY,
                 user_name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
@@ -37,11 +40,13 @@ def migrate(source, target):
         password = row["password"]
         if password is None or password == "":
             print("Password is missing for user_id: %s", row["user_id"])
+            print ("Migration failed.")
             exit(1)
         hashed_password = ph.hash(password)
         email = row["email"]
         if email is None or email == "":
             print("Email is missing for user_id: %s", row["user_id"])
+            print ("Migration failed.")
             exit(1)
         cursor_target.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
                               (row["user_id"], row["user_name"], email, hashed_password))
