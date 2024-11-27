@@ -11,6 +11,7 @@ import {
   useToastController,
 } from "@fluentui/react-components"
 import { login } from "../../utils/request"
+import { useRouter } from "next/navigation"
 
 const useStackClassName = makeResetStyles({
   display: "flex",
@@ -20,6 +21,7 @@ const useStackClassName = makeResetStyles({
 })
 
 export default function Login() {
+  const router = useRouter()
   const toasterId = useId("toaster")
   const { dispatchToast } = useToastController(toasterId)
 
@@ -27,7 +29,7 @@ export default function Login() {
     if (formData.get("email") && formData.get("password")) {
       const success = await login(formData.get("email"), formData.get("password"))
       if (success) {
-        window.location.href = "/"
+        router.push("/")
       } else {
         dispatchToast(
             <Toast>

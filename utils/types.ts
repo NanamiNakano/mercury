@@ -31,6 +31,14 @@ export type SectionResponseSlice = {
 
 export type SectionResponse = SectionResponseSlice[]
 
+export type ServerSection = {
+  score: number
+  offset: number
+  len: number
+  to_doc: boolean
+  index: number
+}
+
 export function userSectionResponse(start: number, end: number, toDoc: boolean): SectionResponseSlice {
   return {
     score: 2,
@@ -40,8 +48,16 @@ export function userSectionResponse(start: number, end: number, toDoc: boolean):
   }
 }
 
-export type Error = {
+export type RequestError = {
   error: string
+}
+
+export function isRequestError(obj: any): obj is RequestError {
+  return typeof obj.error === "string"
+}
+
+export function handleRequestError(e: RequestError) {
+  throw Error(e.error)
 }
 
 export type Normal = {

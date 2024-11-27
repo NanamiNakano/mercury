@@ -3,7 +3,7 @@ import { FluentProvider, webLightTheme } from "@fluentui/react-components"
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+      <html lang="en">
       <head>
         <title>Mercury</title>
         <style>
@@ -15,16 +15,16 @@ export default function RootLayout({ children }) {
         </style>
       </head>
       <body
-        style={{
-          margin: "0",
-          height: "100vh",
-        }}
+          style={{
+            margin: "0",
+            height: "100vh",
+          }}
       >
-        <FluentProvider theme={webLightTheme}>
-          <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
-        </FluentProvider>
+      <FluentProvider theme={webLightTheme}>
+        <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
+      </FluentProvider>
       </body>
-    </html>
+      </html>
   )
 }
 
