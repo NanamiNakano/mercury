@@ -13,7 +13,7 @@ import {
   ProgressBar, Table, TableBody, TableCell,
   TableHeader, TableHeaderCell, TableRow,
   Text,
-  Title1
+  Title1, Toast, ToastBody, Toaster, ToastFooter, ToastTitle, useId, useToastController,
 } from "@fluentui/react-components"
 import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
@@ -31,8 +31,7 @@ import {
   selectText,
   deleteRecord,
   getAllLabels,
-  changeName,
-  checkUserMe
+  changeName, getUserMe, checkUserMe,
 } from "../utils/request"
 import { type LabelData, type SectionResponse, type Task, userSectionResponse } from "../utils/types"
 import {
@@ -44,11 +43,11 @@ import {
   EyeRegular,
   HandRightRegular,
   IosChevronRightRegular,
-  ShareRegular
-} from "@fluentui/react-icons";
+  ShareRegular,
+} from "@fluentui/react-icons"
 import { Allotment } from "allotment"
 import "allotment/dist/style.css"
-import ColumnResize from "react-table-column-resizer";
+import ColumnResize from "react-table-column-resizer"
 import "./page.css"
 
 const labelIndexAtom = atomWithStorage("labelIndex", 0)
@@ -88,24 +87,24 @@ const getColor = (score: number) => {
 // Function to determine if a color is light or dark
 const isLightColor = (color: string) => {
   // Remove the hash if present
-  let newcolor = color.replace('#', '');
+  let newcolor = color.replace("#", "")
 
   // Convert 3-digit hex to 6-digit hex
   if (newcolor.length === 3) {
-    newcolor = newcolor.split('').map(char => char + char).join('');
+    newcolor = newcolor.split("").map(char => char + char).join("")
   }
 
   // Convert hex to RGB
-  const r = Number.parseInt(newcolor.substring(0, 2), 16);
-  const g = Number.parseInt(newcolor.substring(2, 4), 16);
-  const b = Number.parseInt(newcolor.substring(4, 6), 16);
+  const r = Number.parseInt(newcolor.substring(0, 2), 16)
+  const g = Number.parseInt(newcolor.substring(2, 4), 16)
+  const b = Number.parseInt(newcolor.substring(4, 6), 16)
 
   // Calculate luminance
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
 
   // Return true if luminance is greater than 128 (light color)
-  return luminance > 200;
-};
+  return luminance > 200
+}
 
 const exportJSON = () => {
   exportLabel().then(data => {
@@ -135,54 +134,82 @@ export default function Index() {
   const [labels, setLabels] = useState<(string | object)[]>([])
   const [userName, setUserName] = useState<string>("No Name")
   const [tempUserName, setTempUserName] = useState<string>(userName)
-  const [hideName, setHideName] = useState<boolean>(true)
+
+  const toasterId = useId("toaster")
+  const { dispatchToast } = useToastController(toasterId)
 
   const historyColumns = [
     { columnKey: "summary", label: "Summary" },
     { columnKey: "source", label: "Source" },
     { columnKey: "consistent", label: "Consistent" },
-    { columnKey: "actions", label: "Actions" }
+    { columnKey: "actions", label: "Actions" },
   ]
+
+  useEffect(() => {
+    const access_token = localStorage.getItem("access_token")
+    if (access_token == "" || access_token == null) {
+      dispatchToast(
+          <Toast>
+            <ToastTitle>Not logged in</ToastTitle>
+          </Toast>,
+          { intent: "error" },
+      )
+      window.location.href = "/login"
+      return
+    }
+    checkUserMe(access_token).then(valid => {
+      if (!valid) {
+        localStorage.removeItem("access_token")
+        dispatchToast(
+            <Toast>
+              <ToastTitle>Session expired</ToastTitle>
+            </Toast>,
+            { intent: "error" },
+        )
+      }
+      return
+    })
+  }, [])
 
   useEffect(() => {
     if (getLock.current) return
     setUserName(localStorage.getItem("name") || "No Name")
     Promise.all([
-      getAllTasksLength(), 
+      getAllTasksLength(),
       getAllLabels(),
-      checkUserMe(),
+      getUserMe(),
     ])
-      .then(([tasks, labels, result]) => {
-        setMaxIndex(tasks.all)
-        setLabels(labels)
-        setHideName(!result)
-        getLock.current = true
-      })
-      .then(() => {
-        // get query of url
-        const url = new URL(window.location.href)
-        const index = url.searchParams.get("sample")
-        if (index !== null) {
-          washHand()
-          const indexNumber = Number.parseInt(index)
-          if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= maxIndex) {
-            setLabelIndex(indexNumber)
+        .then(([tasks, labels, user]) => {
+          setMaxIndex(tasks.all)
+          setLabels(labels)
+          setUserName(user.name)
+          getLock.current = true
+        })
+        .then(() => {
+          // get query of url
+          const url = new URL(window.location.href)
+          const index = url.searchParams.get("sample")
+          if (index !== null) {
+            washHand()
+            const indexNumber = Number.parseInt(index)
+            if (!Number.isNaN(indexNumber) && indexNumber >= 0 && indexNumber <= maxIndex) {
+              setLabelIndex(indexNumber)
+            }
           }
-        }
-      })
+        })
   }, [])
 
   useEffect(() => {
     getSingleTask(labelIndex)
-      .then(task => {
-        if ("doc" in task) {
-          setCurrentTask(task)
-        }
-      })
-      .catch(error => {
-        setCurrentTask(null)
-        console.error(error)
-      })
+        .then(task => {
+          if ("doc" in task) {
+            setCurrentTask(task)
+          }
+        })
+        .catch(error => {
+          setCurrentTask(null)
+          console.error(error)
+        })
   }, [labelIndex])
 
   const updateHistory = () => {
@@ -202,7 +229,7 @@ export default function Index() {
   useEffect(() => {
     if (viewingRecord === null || currentTask === null) {
       washHand()
-        return
+      return
     }
     setFirstRange([viewingRecord.source_start, viewingRecord.source_end])
     setRangeId("doc")
@@ -213,28 +240,29 @@ export default function Index() {
     const func = (event) => {
       const selection = window.getSelection()
       const target = event.target as HTMLElement
-      
+
       const mercuryElements = document.querySelectorAll("[data-mercury-disable-selection]")
-      
+
       // console.log(mercuryElements)
-      
+
       for (const element of mercuryElements) {
         if (element.contains(target)) {
           return
         }
       }
-      
+
       if (target.id.startsWith("label-")) {
         return
       }
-      
+
       if (
-        !selection.containsNode(document.getElementById("summary"), true) &&
-        !selection.containsNode(document.getElementById("doc"), true)
+          !selection.containsNode(document.getElementById("summary"), true) &&
+          !selection.containsNode(document.getElementById("doc"), true)
       ) {
         if (userSelection !== null) {
           setUserSelection(null)
-        } else {
+        }
+        else {
           washHand()
         }
         return
@@ -246,15 +274,18 @@ export default function Index() {
           if (span.parentElement?.id === "summary" || span.parentElement?.id === "doc") {
             return
           }
-        } else if (target.tagName === "P") {
+        }
+        else if (target.tagName === "P") {
           const p = target as HTMLParagraphElement
           if (p.id === "summary" || p.id === "doc") {
             return
           }
-        } else {
+        }
+        else {
           if (userSelection !== null) {
             setUserSelection(null)
-          } else {
+          }
+          else {
             washHand()
           }
           return
@@ -280,21 +311,21 @@ export default function Index() {
         end: firstRange[1],
         from_summary: rangeId === "summary",
       })
-        .then(response => {
-          setWaiting(null)
-          if ("error" in response) {
-            console.error(response.error)
-            return
-          }
-          if (firstRange === null || rangeId === null) {
-            setServerSelection(null)
-            return
-          }
-          setServerSelection(response as SectionResponse)
-        })
-        .catch(error => {
-          console.error(error)
-        })
+          .then(response => {
+            setWaiting(null)
+            if ("error" in response) {
+              console.error(response.error)
+              return
+            }
+            if (firstRange === null || rangeId === null) {
+              setServerSelection(null)
+              return
+            }
+            setServerSelection(response as SectionResponse)
+          })
+          .catch(error => {
+            console.error(error)
+          })
     }, 100)()
   }, [firstRange, rangeId, labelIndex])
 
@@ -310,55 +341,55 @@ export default function Index() {
 
   const JustSliceText = (props: { text: string; startAndEndOffset: [number, number] }) => {
     const fakeResponse = userSectionResponse(
-      props.startAndEndOffset[0],
-      props.startAndEndOffset[1],
-      rangeId === "summary",
+        props.startAndEndOffset[0],
+        props.startAndEndOffset[1],
+        rangeId === "summary",
     )
     const sliceArray = updateSliceArray(props.text, [fakeResponse])
     return sliceArray.map(slice => {
       return slice[3] === 2 ? (
-        <Tooltip
-          start={slice[0]}
-          end={slice[1]}
-          key={`slice-${slice[0]}-${slice[1]}`}
-          backgroundColor="#79c5fb"
-          textColor="black"
-          text={props.text.slice(slice[0], slice[1] + 1)}
-          labels={labels}
-          onLabel={async (label, note) => {
-            if (firstRange === null || rangeId === null) {
-              return Promise.resolve()
-            }
-            await labelText(labelIndex, {
-              source_start: rangeId === "summary" ? -1 : firstRange[0],
-              source_end: rangeId === "summary" ? -1 + 1 : firstRange[1],
-              summary_start: rangeId === "summary" ? firstRange[0] : -1,
-              summary_end: rangeId === "summary" ? firstRange[1] : -1,
-              consistent: label,
-              note: note,
-            })
-            updateHistory()
-          }}
-          message="Check all types that apply below."
-        />
+          <Tooltip
+              start={slice[0]}
+              end={slice[1]}
+              key={`slice-${slice[0]}-${slice[1]}`}
+              backgroundColor="#79c5fb"
+              textColor="black"
+              text={props.text.slice(slice[0], slice[1] + 1)}
+              labels={labels}
+              onLabel={async (label, note) => {
+                if (firstRange === null || rangeId === null) {
+                  return Promise.resolve()
+                }
+                await labelText(labelIndex, {
+                  source_start: rangeId === "summary" ? -1 : firstRange[0],
+                  source_end: rangeId === "summary" ? -1 + 1 : firstRange[1],
+                  summary_start: rangeId === "summary" ? firstRange[0] : -1,
+                  summary_end: rangeId === "summary" ? firstRange[1] : -1,
+                  consistent: label,
+                  note: note,
+                })
+                updateHistory()
+              }}
+              message="Check all types that apply below."
+          />
       ) : (
-        <Text
-          as="span"
-          key={`slice-${slice[0]}-${slice[1]}`}
-          data-mercury-label-start={slice[0]}
-          data-mercury-label-end={slice[1]}
-        >
-          {props.text.slice(slice[0], slice[1] + 1)}
-        </Text>
+          <Text
+              as="span"
+              key={`slice-${slice[0]}-${slice[1]}`}
+              data-mercury-label-start={slice[0]}
+              data-mercury-label-end={slice[1]}
+          >
+            {props.text.slice(slice[0], slice[1] + 1)}
+          </Text>
       )
     })
   }
 
   const SliceText = (props: { text: string; slices: SectionResponse; user: [number, number] | null }) => {
     const newSlices =
-      props.user === null
-        ? props.slices
-        : [userSectionResponse(props.user[0], props.user[1], rangeId === "summary")]
+        props.user === null
+            ? props.slices
+            : [userSectionResponse(props.user[0], props.user[1], rangeId === "summary")]
     const sliceArray = updateSliceArray(props.text, newSlices)
     const allScore = []
     for (const slice of newSlices) {
@@ -366,52 +397,53 @@ export default function Index() {
     }
     const normalColor = normalizationColor(allScore)
     return (
-      <>
-        {sliceArray.map(slice => {
-          const isBackendSlice = slice[2]
-          const score = slice[3]
-          const bg_color = isBackendSlice ? score === 2 ? "#85e834" : getColor(normalColor[slice[4]]) : "#ffffff"
-          const textColor = isLightColor(bg_color) ? 'black' : 'white'
-          // const textColor= 'red'
-          return isBackendSlice && viewingRecord == null ? (
-            <Tooltip
-              start={slice[0]}
-              end={slice[1]}
-              key={`slice-${slice[0]}-${slice[1]}`}
-              backgroundColor={bg_color}
-              textColor={textColor}
-              text={props.text.slice(slice[0], slice[1] + 1)}
-              score={score}
-              labels={labels}
-              onLabel={async (label, note) => {
-                if (firstRange === null || rangeId === null) {
-                  return Promise.resolve()
-                }
-                await labelText(labelIndex, {
-                  source_start: rangeId === "summary" ? slice[0] : firstRange[0],
-                  source_end: rangeId === "summary" ? slice[1] + 1 : firstRange[1],
-                  summary_start: rangeId === "summary" ? firstRange[0] : slice[0],
-                  summary_end: rangeId === "summary" ? firstRange[1] : slice[1] + 1,
-                  consistent: label,
-                  note: note,
-                })
-                updateHistory()
-              }}
-              message="Select the type(s) of hallucinatin below."
-            />
+        <>
+          <Toaster toasterId={toasterId} />
+          {sliceArray.map(slice => {
+            const isBackendSlice = slice[2]
+            const score = slice[3]
+            const bg_color = isBackendSlice ? score === 2 ? "#85e834" : getColor(normalColor[slice[4]]) : "#ffffff"
+            const textColor = isLightColor(bg_color) ? "black" : "white"
+            // const textColor= 'red'
+            return isBackendSlice && viewingRecord == null ? (
+                <Tooltip
+                    start={slice[0]}
+                    end={slice[1]}
+                    key={`slice-${slice[0]}-${slice[1]}`}
+                    backgroundColor={bg_color}
+                    textColor={textColor}
+                    text={props.text.slice(slice[0], slice[1] + 1)}
+                    score={score}
+                    labels={labels}
+                    onLabel={async (label, note) => {
+                      if (firstRange === null || rangeId === null) {
+                        return Promise.resolve()
+                      }
+                      await labelText(labelIndex, {
+                        source_start: rangeId === "summary" ? slice[0] : firstRange[0],
+                        source_end: rangeId === "summary" ? slice[1] + 1 : firstRange[1],
+                        summary_start: rangeId === "summary" ? firstRange[0] : slice[0],
+                        summary_end: rangeId === "summary" ? firstRange[1] : slice[1] + 1,
+                        consistent: label,
+                        note: note,
+                      })
+                      updateHistory()
+                    }}
+                    message="Select the type(s) of hallucinatin below."
+                />
             ) : (
-            <Text
-              as="span"
-              style={{ backgroundColor: bg_color }}
-              key={`slice-${slice[0]}-${slice[1]}`}
-              data-mercury-label-start={slice[0]}
-              data-mercury-label-end={slice[1]}
-            >
-              {props.text.slice(slice[0], slice[1] + 1)}
-            </Text>
-          )
-        })}
-      </>
+                <Text
+                    as="span"
+                    style={{ backgroundColor: bg_color }}
+                    key={`slice-${slice[0]}-${slice[1]}`}
+                    data-mercury-label-start={slice[0]}
+                    data-mercury-label-end={slice[1]}
+                >
+                  {props.text.slice(slice[0], slice[1] + 1)}
+                </Text>
+            )
+          })}
+        </>
     )
   }
 
@@ -424,10 +456,10 @@ export default function Index() {
     switch (stage) {
       case Stage.None: {
         if (
-          range.intersectsNode(element) &&
-          range.startContainer === range.endContainer &&
-          range.startContainer === element.firstChild &&
-          range.startOffset !== range.endOffset
+            range.intersectsNode(element) &&
+            range.startContainer === range.endContainer &&
+            range.startContainer === element.firstChild &&
+            range.startOffset !== range.endOffset
         ) {
           setFirstRange([range.startOffset, range.endOffset])
           setUserSelection(null)
@@ -445,7 +477,8 @@ export default function Index() {
         if (element.id === rangeId || element.parentElement?.id === rangeId) {
           setFirstRange(getRangeTextHandleableRange(range))
           setUserSelection(null)
-        } else {
+        }
+        else {
           setUserSelection(getRangeTextHandleableRange(range))
         }
         break
@@ -454,68 +487,67 @@ export default function Index() {
   }
 
   return (
-    <>
-      <Title1>Mercury Label</Title1>
-      <br />
-      <br />
-      <div
-        style={{
-          display: "flex",
-          gap: "1em",
-        }}
-      >
-        {JSON.stringify(firstRange) === "[-1,-1]" || viewingRecord != null ? (
-          <Button appearance="primary" icon={<HandRightRegular />} onClick={washHand}>
-            De-select/highlight
+      <>
+        <Title1>Mercury Label</Title1>
+        <br />
+        <br />
+        <div
+            style={{
+              display: "flex",
+              gap: "1em",
+            }}
+        >
+          {JSON.stringify(firstRange) === "[-1,-1]" || viewingRecord != null ? (
+              <Button appearance="primary" icon={<HandRightRegular />} onClick={washHand}>
+                De-select/highlight
+              </Button>
+          ) : (
+              <Button icon={<HandRightRegular />} onClick={washHand}>
+                De-select/highlight
+              </Button>
+          )}
+          <Button icon={<ArrowExportRegular />} onClick={exportJSON}>
+            Export Labels
           </Button>
-        ) : (
-          <Button icon={<HandRightRegular />} onClick={washHand}>
-            De-select/highlight
+          <Button icon={<ShareRegular />} onClick={() => {
+            navigator.clipboard.writeText(
+                `${window.location.origin}${window.location.pathname}?sample=${labelIndex}`,
+            )
+          }}>
+            Share Link
           </Button>
-        )}
-        <Button icon={<ArrowExportRegular />} onClick={exportJSON}>
-          Export Labels
-        </Button>
-        <Button icon={<ShareRegular />} onClick={() => {
-          navigator.clipboard.writeText(
-            `${window.location.origin}${window.location.pathname}?sample=${labelIndex}`
-          )
-        }}>
-          Share Link
-        </Button>
-        {!hideName && (
           <Popover trapFocus>
             <PopoverTrigger disableButtonEnhancement>
               <Button icon={<Avatar size={20} name={userName} />}>
                 {userName}
               </Button>
             </PopoverTrigger>
-            
+
             <PopoverSurface>
               <div>
-                <Field style={{ 
+                <Field style={{
                   display: "flex",
                   flexDirection: "column",
                   gap: "1em",
                 }}
-              >
+                >
                   <Body1>
                     <strong>Change Name</strong>
                   </Body1>
                   <input
-                    type="text"
-                    value={tempUserName}
-                    onChange={event => {
-                      setTempUserName(event.target.value)
-                    }}
+                      type="text"
+                      value={tempUserName}
+                      onChange={event => {
+                        setTempUserName(event.target.value)
+                      }}
                   />
                   <Button
-                    appearance="primary"
-                    onClick={() => {
-                      changeName(tempUserName).then(() => {
-                        setUserName(tempUserName)
-                      })
-                    }}
+                      appearance="primary"
+                      onClick={() => {
+                        changeName(tempUserName).then(() => {
+                          setUserName(tempUserName)
+                        })
+                      }}
                   >
                     Change
                   </Button>
@@ -523,13 +555,12 @@ export default function Index() {
               </div>
             </PopoverSurface>
           </Popover>
-        )}
-        
-        
-        {/* <Link href="/history/" rel="noopener noreferrer" target="_blank">
+
+
+          {/* <Link href="/history/" rel="noopener noreferrer" target="_blank">
           <Button icon={<HistoryRegular />}></Button>
         </Link> */}
-        {/* <Button
+          {/* <Button
           icon={<AddRegular />}
           onClick={() => {
             washHand()
@@ -553,228 +584,230 @@ export default function Index() {
         >
           Select Empty Summary
         </Button> */}
-      </div>
-      <br />
-      <div
-        style={{
-          marginTop: "1em",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1em",
-        }}
-      >
-        <Button
-          disabled={labelIndex === 0}
-          appearance="primary"
-          icon={<ChevronLeftRegular />}
-          iconPosition="before"
-          onClick={() => {
-            washHand()
-            setLabelIndex(labelIndex - 1)
-          }}
-        >
-          Previous
-        </Button>
-        <Field style={{ flexGrow: 1 }} validationMessage={`${labelIndex + 1} / ${maxIndex}`} validationState="none">
-          <ProgressBar value={labelIndex + 1} max={maxIndex} thickness="large" />
-        </Field>
-        <Button
-          disabled={labelIndex === maxIndex - 1}
-          appearance="primary"
-          icon={<IosChevronRightRegular />}
-          iconPosition="after"
-          onClick={() => {
-            washHand()
-            setLabelIndex(labelIndex + 1)
-          }}
-        >
-          Next
-        </Button>
-      </div>
-      <br />
-      {currentTask === null ? (
-        <p>Loading...</p>
-      ) : (
-        <div
-          style={{
-            height: "80vh",
-            margin: "auto",
-          }}
-        >
-          <Allotment>
-            <Allotment.Pane>
-              <div
-                style={{
-                  overflowY: "scroll",
-                  height: "100%",
-                }}
-              >
-                <Card
-                  style={{
-                    userSelect: waiting === "doc" ? "none" : "auto",
-                    color: waiting === "doc" ? "gray" : "black",
-                  }}
-                >
-                  <CardHeader
-                    header={
-                      <Body1>
-                        <strong>Source</strong>
-                      </Body1>
-                    }
-                  />
-                  <Text
-                    id="doc"
-                    as="p"
-                    data-mercury-label-start={0}
-                    data-mercury-label-end={currentTask.doc.length}
-                    onMouseUp={event => {
-                      checkSelection(event.target as HTMLSpanElement)
-                    }}
-                  >
-                    {serverSelection !== null && serverSelection.length > 0 && rangeId === "summary" ? (
-                      <SliceText text={currentTask.doc} slices={serverSelection} user={userSelection} />
-                    ) : rangeId === "doc" ? (
-                      <JustSliceText text={currentTask.doc} startAndEndOffset={firstRange} />
-                    ) : (
-                      currentTask.doc
-                    )}
-                  </Text>
-                </Card>
-              </div>
-            </Allotment.Pane>
-            <Allotment.Pane>
-              <Allotment vertical>
-                <div
-                  style={{
-                    overflowY: "scroll",
-                    height: "100%",
-                  }}
-                >
-                  <Card
-                    style={{
-                      userSelect: waiting === "summary" ? "none" : "auto",
-                      color: waiting === "summary" ? "gray" : "black",
-                    }}
-                  >
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Summary</strong>
-                        </Body1>
-                      }
-                    />
-                    <Text
-                      id="summary"
-                      as="p"
-                      data-mercury-label-start={0}
-                      data-mercury-label-end={currentTask.sum.length}
-                      onMouseUp={event => checkSelection(event.target as HTMLSpanElement)}
-                    >
-                      {serverSelection !== null && rangeId === "doc" ? (
-                        <SliceText text={currentTask.sum} slices={serverSelection} user={userSelection} />
-                      ) : rangeId === "summary" ? (
-                        <JustSliceText text={currentTask.sum} startAndEndOffset={firstRange} />
-                      ) : (
-                        currentTask.sum
-                      )}
-                    </Text>
-                  </Card>
-                </div>
-                <div
-                  style={{
-                    overflowY: "scroll",
-                    height: "100%",
-                  }}
-                >
-                  <Card>
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Existing annotations</strong>
-                          <Button icon={<ArrowSyncRegular />} style={{ marginLeft: "1em" }} onClick={updateHistory}>
-                            Refresh
-                          </Button>
-                        </Body1>
-                      }
-                    />
-                    {history === null ? (
-                      <p>Loading...</p>
-                    ) : (
-                      <Table className="column_resize_table">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHeaderCell key="source">Source</TableHeaderCell>
-                            {/* @ts-ignore */}
-                            <ColumnResize id={1} className="columnResizer" />
-                            <TableHeaderCell key="summary">Summary</TableHeaderCell>
-                            {/* @ts-ignore */}
-                            <ColumnResize id={2} className="columnResizer" />
-                            <TableHeaderCell key="consistent">Label(s)</TableHeaderCell>
-                            {/* @ts-ignore */}
-                            <ColumnResize id={3} className="columnResizer" /> 
-                            <TableHeaderCell key="note">Note</TableHeaderCell>
-                            {/* @ts-ignore */}
-                            <ColumnResize id={4} className="columnResizer" /> 
-                            {/* TODO: Display the resizer. Now they are invisible. */}
-                            <TableHeaderCell key="actions">Actions</TableHeaderCell>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {history
-                            .sort((a, b) => {
-                              let c = a.source_start - b.source_start
-                              if (c === 0) c = a.summary_start - b.summary_start
-                              return c
-                            })
-                            .map((record, index) => (
-                              <TableRow key={record.record_id}>
-                                <TableCell>{currentTask.doc.slice(record.source_start, record.source_end)}</TableCell>
-                                <TableCell className="column_resizer_body" />
-                                <TableCell>{currentTask.sum.slice(record.summary_start, record.summary_end)}</TableCell>
-                                <TableCell className="column_resizer_body" />
-                                <TableCell>{record.consistent.join(", ")}</TableCell>
-                                <TableCell className="column_resizer_body" />
-                                <TableCell>{record.note}</TableCell>
-                                <TableCell className="column_resizer_body" />
-                                <TableCell>
-                                  {viewingRecord != null && viewingRecord.record_id === record.record_id ? (
-                                    <Button icon={<EyeOffRegular />} appearance="primary" onClick={washHand}>
-                                      Restore
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      icon={<EyeRegular />}
-                                      onClick={() => {
-                                        setViewingRecord(record)
-                                      }}
-                                    >
-                                      Show
-                                    </Button>
-                                  )}
-                                  <Button
-                                    icon={<DeleteRegular />}
-                                    onClick={() => {
-                                      deleteRecord(record.record_id).then(updateHistory)
-                                    }}
-                                  >
-                                    Delete
-                                  </Button>
-                                </TableCell>
-                                <TableCell className="column_resizer_body" />
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </Card>
-                </div>
-              </Allotment>
-            </Allotment.Pane>
-          </Allotment>
         </div>
-      )}
-    </>
+        <br />
+        <div
+            style={{
+              marginTop: "1em",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1em",
+            }}
+        >
+          <Button
+              disabled={labelIndex === 0}
+              appearance="primary"
+              icon={<ChevronLeftRegular />}
+              iconPosition="before"
+              onClick={() => {
+                washHand()
+                setLabelIndex(labelIndex - 1)
+              }}
+          >
+            Previous
+          </Button>
+          <Field style={{ flexGrow: 1 }} validationMessage={`${labelIndex + 1} / ${maxIndex}`} validationState="none">
+            <ProgressBar value={labelIndex + 1} max={maxIndex} thickness="large" />
+          </Field>
+          <Button
+              disabled={labelIndex === maxIndex - 1}
+              appearance="primary"
+              icon={<IosChevronRightRegular />}
+              iconPosition="after"
+              onClick={() => {
+                washHand()
+                setLabelIndex(labelIndex + 1)
+              }}
+          >
+            Next
+          </Button>
+        </div>
+        <br />
+        {currentTask === null ? (
+            <p>Loading...</p>
+        ) : (
+            <div
+                style={{
+                  height: "80vh",
+                  margin: "auto",
+                }}
+            >
+              <Allotment>
+                <Allotment.Pane>
+                  <div
+                      style={{
+                        overflowY: "scroll",
+                        height: "100%",
+                      }}
+                  >
+                    <Card
+                        style={{
+                          userSelect: waiting === "doc" ? "none" : "auto",
+                          color: waiting === "doc" ? "gray" : "black",
+                        }}
+                    >
+                      <CardHeader
+                          header={
+                            <Body1>
+                              <strong>Source</strong>
+                            </Body1>
+                          }
+                      />
+                      <Text
+                          id="doc"
+                          as="p"
+                          data-mercury-label-start={0}
+                          data-mercury-label-end={currentTask.doc.length}
+                          onMouseUp={event => {
+                            checkSelection(event.target as HTMLSpanElement)
+                          }}
+                      >
+                        {serverSelection !== null && serverSelection.length > 0 && rangeId === "summary" ? (
+                            <SliceText text={currentTask.doc} slices={serverSelection} user={userSelection} />
+                        ) : rangeId === "doc" ? (
+                            <JustSliceText text={currentTask.doc} startAndEndOffset={firstRange} />
+                        ) : (
+                            currentTask.doc
+                        )}
+                      </Text>
+                    </Card>
+                  </div>
+                </Allotment.Pane>
+                <Allotment.Pane>
+                  <Allotment vertical>
+                    <div
+                        style={{
+                          overflowY: "scroll",
+                          height: "100%",
+                        }}
+                    >
+                      <Card
+                          style={{
+                            userSelect: waiting === "summary" ? "none" : "auto",
+                            color: waiting === "summary" ? "gray" : "black",
+                          }}
+                      >
+                        <CardHeader
+                            header={
+                              <Body1>
+                                <strong>Summary</strong>
+                              </Body1>
+                            }
+                        />
+                        <Text
+                            id="summary"
+                            as="p"
+                            data-mercury-label-start={0}
+                            data-mercury-label-end={currentTask.sum.length}
+                            onMouseUp={event => checkSelection(event.target as HTMLSpanElement)}
+                        >
+                          {serverSelection !== null && rangeId === "doc" ? (
+                              <SliceText text={currentTask.sum} slices={serverSelection} user={userSelection} />
+                          ) : rangeId === "summary" ? (
+                              <JustSliceText text={currentTask.sum} startAndEndOffset={firstRange} />
+                          ) : (
+                              currentTask.sum
+                          )}
+                        </Text>
+                      </Card>
+                    </div>
+                    <div
+                        style={{
+                          overflowY: "scroll",
+                          height: "100%",
+                        }}
+                    >
+                      <Card>
+                        <CardHeader
+                            header={
+                              <Body1>
+                                <strong>Existing annotations</strong>
+                                <Button icon={<ArrowSyncRegular />} style={{ marginLeft: "1em" }}
+                                        onClick={updateHistory}>
+                                  Refresh
+                                </Button>
+                              </Body1>
+                            }
+                        />
+                        {history === null ? (
+                            <p>Loading...</p>
+                        ) : (
+                            <Table className="column_resize_table">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHeaderCell key="source">Source</TableHeaderCell>
+                                  {/* @ts-ignore */}
+                                  <ColumnResize id={1} className="columnResizer" />
+                                  <TableHeaderCell key="summary">Summary</TableHeaderCell>
+                                  {/* @ts-ignore */}
+                                  <ColumnResize id={2} className="columnResizer" />
+                                  <TableHeaderCell key="consistent">Label(s)</TableHeaderCell>
+                                  {/* @ts-ignore */}
+                                  <ColumnResize id={3} className="columnResizer" />
+                                  <TableHeaderCell key="note">Note</TableHeaderCell>
+                                  {/* @ts-ignore */}
+                                  <ColumnResize id={4} className="columnResizer" />
+                                  {/* TODO: Display the resizer. Now they are invisible. */}
+                                  <TableHeaderCell key="actions">Actions</TableHeaderCell>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {history
+                                    .sort((a, b) => {
+                                      let c = a.source_start - b.source_start
+                                      if (c === 0) c = a.summary_start - b.summary_start
+                                      return c
+                                    })
+                                    .map((record, index) => (
+                                        <TableRow key={record.record_id}>
+                                          <TableCell>{currentTask.doc.slice(record.source_start, record.source_end)}</TableCell>
+                                          <TableCell className="column_resizer_body" />
+                                          <TableCell>{currentTask.sum.slice(record.summary_start, record.summary_end)}</TableCell>
+                                          <TableCell className="column_resizer_body" />
+                                          <TableCell>{record.consistent.join(", ")}</TableCell>
+                                          <TableCell className="column_resizer_body" />
+                                          <TableCell>{record.note}</TableCell>
+                                          <TableCell className="column_resizer_body" />
+                                          <TableCell>
+                                            {viewingRecord != null && viewingRecord.record_id === record.record_id ? (
+                                                <Button icon={<EyeOffRegular />} appearance="primary"
+                                                        onClick={washHand}>
+                                                  Restore
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    icon={<EyeRegular />}
+                                                    onClick={() => {
+                                                      setViewingRecord(record)
+                                                    }}
+                                                >
+                                                  Show
+                                                </Button>
+                                            )}
+                                            <Button
+                                                icon={<DeleteRegular />}
+                                                onClick={() => {
+                                                  deleteRecord(record.record_id).then(updateHistory)
+                                                }}
+                                            >
+                                              Delete
+                                            </Button>
+                                          </TableCell>
+                                          <TableCell className="column_resizer_body" />
+                                        </TableRow>
+                                    ))}
+                              </TableBody>
+                            </Table>
+                        )}
+                      </Card>
+                    </div>
+                  </Allotment>
+                </Allotment.Pane>
+              </Allotment>
+            </div>
+        )}
+      </>
   )
 }

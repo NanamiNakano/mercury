@@ -2,13 +2,15 @@ import json
 import os
 import sys
 import uuid
+from functools import lru_cache
 from typing import Annotated
 import struct
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import List
 
@@ -25,6 +27,10 @@ import sqlite_vec
 from ingester import Embedder
 from database import Database
 
+import jwt
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime, timedelta, timezone
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -33,11 +39,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 # vectara_client = Vectara()
 
 def serialize_f32(vector: List[float]) -> bytes:
     """serializes a list of floats into a compact "raw bytes" format"""
     return struct.pack("%sf" % len(vector), *vector)
+
 
 class Label(BaseModel):
     summary_start: int
@@ -47,49 +56,109 @@ class Label(BaseModel):
     consistent: list[str]
     note: str
 
+
 class Selection(BaseModel):
     start: int
     end: int
     from_summary: bool
 
+
 class Name(BaseModel):
     name: str
 
-@app.get("/candidate_labels") 
-async def get_labels() -> list: # get all candidate labels for human annotators to choose from
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class User(BaseModel):
+    id: str
+    name: str
+    email: str
+
+
+@lru_cache
+class Config(BaseModel):
+    secret_key: str
+    expire: int
+
+
+def get_config():
+    raise NotImplementedError("This should be overridden.")
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
+def create_access_token(data: dict, secret_key: str, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm="HS256")
+    return encoded_jwt
+
+
+@app.post("/login")
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], config: Config = Depends(get_config)) -> Token:
+    auth_success, user_id = database.auth_user(form_data.username,
+                                               form_data.password)
+    if not auth_success:  # username here is actually email, since OAuth2 requires key be username
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password",
+                            headers={"WWW-Authenticate": "Bearer"})
+    access_token_expires = timedelta(minutes=config.expire)
+    access_token = create_access_token({"user_id": user_id}, config.secret_key, access_token_expires)
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@app.get("/candidate_labels")
+async def get_labels() -> list:  # get all candidate labels for human annotators to choose from
     with open("labels.yaml") as f:
         labels = yaml.safe_load(f)
     return labels
 
-@app.get("/user/new") # please update the route name to be more meaningful, e.g., /user/new_user
+
+@app.get("/user/new")  # please update the route name to be more meaningful, e.g., /user/new_user
 async def create_new_user():
     user_id = uuid.uuid4().hex
     user_name = "New User"
     database.add_user(user_id, user_name)
     return {"key": user_id, "name": user_name}
 
-@app.post("/user/name")
-async def update_user_name(name: Name, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    database.change_user_name(user_key, name.name)
-    return {"message": "success"}
 
 @app.get("/user/me")
-async def get_user_name(user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    username = database.get_user_name(user_key)
-    if username is None:
-        return {"error": "User not found"}
-    else:
-        return {"name": username}
+async def get_user(token: Annotated[str, Depends(oauth2_scheme)], config: Config = Depends(get_config)) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, config.secret_key, algorithms=["HS256"], verify=True)
+        user_id: str = payload.get("user_id")
+        if user_id is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+    user = database.get_user_by_id(user_id)
+    if user is None:
+        raise credentials_exception
+    return User(id=user[0], name=user[1], email=user[2])
 
-@app.get("/user/export") # please update the route name to be more meaningful, e.g., /user/export_user_data
-async def export_user_data(user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    return database.dump_annotator_labels(user_key)
+
+@app.post("/user/name")
+async def update_user_name(name: Name, user: Annotated[User, Depends(get_user)]):
+    database.change_user_name(user.id, name.name)
+    return {"message": "success"}
+
+
+@app.get("/user/export")  # please update the route name to be more meaningful, e.g., /user/export_user_data
+async def export_user_data(user: Annotated[User, Depends(get_user)]):
+    return database.dump_annotator_labels(user.id)
 
 
 @app.get("/task")
@@ -106,17 +175,12 @@ async def get_task(task_index: int = 0):
 
 
 @app.get("/task/{task_index}/history")
-async def get_task_history(task_index: int, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    return database.export_task_history(task_index, user_key)
+async def get_task_history(task_index: int, user: Annotated[User, Depends(get_user)]):
+    return database.export_task_history(task_index, user.id)
 
 
 @app.post("/task/{task_index}/label")
-async def post_task(task_index: int, label: Label, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-
+async def post_task(task_index: int, label: Label, user: Annotated[User, Depends(get_user)]):
     # label_data = LabelData(
     #     record_id="not assigned",
     #     sample_id=tasks[task_index]["_id"],
@@ -128,29 +192,30 @@ async def post_task(task_index: int, label: Label, user_key: Annotated[str, Head
     #     task_index=task_index,
     #     user_id=user_key,
     # )
-    
+
     sample_id = task_index
     annot_spans = {}
     if label.summary_start != -1:
         annot_spans["summary"] = (label.summary_start, label.summary_end)
     if label.source_start != -1:
         annot_spans["source"] = (label.source_start, label.source_end)
-    
-    annotator = user_key
-    
+
+    annotator = user.id
+
     label_string = json.dumps(label.consistent)
-    
+
     database.push_annotation({
         "sample_id": sample_id,
         "annotator": annotator,
         "label": label_string,
         "annot_spans": annot_spans,
         "note": label.note
-    }) # the label_data is in databse.OldLabelData format
+    })  # the label_data is in databse.OldLabelData format
     return {"message": "success"}
 
 
-@app.post("/task/{task_index}/select") # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
+@app.post(
+    "/task/{task_index}/select")  # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
 async def post_selections(task_index: int, selection: Selection):
     if task_index >= len(tasks):
         return {"error": "Invalid task index"}
@@ -158,9 +223,9 @@ async def post_selections(task_index: int, selection: Selection):
         return {"error": "Invalid task index"}
     # use_id = source_corpus_id if selection.from_summary else summary_corpus_id
     query = (
-        tasks[task_index]["source"][selection.start : selection.end]
+        tasks[task_index]["source"][selection.start: selection.end]
         if not selection.from_summary
-        else tasks[task_index]["summary"][selection.start : selection.end]
+        else tasks[task_index]["summary"][selection.start: selection.end]
     )
     id_ = tasks[task_index]["_id"]
 
@@ -176,7 +241,7 @@ async def post_selections(task_index: int, selection: Selection):
 
     # first embedd query 
     embedding = embedder.embed([query], embedding_dimension=configs["embedding_dimension"])[0]
-    
+
     # Then get the chunk_id's from the opposite document
     sql_cmd = "SELECT chunk_id, text FROM chunks WHERE text_type = ? AND sample_id = ?"
     if selection.from_summary:
@@ -184,11 +249,11 @@ async def post_selections(task_index: int, selection: Selection):
     else:
         text_type = "summary"
 
-    chunk_id_and_text = database.db.execute(sql_cmd, [text_type, task_index]).fetchall()
+    chunk_id_and_text = database.mercury_db.execute(sql_cmd, [text_type, task_index]).fetchall()
     search_chunk_ids = [row[0] for row in chunk_id_and_text]
-    vecter_db_row_ids = [str(x+1) for x in search_chunk_ids] # rowid starts from 1 while chunk_id starts from 0
+    vecter_db_row_ids = [str(x + 1) for x in search_chunk_ids]  # rowid starts from 1 while chunk_id starts from 0
 
-    if len(search_chunk_ids) == 1: # no need for vector search
+    if len(search_chunk_ids) == 1:  # no need for vector search
         selections = [{
             "score": 1.0,
             "offset": 0,
@@ -204,24 +269,25 @@ async def post_selections(task_index: int, selection: Selection):
         SELECT  \
             rowid, \
             distance \
-        FROM embeddings "  \
-        " WHERE rowid IN ({0})" \
-        "AND embedding MATCH '{1}'  \
-        ORDER BY distance \
-        LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
+        FROM embeddings " \
+              " WHERE rowid IN ({0})" \
+              "AND embedding MATCH '{1}'  \
+              ORDER BY distance \
+              LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
     # print ("SQL_CMD", sql_cmd)
-    
+
     # vector_search_result = database.db.execute(sql_cmd, [*search_chunk_ids, serialize_f32(embedding)]).fetchall()
-    vector_search_result = database.db.execute(sql_cmd).fetchall()
+    vector_search_result = database.mercury_db.execute(sql_cmd).fetchall()
     # [(2, 0.20000001788139343), (1, 0.40000003576278687)]
     # turn this into a dict from chunk__id to distance/score
     chunk_id_to_score = {row[0]: row[1] for row in vector_search_result}
     chunk_ids_of_top_k = [row[0] for row in vector_search_result]
 
     # get the char_offset and len from the chunks table based on the chunk_ids
-    sql_cmd = "SELECT chunk_id, text, char_offset FROM chunks WHERE chunk_id in ({0});".format(', '.join('?' for _ in chunk_ids_of_top_k))
+    sql_cmd = "SELECT chunk_id, text, char_offset FROM chunks WHERE chunk_id in ({0});".format(
+        ', '.join('?' for _ in chunk_ids_of_top_k))
     search_chunk_ids = [row[0] for row in vector_search_result]
-    response = database.db.execute(sql_cmd, search_chunk_ids).fetchall()
+    response = database.mercury_db.execute(sql_cmd, search_chunk_ids).fetchall()
     # [(1, 'This is a test.', 0, 14), (2, 'This is a test.', 15, 14)]
 
     # organize into a dict of keys "score", "offset", "len", "to_doc"
@@ -233,7 +299,7 @@ async def post_selections(task_index: int, selection: Selection):
         text = i[1]
         selections.append(
             {
-                "score": 1 - score, # semantic similarity is 1 - distance
+                "score": 1 - score,  # semantic similarity is 1 - distance
                 "offset": offset,
                 "len": len(text),
                 "to_doc": selection.from_summary,
@@ -263,38 +329,54 @@ async def post_selections(task_index: int, selection: Selection):
 
 
 @app.delete("/record/{record_id}")
-async def delete_annotation(record_id: str, user_key: Annotated[str, Header()]):
-    if user_key.startswith('"') and user_key.endswith('"'):
-        user_key = user_key[1:-1]
-    database.delete_annotation(record_id, user_key)
+async def delete_annotation(record_id: str, user: Annotated[User, Depends(get_user)]):
+    database.delete_annotation(record_id, user.id)
     return {"message": f"delete anntation {record_id} success"}
+
 
 @app.get("/labels")
 async def get_labels():
     return database.dump_annotation(dump_file=None)
 
+
 @app.get("/history")  # redirect route to history.html
 async def history():
     return FileResponse("dist/history.html")
+
 
 @app.get("/viewer")
 async def viewer():
     return FileResponse("dist/viewer.html")
 
-if __name__ == "__main__":
 
+@app.get("/login")
+async def login():
+    return FileResponse("dist/login.html")
+
+
+if __name__ == "__main__":
     app.mount("/", StaticFiles(directory="dist", html=True), name="dist")
 
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--sqlite_db", type=str, default="./mercury.sqlite")
+    parser.add_argument("--mercury_db", type=str, required=True, default="./mercury.sqlite")
+    parser.add_argument("--user_db", type=str, required=True, default="./user.sqlite")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
-    print ("Using sqlite db: ", args.sqlite_db)
+    env_secret_key = os.getenv("SECRET_KEY")
+    if env_secret_key is None:
+        print("SECRET_KEY is not set in the environment")
+        exit(1)
+    expire = int(os.getenv("EXPIRE_MINUTES", 10080))
+    env_config = Config(secret_key=env_secret_key, expire=expire)
 
-    database = Database(args.sqlite_db)
+    print("Using Mercury SQLite db: ", args.mercury_db)
+    print("Using User SQLite db: ", args.user_db)
+
+    database = Database(args.mercury_db, args.user_db)
+    app.dependency_overrides[get_config] = lambda: env_config
 
     # TODO: the name 'tasks' can be misleading. It should be changed to something more descriptive.
     tasks = database.fetch_data_for_labeling()

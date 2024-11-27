@@ -70,7 +70,7 @@ class Ingester:
         overwrite_data: bool = False,
         embedding_dimension: int = 512,
         # embedding_model_id: Literal["bge-m3", "bge-small-en-v1.5", "openai/text-embedding-3-small", "openai/text-embedding-3-large", "multi-qa-mpnet-base-dot-v1", "dummy"] = "dummy",
-        embedding_model_id: Literal["bge-small-en-v1.5", "openai/text-embedding-3-small", "openai/text-embedding-3-large", "multi-qa-mpnet-base-dot-v1", "dummy"] = "dummy",
+        embedding_model_id: Literal["bge-small-en-v1.5", "openai/text-embedding-3-small", "openai/text-embedding-3-large", "multi-qa-mpnet-base-dot-v1",'all-mpnet-base-v2', "dummy"] = "dummy",
         sqlite_db_path: str = "./mercury.sqlite",
         ingest_column_1: str = "source",
         ingest_column_2: str = "summary",
@@ -81,6 +81,8 @@ class Ingester:
         self.embedding_dimension = embedding_dimension
         if embedding_model_id == "bge-small-en-v1.5":
             self.embedding_dimension = 384
+        elif embedding_model_id == 'all-mpnet-base-v2':
+            self.embedding_dimension = 768
         self.embedding_model_id = embedding_model_id
 
         self.ingest_column_1 = ingest_column_1
