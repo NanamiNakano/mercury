@@ -7,7 +7,7 @@ import csv
 import os
 
 class Migrator:
-    def __init__(self, workdir, keep_users=True):
+    def __init__(self, workdir=None, keep_users=True):
         self.workdir = workdir
         self.keep_users = keep_users # whether to keep the `users` table in the SQLite files
     
@@ -219,6 +219,6 @@ if __name__ == "__main__":
         migrator.update_user_id_in_dir()
         migrator.dump_unified_user_info_to_csv("unified_users.csv")
     elif args.command == "register":
-        migrator = Migrator(args.workdir)
+        migrator = Migrator()
         migrator.ingest_users_csv_to_sqlite(args.csv, args.db)
     
