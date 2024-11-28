@@ -204,8 +204,7 @@ class Database:
         data_for_labeling = {}
         sectioned_chunks = {}
         # db = sqlite3.connect(sqlite_db_path)
-        db = self.mercury_db
-        texts = db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
+        texts = self.mercury_db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
         """ texts = 
         [('The quick brown fox.', 'source', 1, 0),
         ('Jumps over a lazy dog.', 'source', 1, 1),
@@ -278,8 +277,7 @@ class Database:
 
     def fetch_configs(self):
         # db = sqlite3.connect(sqlite_db_path)
-        db = self.mercury_db
-        configs = db.execute("SELECT key, value FROM config").fetchall()
+        configs = self.mercury_db.execute("SELECT key, value FROM config").fetchall()
         return {key: value for key, value in configs}
 
     @database_lock()
