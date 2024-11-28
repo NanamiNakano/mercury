@@ -9,7 +9,7 @@ export default function RootLayout({ children }) {
         <style>
           {`
             .fui-DialogSurface {
-              max-width: 80vw;
+              max-width: 85vw !important;
             }
           `}
         </style>

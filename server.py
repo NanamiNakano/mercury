@@ -56,7 +56,6 @@ class Label(BaseModel):
     consistent: list[str]
     note: str
 
-
 class Selection(BaseModel):
     start: int
     end: int
@@ -213,6 +212,28 @@ async def post_task(task_index: int, label: Label, user: Annotated[User, Depends
     })  # the label_data is in databse.OldLabelData format
     return {"message": "success"}
 
+@app.patch("/task/{task_index}/label/{record_id}")
+async def patch_task(task_index: int, record_id: int, label: Label, user: Annotated[User, Depends(get_user)]):
+    sample_id = task_index
+    annot_spans = {}
+    if label.summary_start != -1:
+        annot_spans["summary"] = (label.summary_start, label.summary_end)
+    if label.source_start != -1:
+        annot_spans["source"] = (label.source_start, label.source_end)
+
+    annotator = user.id
+
+    label_string = json.dumps(label.consistent)
+
+    database.update_annotation({
+        "record_id": record_id,
+        "sample_id": sample_id,
+        "annotator": annotator,
+        "label": label_string,
+        "annot_spans": annot_spans,
+        "note": label.note
+    })
+    return {"message": "success"}
 
 @app.post(
     "/task/{task_index}/select")  # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
@@ -239,7 +260,7 @@ async def post_selections(task_index: int, selection: Selection):
     #     do_generation=False,
     # )
 
-    # first embedd query 
+    # first embedd query
     embedding = embedder.embed([query], embedding_dimension=configs["embedding_dimension"])[0]
 
     # Then get the chunk_id's from the opposite document
@@ -264,7 +285,7 @@ async def post_selections(task_index: int, selection: Selection):
 
     # Do vector search on the `embeddings` table when rowid is in chunk_ids
     # print ("Search for row ids: ", search_chunk_ids)
-    # print ("Embedding: ", embedding)    
+    # print ("Embedding: ", embedding)
     sql_cmd = " \
         SELECT  \
             rowid, \

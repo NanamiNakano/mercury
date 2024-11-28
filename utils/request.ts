@@ -55,7 +55,7 @@ const getUserMe = async (): Promise<User> => {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/me`, {
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   })
   return response.json()
@@ -64,7 +64,7 @@ const getUserMe = async (): Promise<User> => {
 const checkUserMe = async (access_token: string): Promise<boolean> => {
   const response = await fetch(`${backend}/user/me`, {
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   })
   return response.ok
@@ -76,7 +76,7 @@ const changeName = async (name: string): Promise<Normal> => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify({ name }),
   })
@@ -118,7 +118,7 @@ const selectText = async (taskIndex: number, req: SelectionRequest): Promise<Sec
 const labelText = async (taskIndex: number, req: LabelRequest, single?: "source" | "summary"): Promise<Normal> => {
   const processedReq = produce(req, draft => {
     if (single) {
-      if (single == "source") {
+      if (single === "source") {
         draft.summary_start = -1
         draft.summary_end = -1
       } else {
@@ -132,7 +132,7 @@ const labelText = async (taskIndex: number, req: LabelRequest, single?: "source"
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify(processedReq),
   })
@@ -144,7 +144,7 @@ const exportLabel = async (): Promise<LabelData[]> => {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/export`, {
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
@@ -155,15 +155,14 @@ const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/history`, {
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
   if (Array.isArray(data)) {
     return data as LabelData[]
-  } else {
-    return []
   }
+  return []
 }
 
 const deleteRecord = async (recordId: string): Promise<Normal> => {
@@ -171,7 +170,7 @@ const deleteRecord = async (recordId: string): Promise<Normal> => {
   const response = await fetch(`${backend}/record/${recordId}`, {
     method: "DELETE",
     headers: {
-      "Authorization": `Bearer ${access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   })
   const data = await response.json()
@@ -184,15 +183,28 @@ const login = async (email: string, password: string): Promise<boolean> => {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ "username": email, "password": password }),
+    body: new URLSearchParams({ username: email, password: password }),
   })
   const data = await response.json()
   if ("access_token" in data) {
     localStorage.setItem("access_token", data.access_token)
     return true
-  } else {
-    return false
   }
+  return false
+}
+
+const updateRecord = async (taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> => {
+  const access_token = getAccessToken()
+  const response = await fetch(`${backend}/task/${taskIndex}/label/${recordId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`,
+    },
+    body: JSON.stringify(labelData),
+  })
+  const data = await response.json()
+  return data as Normal
 }
 
 export {
@@ -208,4 +220,5 @@ export {
   checkUserMe,
   getUserMe,
   login,
+  updateRecord
 }

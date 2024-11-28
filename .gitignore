@@ -53,9 +53,9 @@ data.json
 mercury_annotations.json
 
 .venv
-.idea
 mercury.sqlite
 users.sqlite
 output.csv
 
 test.jsonl
+user.db

@@ -11,21 +11,22 @@ import {
   TableHeader,
   TableHeaderCell,
   TableRow,
-  TableColumnDefinition,
+  type TableColumnDefinition,
   createTableColumn,
   useTableFeatures,
   useTableColumnSizing_unstable,
-  TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList,
+  type TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList,
 } from "@fluentui/react-components"
-import { ArrowSyncRegular, DeleteRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
+import { ArrowSyncRegular, DeleteRegular, EditRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
 import { deleteRecord } from "../../utils/request"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
-import { LabelData } from "../../utils/types"
+import type { LabelData } from "../../utils/types"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { HasError, Loading } from "./fallback"
 import _ from "lodash"
 import { useTrackedEditorStore } from "../../store/useEditorStore"
+import { useTrackedPopupStore } from "../../store/usePopupStore";
 
 const columnsDef: TableColumnDefinition<LabelData>[] = [
   createTableColumn({
@@ -51,13 +52,14 @@ const columnsDef: TableColumnDefinition<LabelData>[] = [
 ]
 
 type Props = {
-  onRestore?: Function,
+  onRestore?: () => void,
 }
 
-export default function ExistingPane({ onRestore = Function() }: Props) {
+export default function ExistingPane({ onRestore }: Props) {
   const editorStore = useTrackedEditorStore()
   const indexStore = useTrackedIndexStore()
   const taskStore = useTrackedTaskStore()
+  const popUpStore = useTrackedPopupStore()
 
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -205,37 +207,57 @@ export default function ExistingPane({ onRestore = Function() }: Props) {
                         >
                           {item.note}
                         </TableCell>
-                        <TableCell>
-                          {editorStore.viewingID != null && editorStore.viewingID === item.record_id ? (
-                              <Button icon={<EyeOffRegular />} appearance="primary"
-                                      onClick={() => {
-                                        editorStore.setViewing(null)
-                                        onRestore()
-                                      }}>
-                                Restore
-                              </Button>
-                          ) : (
-                              <Button
-                                  icon={<EyeRegular />}
-                                  onClick={() => {
-                                    editorStore.setViewing(item)
+                        <TableCell
+                          {...columnSizing_unstable.getTableCellProps("action")}
+                        >
+                          <Menu>
+                            <MenuTrigger disableButtonEnhancement>
+                              <Button>Actions</Button>
+                            </MenuTrigger>
+                            <MenuPopover>
+                              <MenuList>
+                                {editorStore.viewingID != null && editorStore.viewingID === item.record_id ? (
+                                  <MenuItem
+                                    icon={<EyeOffRegular />}
+                                    onClick={() => {
+                                      editorStore.setViewing(null)
+                                      onRestore()
+                                    }}>
+                                    Restore
+                                  </MenuItem>
+                                ) : (
+                                  <MenuItem
+                                    icon={<EyeRegular />}
+                                    onClick={() => {
+                                      editorStore.setViewing(item)
+                                    }}
+                                  >
+                                    Show
+                                  </MenuItem>
+                                )}
+                                <MenuItem
+                                  icon={<DeleteRegular />}
+                                  onClick={async () => {
+                                    await deleteRecord(item.record_id)
+                                    if (editorStore.viewingID != null && editorStore.viewingID === item.record_id) {
+                                      onRestore()
+                                    }
+                                    await onRefreshHistory()
                                   }}
-                              >
-                                Show
-                              </Button>
-                          )}
-                          <Button
-                              icon={<DeleteRegular />}
-                              onClick={async () => {
-                                await deleteRecord(item.record_id)
-                                if (editorStore.viewingID != null && editorStore.viewingID === item.record_id) {
-                                  onRestore()
-                                }
-                                await onRefreshHistory()
-                              }}
-                          >
-                            Delete
-                          </Button>
+                                >
+                                  Delete
+                                </MenuItem>
+                                <MenuItem
+                                  icon={<EditRegular />}
+                                  onClick={() => {
+                                    popUpStore.setLabelData(item)
+                                  }}
+                                >
+                                  Edit
+                                </MenuItem>
+                              </MenuList>
+                            </MenuPopover>
+                          </Menu>
                         </TableCell>
                       </TableRow>
                   ))}

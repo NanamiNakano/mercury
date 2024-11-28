@@ -48,6 +48,13 @@ export function userSectionResponse(start: number, end: number, toDoc: boolean):
   }
 }
 
+export function mixedToBoolean(checked: "mixed" | boolean): boolean {
+  if (checked === "mixed") {
+    return true
+  }
+  return checked
+}
+
 export type RequestError = {
   error: string
 }

@@ -206,7 +206,7 @@ class Database:
         # db = sqlite3.connect(sqlite_db_path)
         db = self.mercury_db
         texts = db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
-        """ texts = 
+        """ texts =
         [('The quick brown fox.', 'source', 1, 0),
         ('Jumps over a lazy dog.', 'source', 1, 1),
         ('We the people.', 'source', 2, 0),
@@ -219,7 +219,7 @@ class Database:
             sectioned_chunks.setdefault(sample_id, {}).setdefault(text_type, {})[chunk_offset] = text
             # levels: sample_id -> text_type -> chunk_offset -> text
 
-        # sort chunks by chunk_offset as dictionary 
+        # sort chunks by chunk_offset as dictionary
         for sample_id in sectioned_chunks:
             for text_type in sectioned_chunks[sample_id]:
                 sectioned_chunks[sample_id][text_type] = dict(sorted(sectioned_chunks[sample_id][text_type].items()))
@@ -230,7 +230,7 @@ class Database:
                 'source': {
                     0: 'The quick brown fox.',
                     1: 'Jumps over a lazy dog.'
-                }, 
+                },
                 'summary': {
                     0: '26 letters.'
                 }
@@ -239,7 +239,7 @@ class Database:
                 'source': {
                     0: 'We the people.',
                     1: 'Of the U.S.A.'
-                }, 
+                },
                 'summary': {
                     0: 'The U.S. Constitution.',
                     1: 'It is great.'
@@ -281,6 +281,27 @@ class Database:
         db = self.mercury_db
         configs = db.execute("SELECT key, value FROM config").fetchall()
         return {key: value for key, value in configs}
+
+    @database_lock()
+    def update_annotation(self, label_data: OldLabelData):
+        # find the record_id in the database
+        sql_cmd = "SELECT annotator FROM annotations WHERE annot_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (label_data["record_id"],))
+        annotation = res.fetchone()
+        if annotation is None:
+            return
+        # check annotator
+        if annotation[0] != label_data["annotator"]:
+            return
+        # update the record
+        sql_cmd = "UPDATE annotations SET annot_spans = ?, label = ?, note = ? WHERE annot_id = ?"
+        self.mercury_db.execute(sql_cmd, (
+            json.dumps(label_data["annot_spans"]),
+            label_data["label"],
+            label_data["note"],
+            label_data["record_id"],
+        ))
+        self.mercury_db.commit()
 
     @database_lock()
     def push_annotation(self, label_data: OldLabelData):
