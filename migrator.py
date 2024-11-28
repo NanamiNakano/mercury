@@ -7,14 +7,14 @@ import csv
 import os
 
 class Migrator:
-    def __init__(self, workdir=None, keep_users=True):
+    def __init__(self, workdir=None, keep_users=False):
         self.workdir = workdir
         self.keep_users = keep_users # whether to keep the `users` table in the SQLite files
     
     def load_users_from_sqlite(self, dbfile):
         """
         Return is a list of 4-tuples, 
-        ('3843397537424bf2ab4ca550533dd39e', 'Renyi Qu')
+        ('3843397537424bf2ab4ca550533dd39e', 'John Doe', 'john@example.com', '123456')
         """
 
         print (f"Loading users from {dbfile}")
@@ -115,9 +115,6 @@ class Migrator:
         for annotator in annotators:
             annotator = annotator[0]
             unified_id = self.raw_id_to_unified_id.get(annotator)
-
-            print ("Annotator: ", annotator, type(annotator))
-            print ("Unified ID: ", unified_id, type(unified_id))
             cursor.execute("UPDATE annotations SET annotator = ? WHERE annotator = ?", (unified_id, annotator))
 
         conn.commit()
@@ -141,7 +138,7 @@ class Migrator:
         
         """
             
-        print ("Writing unified user information to csv")
+        print (f"Writing unified user information to csv {unified_user_csv}")
 
         csv_fp = open(unified_user_csv, "w", newline="")
         writer = csv.writer(csv_fp)
@@ -180,6 +177,7 @@ class Migrator:
         csv_fp = open(csvfile, newline="")
         reader = csv.DictReader(csv_fp)
         for row in reader:
+            print (row["user_name"])
             password = row["password"]
             if password is None or password == "":
                 print("Password is missing for user_id: %s", row["user_id"])
@@ -203,7 +201,7 @@ if __name__ == "__main__":
     commands_parser = parser.add_subparsers(dest="command", required=True)
 
     export_parser = commands_parser.add_parser("export", help="Export, Unify, and remove user information in existing SQLite files")
-    export_parser.add_argument("--workdir", type=str, required=True, help="Path to the directory containing SQLite files")
+    export_parser.add_argument("--workdir", type=str, required=True, help="Path to the directory containing SQLite files. The script will scan all .sqlite files in the directory.")
     export_parser.add_argument("--csv", type=str, required=True, help="Path to the CSV file that contains user_id, user_name, email (empty), password (empty) for editing")
     export_parser.add_argument("--keep-users", action="store_true", help="Keep the `users` table in the SQLite files")
 
@@ -218,8 +216,7 @@ if __name__ == "__main__":
         users = migrator.load_users_from_dir()
         migrator.unify_userid_by_username()
         migrator.update_user_id_in_dir()
-        migrator.dump_unified_user_info_to_csv("unified_users.csv")
+        migrator.dump_unified_user_info_to_csv(args.csv)
     elif args.command == "register":
         migrator = Migrator()
         migrator.ingest_users_csv_to_sqlite(args.csv, args.db)
-    

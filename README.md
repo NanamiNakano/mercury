@@ -108,7 +108,11 @@ You can view exported data in `http://[your_host]/viewer`
 
 ### Migrating data from old version
 
-See the bottom of `migrator.py` for usage. 
+```
+python3 migrator.py export --workdir {DIR_OF_SQLITE_FILES} --csv unified_users.csv 
+python3 migrator.py register --csv unified_users.csv --db unified_users.sqlite
+```
+
 
 ## Technical details
 
