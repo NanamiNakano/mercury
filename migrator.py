@@ -147,7 +147,8 @@ class Migrator:
         writer = csv.writer(csv_fp)
         writer.writerow(["user_id", "user_name", "email", "password"])
         for user_id, user_name in self.unified_id_to_user_name.items():
-            writer.writerow([user_id, user_name, "", ""])
+            password = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+            writer.writerow([user_id, user_name, "", password])
         csv_fp.close()
 
     def ingest_users_csv_to_sqlite(self, csvfile, dbfile):
