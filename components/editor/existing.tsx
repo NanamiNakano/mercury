@@ -55,7 +55,9 @@ type Props = {
   onRestore?: () => void,
 }
 
-export default function ExistingPane({ onRestore }: Props) {
+const emptyRestore = () => {}
+
+export default function ExistingPane({ onRestore = emptyRestore }: Props) {
   const editorStore = useTrackedEditorStore()
   const indexStore = useTrackedIndexStore()
   const taskStore = useTrackedTaskStore()
