@@ -18,6 +18,7 @@ import { useTrackedPopupStore } from "../../store/usePopupStore";
 import CustomOption from "../customOption";
 import type { LabelData } from "../../utils/types";
 import { useTrackedIndexStore } from "../../store/useIndexStore";
+import { useState } from "react";
 
 type PopupEditorProps = {
   onEditedDone: (changed: boolean, labelData?: LabelData) => Promise<void>,
@@ -33,6 +34,37 @@ const useStyles = makeStyles({
     ...shorthands.flex(1)
   }
 })
+
+type SimpleSelectionProps = {
+  text: string,
+  onSelectChange: (range: [number, number]) => void
+}
+
+const SimpleSelection = (props: SimpleSelectionProps) => {
+  const [select, setSelect] = useState(false)
+  return (
+    <Text
+      as="p"
+      ref={(el) => {
+        if (!el) return;
+
+        el.addEventListener("mousedown", () => {
+          setSelect(true)
+        })
+        el.addEventListener("mouseup", () => {
+          if (!select) return;
+          const selection = window.getSelection()
+          if (!selection || selection.rangeCount <= 0) return;
+          const range = selection.getRangeAt(0);
+          props.onSelectChange([range.startOffset, range.endOffset])
+          setSelect(false)
+        })
+      }}
+    >
+      {props.text}
+    </Text>
+  )
+}
 
 const PopupEditor = (props: PopupEditorProps) => {
   const popUpStore = useTrackedPopupStore()
@@ -60,6 +92,15 @@ const PopupEditor = (props: PopupEditorProps) => {
                       <strong>Source</strong>
                     </Body1>
                   }
+                  action={popUpStore.sourceSelectionRange[0] > 0 &&
+                    <Button
+                      onClick={() => {
+                        popUpStore.setSourceSelectionRange([-1, -1])
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  }
                 />
                 {
                   popUpStore.editingID && (popUpStore.sourceSelectionRange[1] > 0 ? (
@@ -72,9 +113,12 @@ const PopupEditor = (props: PopupEditorProps) => {
                       }}
                     />
                   ) : (
-                    <Text as="p">
-                      {taskStore.current.doc}
-                    </Text>
+                    <SimpleSelection
+                      text={taskStore.current.doc}
+                      onSelectChange={(range) => {
+                        popUpStore.setSourceSelectionRange(range)
+                      }}
+                    />
                   ))
                 }
               </Card>
@@ -85,6 +129,15 @@ const PopupEditor = (props: PopupEditorProps) => {
                     <Body1>
                       <strong>Summary</strong>
                     </Body1>
+                  }
+                  action={popUpStore.summarySelectionRange[0] > 0 &&
+                      <Button
+                          onClick={() => {
+                            popUpStore.setSummarySelectionRange([-1, -1])
+                          }}
+                      >
+                          Clear
+                      </Button>
                   }
                 />
                 {
@@ -98,9 +151,12 @@ const PopupEditor = (props: PopupEditorProps) => {
                       }}
                     />
                   ) : (
-                    <Text as="p">
-                      {taskStore.current.sum}
-                    </Text>
+                    <SimpleSelection
+                      text={taskStore.current.sum}
+                      onSelectChange={(range) => {
+                        popUpStore.setSummarySelectionRange(range)
+                      }}
+                    />
                   ))
                 }
               </Card>

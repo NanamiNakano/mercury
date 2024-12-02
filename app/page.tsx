@@ -87,7 +87,7 @@ function Page() {
 
       if (typeof window !== "undefined") {
         const access_token = localStorage.getItem("access_token")
-        if (access_token === "" || access_token == null) {
+        if (access_token == "" || access_token == null) {
           dispatchToast(
               <Toast>
                 <ToastTitle>Not logged in</ToastTitle>
