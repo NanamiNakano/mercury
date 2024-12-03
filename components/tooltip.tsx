@@ -87,6 +87,12 @@ const Tooltip = (props: {
             border: "1px solid black",
           }}
           {...getFloatingProps()}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+          }}
+          onMouseUp={(e) => {
+            e.stopPropagation()
+          }}
         >
           {typeof props.score === "number" ? <Subtitle2>This pair of spans is hallucinated. </Subtitle2> : <Subtitle2>A single span hallucinated against the whole source. </Subtitle2>}
           {/* (Score: {props.score.toFixed(2)}) */}
