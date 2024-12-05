@@ -278,8 +278,7 @@ class Database:
 
     def fetch_configs(self):
         # db = sqlite3.connect(sqlite_db_path)
-        db = self.mercury_db
-        configs = db.execute("SELECT key, value FROM config").fetchall()
+        configs = self.mercury_db.execute("SELECT key, value FROM config").fetchall()
         return {key: value for key, value in configs}
 
     @database_lock()
@@ -376,7 +375,7 @@ class Database:
         self.mercury_db.commit()
 
     @database_lock()
-    def add_user(self, user_id: str, user_name: str): #TODO: remove this method since now only admin can add user
+    def add_user(self, user_id: str, user_name: str):  # TODO: remove this method since now only admin can add user
         sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
         self.mercury_db.execute(sql_cmd, (user_id, user_name))
         self.mercury_db.commit()
@@ -589,6 +588,7 @@ class Database:
             success = False
         return success, user[0]
 
+
 if __name__ == "__main__":
     import argparse
     import os
@@ -607,12 +607,13 @@ if __name__ == "__main__":
         description="Dump all annotations from a Vectara corpus to a JSON file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("sqlite_db_path", type=str, help="Path to the SQLite database")
-    parser.add_argument("--dump_file", type=str, default="mercury_annotations.json")
+    parser.add_argument("--mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
+    parser.add_argument("--user_db_path", type=str, required=True, help="Path to the user SQLite database")
+    parser.add_argument("--dump_file", type=str, required=True, default="mercury_annotations.json")
     args = parser.parse_args()
 
     # db = Database(args.annotation_corpus_id)
-    db_obj = Database(args.sqlite_db_path)
+    db_obj = Database(args.mercury_db_path, args.user_db_path)
     print(f"Dumping all data to {args.dump_file}")
     # db.dump_all_data(args.dump_file, args.source_corpus_id, args.summary_corpus_id)
     db_obj.dump_annotation(args.dump_file)
