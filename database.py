@@ -585,9 +585,9 @@ if __name__ == "__main__":
         description="Dump all annotations from a Vectara corpus to a JSON file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
-    parser.add_argument("user_db_path", type=str, required=True, help="Path to the user SQLite database")
-    parser.add_argument("--dump_file", type=str, default="mercury_annotations.json")
+    parser.add_argument("--mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
+    parser.add_argument("--user_db_path", type=str, required=True, help="Path to the user SQLite database")
+    parser.add_argument("--dump_file", type=str, required=True, default="mercury_annotations.json")
     args = parser.parse_args()
 
     # db = Database(args.annotation_corpus_id)
