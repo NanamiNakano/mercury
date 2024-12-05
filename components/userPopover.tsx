@@ -40,8 +40,8 @@ export default function UserPopover() {
               flexDirection: "column",
               gap: "1em",
             }} action={formSetName}>
-              <Field label="New Name">
-                <Input type="text" name="newName" />
+              <Field label="Change Name">
+                <Input type="text" name="newName" defaultValue={userState.user.name}/>
               </Field>
               <Button appearance="primary" type="submit">
                 Change
