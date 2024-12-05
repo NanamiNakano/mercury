@@ -65,6 +65,7 @@ const Tooltip = (props: {
         style={{
           backgroundColor: props.backgroundColor,
           color: props.textColor,
+          whiteSpace: "pre-wrap",
         }}
         ref={refs.setReference}
         {...getReferenceProps()}

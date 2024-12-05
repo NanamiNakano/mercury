@@ -17,8 +17,7 @@ import {
   useTableColumnSizing_unstable,
   type TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList,
 } from "@fluentui/react-components"
-import { ArrowSyncRegular, DeleteRegular, EditRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
-import { deleteRecord } from "../../utils/request"
+import { ArrowSyncRegular, EditRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
 import type { LabelData } from "../../utils/types"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -237,18 +236,6 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
                                     Show
                                   </MenuItem>
                                 )}
-                                <MenuItem
-                                  icon={<DeleteRegular />}
-                                  onClick={async () => {
-                                    await deleteRecord(item.record_id)
-                                    if (editorStore.viewingID != null && editorStore.viewingID === item.record_id) {
-                                      onRestore()
-                                    }
-                                    await onRefreshHistory()
-                                  }}
-                                >
-                                  Delete
-                                </MenuItem>
                                 <MenuItem
                                   icon={<EditRegular />}
                                   onClick={() => {

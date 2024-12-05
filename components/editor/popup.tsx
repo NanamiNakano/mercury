@@ -10,7 +10,7 @@ import {
   DialogSurface,
   DialogTitle,
   Text,
-  makeStyles, DialogActions, Button, shorthands, Textarea
+  makeStyles, DialogActions, Button, shorthands, Textarea, DialogTrigger
 } from "@fluentui/react-components";
 import DragSelect from "../dragSelect";
 import { useTrackedTaskStore } from "../../store/useTaskStore";
@@ -18,7 +18,10 @@ import { useTrackedPopupStore } from "../../store/usePopupStore";
 import CustomOption from "../customOption";
 import type { LabelData } from "../../utils/types";
 import { useTrackedIndexStore } from "../../store/useIndexStore";
-import { useState } from "react";
+import { useReducer, useState } from "react";
+import { ArrowResetFilled } from "@fluentui/react-icons";
+import { deleteRecord } from "../../utils/request";
+import { useTrackedEditorStore } from "../../store/useEditorStore";
 
 type PopupEditorProps = {
   onEditedDone: (changed: boolean, labelData?: LabelData) => Promise<void>,
@@ -32,6 +35,17 @@ const useStyles = makeStyles({
     boxShadow: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
     ...shorthands.padding("1rem", "1rem"),
     ...shorthands.flex(1)
+  },
+  dangerButton: {
+    backgroundColor: "#f44336",
+    color: "white",
+    "&:hover": {
+      backgroundColor: "#d32f2f",
+      color: "white",
+    }
+  },
+  largeSurface: {
+    maxWidth: "80vw",
   }
 })
 
@@ -67,16 +81,38 @@ const SimpleSelection = (props: SimpleSelectionProps) => {
 }
 
 const PopupEditor = (props: PopupEditorProps) => {
+  const [forceUpdateKey, forceUpdate] = useReducer(x => x + 1, 0);
   const popUpStore = useTrackedPopupStore()
   const taskStore = useTrackedTaskStore()
   const styles = useStyles()
   const indexStore = useTrackedIndexStore()
+  const editorStore = useTrackedEditorStore()
 
   return (
     <Dialog open={props.open} >
-      <DialogSurface>
+      <DialogSurface className={styles.largeSurface}>
         <DialogBody>
-          <DialogTitle>Editing</DialogTitle>
+          <DialogTitle
+            action={
+              <DialogTrigger>
+                <Button
+                  appearance="primary"
+                  icon={<ArrowResetFilled />}
+                  onClick={() => {
+                    if (popUpStore.restore !== null) {
+                      popUpStore.setLabelData(popUpStore.restore)
+                      forceUpdate()
+                    }
+                  }}
+                  disabled={popUpStore.restore === null}
+                >
+                  Restore
+                </Button>
+              </DialogTrigger>
+            }
+          >
+            Editing
+          </DialogTitle>
           <DialogContent>
             <div
               style={{
@@ -111,6 +147,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                       onRangeChange={(range) => {
                         popUpStore.setSourceSelectionRange(range)
                       }}
+                      key={forceUpdateKey}
                     />
                   ) : (
                     <SimpleSelection
@@ -149,6 +186,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                       onRangeChange={(range) => {
                         popUpStore.setSummarySelectionRange(range)
                       }}
+                      key={forceUpdateKey}
                     />
                   ) : (
                     <SimpleSelection
@@ -162,7 +200,44 @@ const PopupEditor = (props: PopupEditorProps) => {
               </Card>
             </div>
           </DialogContent>
-          <DialogActions>
+
+          <DialogActions position="start">
+            <Dialog modalType="non-modal">
+              <DialogTrigger disableButtonEnhancement>
+                <Button className={styles.dangerButton}>
+                  Delete
+                </Button>
+              </DialogTrigger>
+              <DialogSurface>
+                <DialogBody>
+                  <DialogTitle>Delete this record?</DialogTitle>
+                  <DialogContent>
+                    <Text as="p">
+                      Are you sure you want to delete this record? This action cannot be undone.
+                    </Text>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button
+                      onClick={async () => {
+                        await deleteRecord(popUpStore.editingID)
+                        if (editorStore.viewingID === popUpStore.editingID) {
+                          editorStore.setViewing(null)
+                        }
+                        await editorStore.updateHistory(indexStore.index)
+                        popUpStore.clearAll()
+                      }}
+                      className={styles.dangerButton}
+                    >
+                      Delete
+                    </Button>
+                    <Button>Cancel</Button>
+                  </DialogActions>
+                </DialogBody>
+              </DialogSurface>
+            </Dialog>
+
+          </DialogActions>
+          <DialogActions position="end">
             <CustomOption
               labels={props.labels}
               syncLabels={(labels) => {
@@ -172,6 +247,7 @@ const PopupEditor = (props: PopupEditorProps) => {
               style={{
                 width: "100%"
               }}
+              key={forceUpdateKey}
             />
             <Textarea
               resize="both"

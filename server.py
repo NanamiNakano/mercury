@@ -177,6 +177,9 @@ async def get_task(task_index: int = 0):
 async def get_task_history(task_index: int, user: Annotated[User, Depends(get_user)]):
     return database.export_task_history(task_index, user.id)
 
+@app.get("/task/{task_index}/other/annotations")
+async def get_other_annotations(task_index: int, user: Annotated[User, Depends(get_user)]):
+    return database.get_others_annotation(user.id, task_index)
 
 @app.post("/task/{task_index}/label")
 async def post_task(task_index: int, label: Label, user: Annotated[User, Depends(get_user)]):

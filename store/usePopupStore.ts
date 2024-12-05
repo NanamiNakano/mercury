@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { produce } from "immer";
 import { createTrackedSelector } from "react-tracked";
 import type { LabelData } from "../utils/types";
 
@@ -9,6 +8,8 @@ interface PopupState {
   sourceSelectionRange: [number, number],
   consistent: string[],
   note: string,
+
+  restore: LabelData | null,
 
   setEditingID: (id: string | null) => void
   setSummarySelectionRange: (range: [number, number]) => void
@@ -28,6 +29,8 @@ export const usePopupStore = create<PopupState>((set) => ({
 
   consistent: [],
   note: "",
+
+  restore: null,
 
   setEditingID: (id: string | null) => set({
     editingID: id
@@ -50,6 +53,7 @@ export const usePopupStore = create<PopupState>((set) => ({
     sourceSelectionRange: [data.source_start, data.source_end],
     consistent: data.consistent,
     note: data.note,
+    restore: data
   }),
 
   clearAll: () => set({
