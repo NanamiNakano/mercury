@@ -1,4 +1,4 @@
-// A popup window to edit an existing annotation record selected 
+// A popup window to edit an existing annotation record selected
 
 "use client"
 
@@ -13,14 +13,12 @@ import {
   Text,
   makeStyles, DialogActions, Button, shorthands, Textarea, DialogTrigger
 } from "@fluentui/react-components";
-import DragSelect from "../dragSelect";
 import { useTrackedTaskStore } from "../../store/useTaskStore";
 import { useTrackedPopupStore } from "../../store/usePopupStore";
 import CustomOption from "../customOption";
 import type { LabelData } from "../../utils/types";
 import { useTrackedIndexStore } from "../../store/useIndexStore";
 import { useReducer, useState } from "react";
-import { ArrowResetFilled } from "@fluentui/react-icons";
 import { deleteRecord } from "../../utils/request";
 import { useTrackedEditorStore } from "../../store/useEditorStore";
 
@@ -60,6 +58,9 @@ const SimpleSelection = (props: SimpleSelectionProps) => {
   return (
     <Text
       as="p"
+      style={{
+        whiteSpace: "pre-wrap"
+      }}
       ref={(el) => {
         if (!el) return;
 
@@ -81,6 +82,30 @@ const SimpleSelection = (props: SimpleSelectionProps) => {
   )
 }
 
+type SimpleSelectionShowProps = {
+  text: string,
+  range: [number, number]
+}
+
+const SimpleSelectionShow = (props: SimpleSelectionShowProps) => {
+  return (
+    <Text
+      as="p"
+      style={{
+        whiteSpace: "pre-wrap"
+      }}
+    >
+      {props.text.slice(0, props.range[0])}
+      <span style={{
+        backgroundColor: "#ffbb55"
+      }}>
+        {props.text.slice(props.range[0], props.range[1])}
+      </span>
+      {props.text.slice(props.range[1])}
+    </Text>
+  )
+}
+
 const PopupEditor = (props: PopupEditorProps) => {
   const [forceUpdateKey, forceUpdate] = useReducer(x => x + 1, 0);
   const popUpStore = useTrackedPopupStore()
@@ -95,10 +120,45 @@ const PopupEditor = (props: PopupEditorProps) => {
         <DialogBody>
           <DialogTitle
             action={
-              <DialogTrigger>
+              <div style={{
+                display: "flex",
+                gap: 4,
+              }}>
+                <Dialog modalType="non-modal">
+                  <DialogTrigger disableButtonEnhancement>
+                    <Button className={styles.dangerButton}>
+                      Delete
+                    </Button>
+                  </DialogTrigger>
+                  <DialogSurface>
+                    <DialogBody>
+                      <DialogTitle>Delete this record?</DialogTitle>
+                      <DialogContent>
+                        <Text as="p">
+                          Are you sure you want to delete this record? This action cannot be undone.
+                        </Text>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button
+                          onClick={async () => {
+                            await deleteRecord(popUpStore.editingID)
+                            if (editorStore.viewingID === popUpStore.editingID) {
+                              editorStore.setViewing(null)
+                            }
+                            await editorStore.updateHistory(indexStore.index)
+                            popUpStore.clearAll()
+                          }}
+                          className={styles.dangerButton}
+                        >
+                          Delete
+                        </Button>
+                        <Button>Cancel</Button>
+                      </DialogActions>
+                    </DialogBody>
+                  </DialogSurface>
+                </Dialog>
                 <Button
-                  appearance="primary"
-                  icon={<ArrowResetFilled />}
+                  className={styles.dangerButton}
                   onClick={() => {
                     if (popUpStore.restore !== null) {
                       popUpStore.setLabelData(popUpStore.restore)
@@ -109,7 +169,33 @@ const PopupEditor = (props: PopupEditorProps) => {
                 >
                   Restore
                 </Button>
-              </DialogTrigger>
+                <Button
+                  onClick={async () => {
+                    await props.onEditedDone(false)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await props.onEditedDone(true, {
+                      record_id: popUpStore.editingID,
+                      sample_id: indexStore.index.toString(),
+                      summary_start: popUpStore.summarySelectionRange[0],
+                      summary_end: popUpStore.summarySelectionRange[1],
+                      source_start: popUpStore.sourceSelectionRange[0],
+                      source_end: popUpStore.sourceSelectionRange[1],
+                      consistent: popUpStore.consistent,
+                      task_index: indexStore.index,
+                      user_id: "",
+                      note: popUpStore.note
+                    })
+                  }}
+                  appearance="primary"
+                >
+                  Submit
+                </Button>
+              </div>
             }
           >
             Editing
@@ -141,14 +227,9 @@ const PopupEditor = (props: PopupEditorProps) => {
                 />
                 {
                   popUpStore.editingID && (popUpStore.sourceSelectionRange[1] > 0 ? (
-                    <DragSelect
-                      idPrefix={"popup-edit-source"}
+                    <SimpleSelectionShow
                       text={taskStore.current.doc}
                       range={popUpStore.sourceSelectionRange}
-                      onRangeChange={(range) => {
-                        popUpStore.setSourceSelectionRange(range)
-                      }}
-                      key={forceUpdateKey}
                     />
                   ) : (
                     <SimpleSelection
@@ -180,14 +261,9 @@ const PopupEditor = (props: PopupEditorProps) => {
                 />
                 {
                   popUpStore.editingID && (popUpStore.summarySelectionRange[1] > 0 ? (
-                    <DragSelect
-                      idPrefix={"popup-edit-summary"}
+                    <SimpleSelectionShow
                       text={taskStore.current.sum}
                       range={popUpStore.summarySelectionRange}
-                      onRangeChange={(range) => {
-                        popUpStore.setSummarySelectionRange(range)
-                      }}
-                      key={forceUpdateKey}
                     />
                   ) : (
                     <SimpleSelection
@@ -202,41 +278,6 @@ const PopupEditor = (props: PopupEditorProps) => {
             </div>
           </DialogContent>
 
-          <DialogActions position="start">
-            <Dialog modalType="non-modal">
-              <DialogTrigger disableButtonEnhancement>
-                <Button className={styles.dangerButton}>
-                  Delete
-                </Button>
-              </DialogTrigger>
-              <DialogSurface>
-                <DialogBody>
-                  <DialogTitle>Delete this record?</DialogTitle>
-                  <DialogContent>
-                    <Text as="p">
-                      Are you sure you want to delete this record? This action cannot be undone.
-                    </Text>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button
-                      onClick={async () => {
-                        await deleteRecord(popUpStore.editingID)
-                        if (editorStore.viewingID === popUpStore.editingID) {
-                          editorStore.setViewing(null)
-                        }
-                        await editorStore.updateHistory(indexStore.index)
-                        popUpStore.clearAll()
-                      }}
-                      className={styles.dangerButton}
-                    >
-                      Delete
-                    </Button>
-                    <Button>Cancel</Button>
-                  </DialogActions>
-                </DialogBody>
-              </DialogSurface>
-            </Dialog>
-          </DialogActions>
           <DialogActions position="end">
             <CustomOption
               labels={props.labels}
@@ -245,45 +286,19 @@ const PopupEditor = (props: PopupEditorProps) => {
               }}
               initialLabels={popUpStore.consistent}
               style={{
-                width: "100%"
+                width: "fit-content"
               }}
               key={forceUpdateKey}
             />
             <Textarea
               resize="both"
               style={{
-                width: "30vw",
+                width: "25vw",
               }}
               placeholder="Add an optional note"
               value={popUpStore.note}
               onChange={(_, data) => popUpStore.setNote(data.value)}
             />
-            <Button
-              onClick={async () => {
-                await props.onEditedDone(false)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                await props.onEditedDone(true, {
-                  record_id: popUpStore.editingID,
-                  sample_id: indexStore.index.toString(),
-                  summary_start: popUpStore.summarySelectionRange[0],
-                  summary_end: popUpStore.summarySelectionRange[1],
-                  source_start: popUpStore.sourceSelectionRange[0],
-                  source_end: popUpStore.sourceSelectionRange[1],
-                  consistent: popUpStore.consistent,
-                  task_index: indexStore.index,
-                  user_id: "",
-                  note: popUpStore.note
-                })
-              }}
-              appearance="primary"
-            >
-              Submit
-            </Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>

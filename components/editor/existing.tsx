@@ -6,57 +6,33 @@ import {
   Body1,
   Button,
   Card,
-  CardHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-  type TableColumnDefinition,
-  createTableColumn,
-  useTableFeatures,
-  useTableColumnSizing_unstable,
-  type TableColumnSizingOptions, MenuItem, Menu, MenuTrigger, MenuPopover, MenuList,
+  CardHeader, makeStyles, tokens,
 } from "@fluentui/react-components"
-import { ArrowSyncRegular, EditRegular, EyeOffRegular, EyeRegular } from "@fluentui/react-icons"
+import { ArrowSyncRegular, EditRegular, EyeRegular } from "@fluentui/react-icons"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
-import type { LabelData } from "../../utils/types"
+import { isSafeNumber } from "../../utils/types"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { HasError, Loading } from "./fallback"
 import _ from "lodash"
 import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useTrackedPopupStore } from "../../store/usePopupStore";
-
-const columnsDef: TableColumnDefinition<LabelData>[] = [
-  createTableColumn({
-    columnId: "source",
-    renderHeaderCell: () => <>Source</>,
-  }),
-  createTableColumn({
-    columnId: "summary",
-    renderHeaderCell: () => <>Summary</>,
-  }),
-  createTableColumn({
-    columnId: "consistent",
-    renderHeaderCell: () => <>Label(s)</>,
-  }),
-  createTableColumn({
-    columnId: "note",
-    renderHeaderCell: () => <>Note</>,
-  }),
-  createTableColumn({
-    columnId: "actions",
-    renderHeaderCell: () => <>Actions</>,
-  }),
-]
+import TagGroups from "../tagGroups";
 
 type Props = {
   onRestore?: () => void,
 }
 
 const emptyRestore = () => {}
+
+const useStyles = makeStyles({
+  propsTable: {
+    "& td:first-child": {
+      fontWeight: tokens.fontWeightSemibold,
+      paddingRight: "1rem",
+    },
+  },
+});
 
 export default function ExistingPane({ onRestore = emptyRestore }: Props) {
   const editorStore = useTrackedEditorStore()
@@ -66,6 +42,7 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
 
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const classes = useStyles()
 
   const debounceSetIsLoading = _.debounce(setIsLoading, 500)
 
@@ -102,34 +79,6 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
         })
   }, [editorStore.history])
 
-  const [columns] = useState<TableColumnDefinition<LabelData>[]>(columnsDef)
-  const [columnSizingOptions] = useState<TableColumnSizingOptions>({
-    source: {
-      idealWidth: 300,
-    },
-    summary: {
-      idealWidth: 300,
-    },
-    consistent: {
-      idealWidth: 100,
-    },
-    note: {
-      idealWidth: 150,
-    },
-    actions: {
-      idealWidth: 120,
-    },
-  })
-
-  const { getRows, columnSizing_unstable, tableRef } = useTableFeatures(
-      {
-        columns,
-        items: sortedHistory,
-      },
-      [useTableColumnSizing_unstable({ columnSizingOptions })],
-  )
-  const rows = getRows()
-
   return (
       <div
           style={{
@@ -152,88 +101,68 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
           {isLoading && <Loading />}
           {hasError && <HasError />}
           {!isLoading && !hasError && taskStore.current && (
-              // @ts-ignore
-              
-
-              <Table
-                  sortable
-                  ref={tableRef}
-                  {...columnSizing_unstable.getTableProps()}
-              >
-                <TableHeader>
-                  <TableRow>
-                    {columns.map((column) => (
-                        <Menu openOnContext key={column.columnId}>
-                          <MenuTrigger>
-                            <TableHeaderCell
-                                key={column.columnId}
-                                {...columnSizing_unstable.getTableHeaderCellProps(
-                                    column.columnId,
-                                )}
-                            >
-                              {column.renderHeaderCell()}
-                            </TableHeaderCell>
-                          </MenuTrigger>
-                          <MenuPopover>
-                            <MenuList>
-                              <MenuItem
-                                  onClick={columnSizing_unstable.enableKeyboardMode(
-                                      column.columnId,
-                                  )}
-                              >
-                                Keyboard Column Resizing
-                              </MenuItem>
-                            </MenuList>
-                          </MenuPopover>
-                        </Menu>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map(({ item }) => (
-                      <TableRow key={item.record_id}>
-                        <TableCell
-                            {...columnSizing_unstable.getTableCellProps("source")}
-                        >
-                          {taskStore.current.doc.slice(item.source_start, item.source_end)}
-                        </TableCell>
-                        <TableCell
-                            {...columnSizing_unstable.getTableCellProps("summary")}
-                        >
-                          {taskStore.current.sum.slice(item.summary_start, item.summary_end)}
-                        </TableCell>
-                        <TableCell
-                            {...columnSizing_unstable.getTableCellProps("consistent")}
-                        >
-                          {item.consistent.join(", ")}
-                        </TableCell>
-                        <TableCell
-                            {...columnSizing_unstable.getTableCellProps("note")}
-                        >
-                          {item.note}
-                        </TableCell>
-                      <TableCell>
-                        <Button
-                          icon={<EyeRegular />}
-                          onClick={() => {
-                            editorStore.setViewing(item)
-                          }}
-                        >
-                          Show
-                        </Button>
-                        <Button
-                          icon={<EditRegular />}
-                          onClick={() => {
-                            popUpStore.setLabelData(item)
-                          }}
-                        >
-                            Edit
-                        </Button>
-                      </TableCell>
-                      </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            sortedHistory.map((record, index) => (
+              <>
+                <div role="tabpanel" className={classes.propsTable} key={record.record_id}>
+                  <table>
+                    <tbody>
+                      {(isSafeNumber(record.source_end) && isSafeNumber(record.source_start)) && (
+                        <tr>
+                          <td>Source</td>
+                          <td>
+                            {`${taskStore.current.doc.slice(record.source_start, record.source_end)}`}
+                          </td>
+                        </tr>
+                      )}
+                      {(isSafeNumber(record.summary_start) && isSafeNumber(record.summary_end)) && (
+                        <tr>
+                          <td>Summary</td>
+                          <td>
+                            {`${taskStore.current.sum.slice(record.summary_start, record.summary_end)}`}
+                          </td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td>Labels</td>
+                        <td>
+                          <TagGroups tags={record.consistent}/>
+                        </td>
+                      </tr>
+                      {record.note && (
+                        <tr>
+                          <td>Note</td>
+                          <td>{record.note}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <div style={{
+                    display: "flex",
+                    gap: "1rem",
+                  }}>
+                    <Button
+                      icon={<EyeRegular/>}
+                      onClick={() => {
+                        editorStore.setViewing(record)
+                      }}
+                    >
+                      Show
+                    </Button>
+                    <Button
+                      icon={<EditRegular/>}
+                      onClick={() => {
+                        popUpStore.setLabelData(record)
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+                {index !== sortedHistory.length - 1 && <div style={{
+                  borderBottom: "1px solid #e0e0e0",
+                }} />}
+              </>
+            ))
           )}
         </Card>
       </div>

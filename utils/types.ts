@@ -89,3 +89,11 @@ export type User = {
   name: string
   email: string
 }
+
+export function isNumber(value: unknown)  {
+  return typeof value === "number" && !Number.isNaN(value)
+}
+
+export function isSafeNumber(value: unknown) {
+  return isNumber(value) ? (value as number) >= 0 : false
+}
