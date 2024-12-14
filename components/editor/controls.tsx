@@ -71,13 +71,13 @@ export default function Controls() {
               ? "primary"
               : null
         }>
-          De-select/highlight
+          Reset selection/highlight
         </Button>
         <Button icon={<ArrowExportRegular />} onClick={onExportJSON}>
-          Export Labels
+          Export labels
         </Button>
         <Button icon={<ShareRegular />} onClick={onShare}>
-          Share Link
+          Share this sample
         </Button>
         <UserPopover />
       </div>

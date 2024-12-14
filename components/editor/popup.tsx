@@ -1,4 +1,5 @@
-// A new interface for changing the history of the labels.
+// A popup window to edit an existing annotation record selected 
+
 "use client"
 
 import {
@@ -134,7 +135,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                         popUpStore.setSourceSelectionRange([-1, -1])
                       }}
                     >
-                      Clear
+                      Delete highlight
                     </Button>
                   }
                 />
@@ -173,7 +174,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                             popUpStore.setSummarySelectionRange([-1, -1])
                           }}
                       >
-                          Clear
+                          Delete highlight
                       </Button>
                   }
                 />
@@ -235,7 +236,6 @@ const PopupEditor = (props: PopupEditorProps) => {
                 </DialogBody>
               </DialogSurface>
             </Dialog>
-
           </DialogActions>
           <DialogActions position="end">
             <CustomOption

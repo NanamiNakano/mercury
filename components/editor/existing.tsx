@@ -1,3 +1,5 @@
+// The panel to display annotations already made on a sample
+
 "use client"
 
 import {
@@ -151,6 +153,8 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
           {hasError && <HasError />}
           {!isLoading && !hasError && taskStore.current && (
               // @ts-ignore
+              
+
               <Table
                   sortable
                   ref={tableRef}
@@ -208,46 +212,24 @@ export default function ExistingPane({ onRestore = emptyRestore }: Props) {
                         >
                           {item.note}
                         </TableCell>
-                        <TableCell
-                          {...columnSizing_unstable.getTableCellProps("action")}
+                      <TableCell>
+                        <Button
+                          icon={<EyeRegular />}
+                          onClick={() => {
+                            editorStore.setViewing(item)
+                          }}
                         >
-                          <Menu>
-                            <MenuTrigger disableButtonEnhancement>
-                              <Button>Actions</Button>
-                            </MenuTrigger>
-                            <MenuPopover>
-                              <MenuList>
-                                {editorStore.viewingID != null && editorStore.viewingID === item.record_id ? (
-                                  <MenuItem
-                                    icon={<EyeOffRegular />}
-                                    onClick={() => {
-                                      editorStore.setViewing(null)
-                                      onRestore()
-                                    }}>
-                                    Restore
-                                  </MenuItem>
-                                ) : (
-                                  <MenuItem
-                                    icon={<EyeRegular />}
-                                    onClick={() => {
-                                      editorStore.setViewing(item)
-                                    }}
-                                  >
-                                    Show
-                                  </MenuItem>
-                                )}
-                                <MenuItem
-                                  icon={<EditRegular />}
-                                  onClick={() => {
-                                    popUpStore.setLabelData(item)
-                                  }}
-                                >
-                                  Edit
-                                </MenuItem>
-                              </MenuList>
-                            </MenuPopover>
-                          </Menu>
-                        </TableCell>
+                          Show
+                        </Button>
+                        <Button
+                          icon={<EditRegular />}
+                          onClick={() => {
+                            popUpStore.setLabelData(item)
+                          }}
+                        >
+                            Edit
+                        </Button>
+                      </TableCell>
                       </TableRow>
                   ))}
                 </TableBody>
