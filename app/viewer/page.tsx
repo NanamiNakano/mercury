@@ -1,10 +1,12 @@
 "use client";
 
-import { Body1, Button, Card, CardHeader, Dialog, DialogBody, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, makeStyles, MessageBar, MessageBarBody, MessageBarTitle, Persona, ProgressBar, Option, Tag, TagGroup, Text, Title1, tokens, DialogContent, DialogActions } from "@fluentui/react-components";
+import { Body1, Button, Card, CardHeader, Dialog, DialogBody, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, makeStyles, MessageBar, MessageBarBody, MessageBarTitle, Persona, ProgressBar, Option, Text, Title1, tokens, DialogContent, DialogActions } from "@fluentui/react-components";
 import { ArrowLeftRegular, ArrowRightRegular, ArrowUploadRegular, DocumentArrowLeftRegular, DocumentArrowRightRegular, FilterRegular } from "@fluentui/react-icons";
 import { Allotment } from "allotment";
 import { useEffect, useRef, useState } from "react";
 import "allotment/dist/style.css";
+import TagGroups from "../../components/tagGroups";
+import { isNumber } from "../../utils/types";
 
 type Annotation = {
   annot_id: number
@@ -68,22 +70,6 @@ const makeUsers = (slices: DumpSlice[]): Users => {
   return users
 }
 
-const isNumber = (value: unknown) => {
-  return typeof value === "number" && !Number.isNaN(value)
-}
-
-const TagGroups = (props: { tags: string[] }) => {
-  return (
-    <TagGroup role="list">
-      {props.tags.map((tag, index) => (
-        <Tag key={`tag-${tag}`} role="listitem">
-          {tag}
-        </Tag>
-      ))}
-    </TagGroup>
-  )
-}
-
 const SliceText = (props: { text: string, start?: number, end?: number }) => {
   const { text, start, end } = props
   if (start === undefined || end === undefined) {
@@ -104,19 +90,19 @@ const SliceText = (props: { text: string, start?: number, end?: number }) => {
 export default function Page() {
   const [sampleIndex, setSampleIndex] = useState(0)
   const [maxSample, setMaxSample] = useState(0)
-  
+
   const [annotationIndex, setAnnotationIndex] = useState(0)
   const [maxAnnotation, setMaxAnnotation] = useState(0)
-  
+
   const [currentSlice, setCurrentSlice] = useState<DumpAnnotationSlice | null>(null)
-  
+
   const [fullSlices, setFullSlices] = useState<DumpSlice[] | null>(null)
   const [nowSlices, setNowSlices] = useState<DumpSlice[] | null>(null)
   const [filterUsers, setFilterUsers] = useState<string[]>([])
   const [users, setUsers] = useState<Users | null>(null)
   const fetchLock = useRef(false)
   const styles = useStyles();
-  
+
   useEffect(() => {
     if (fetchLock.current) {
       return
@@ -140,22 +126,22 @@ export default function Page() {
         console.log("--- Failed to fetch labels, upload a json file to start.")
       })
   }, [])
-  
+
   useEffect(() => {
     if (nowSlices === null || nowSlices.length <= 0) {
       return
     }
-    
+
     setCurrentSlice({
       sample_id: nowSlices[sampleIndex].sample_id,
       source: nowSlices[sampleIndex].source,
       summary: nowSlices[sampleIndex].summary,
       annotation: nowSlices[sampleIndex].annotations[annotationIndex]
     })
-    
+
     setMaxAnnotation(nowSlices[sampleIndex].annotations.length)
   }, [annotationIndex, sampleIndex, nowSlices])
-  
+
   useEffect(() => {
     if (fullSlices === null || fullSlices.length <= 0) {
       return
@@ -172,7 +158,7 @@ export default function Page() {
       setAnnotationIndex(0)
       return
     }
-    
+
     const newSlices: DumpSlice[] = []
     // for (const slice of fullSlices) {
       for (const slice of filteredSlices) {
@@ -184,7 +170,7 @@ export default function Page() {
         })
       }
     }
-    
+
     setMaxSample(newSlices.length)
     // setMaxAnnotation(newSlices[0].annotations.length)
     setMaxAnnotation(newSlices[0]?.annotations.length || 0)
@@ -192,7 +178,7 @@ export default function Page() {
     setAnnotationIndex(0)
     setNowSlices(newSlices)
   }, [fullSlices, filterUsers])
-  
+
   const LabelInfoPanel = (props: DumpAnnotationSlice) => {
     const annotator = props.annotation.annotator_name ?? props.annotation.annotator
     return (
@@ -205,12 +191,7 @@ export default function Page() {
             </tr>
             <tr>
               <td>Annotator</td>
-              <td>{annotator} <Button onClick={() => {
-                localStorage.setItem("key", props.annotation.annotator);
-                setTimeout(() => {
-                  window.location.reload()
-                }, 500)
-              }}>Switch To This User</Button></td>
+              <td>{annotator}</td>
             </tr>
             <tr>
               <td>Labels</td>
@@ -249,7 +230,7 @@ export default function Page() {
       </div>
     )
   }
-    
+
   return (
     <>
       <Title1>Mercury Label Viewer</Title1>
@@ -325,7 +306,7 @@ export default function Page() {
                     {
                       users === null ? null : Object.keys(users).map((user) => (
                         <Option text={users[user].name ?? user} key={user} value={user}>
-                          <Persona 
+                          <Persona
                             avatar={{
                               color: "colorful",
                               "aria-hidden": true,
@@ -341,7 +322,7 @@ export default function Page() {
               </DialogContent>
               <DialogActions>
                 <DialogTrigger disableButtonEnhancement>
-                  <Button 
+                  <Button
                     appearance="secondary"
                     onClick={() => {
                       setFilterUsers([])
@@ -381,25 +362,25 @@ export default function Page() {
         >
           Previous sample
         </Button>
-        <Field 
-          //  validationMessage={`Sample ${sampleIndex + 1} / ${maxSample}, ID in current batch: ${currentSlice ? currentSlice.sample_id + 1 : "N/A"}`} 
-          validationMessage={`Sample ID in current batch: ${currentSlice ? currentSlice.sample_id + 1 : "N/A"}`} 
-          // validationMessage={`Sample ${currentSlice.sample_id + 1} in current batch`} 
-          // TODO: Please fix above 
+        <Field
+          //  validationMessage={`Sample ${sampleIndex + 1} / ${maxSample}, ID in current batch: ${currentSlice ? currentSlice.sample_id + 1 : "N/A"}`}
+          validationMessage={`Sample ID in current batch: ${currentSlice ? currentSlice.sample_id + 1 : "N/A"}`}
+          // validationMessage={`Sample ${currentSlice.sample_id + 1} in current batch`}
+          // TODO: Please fix above
           validationState="none"
           style={{
             flexGrow: 1
           }}
         >
-          <ProgressBar 
-            value={sampleIndex + 1} 
-            max={maxSample} 
-            thickness="large" 
+          <ProgressBar
+            value={sampleIndex + 1}
+            max={maxSample}
+            thickness="large"
           />
         </Field>
-        <Button 
-          icon={<DocumentArrowRightRegular />} 
-          disabled={sampleIndex >= maxSample - 1} 
+        <Button
+          icon={<DocumentArrowRightRegular />}
+          disabled={sampleIndex >= maxSample - 1}
           iconPosition="after"
           style={{
             width: "15%"
@@ -422,8 +403,8 @@ export default function Page() {
           gap: "1rem",
         }}
       >
-        <Button 
-          icon={<ArrowLeftRegular />} 
+        <Button
+          icon={<ArrowLeftRegular />}
           disabled={annotationIndex <= 0}
           style={{
             width: "15%"
@@ -442,16 +423,16 @@ export default function Page() {
             flexGrow: 1
           }}
         >
-          <ProgressBar 
-            value={annotationIndex + 1} 
-            max={maxAnnotation} 
-            thickness="large" 
+          <ProgressBar
+            value={annotationIndex + 1}
+            max={maxAnnotation}
+            thickness="large"
             color="success"
           />
         </Field>
-        <Button 
-          icon={<ArrowRightRegular />} 
-          disabled={annotationIndex >= maxAnnotation - 1} 
+        <Button
+          icon={<ArrowRightRegular />}
+          disabled={annotationIndex >= maxAnnotation - 1}
           iconPosition="after"
           style={{
             width: "15%"
@@ -491,9 +472,9 @@ export default function Page() {
                         </Body1>
                       }
                     />
-                    <SliceText 
-                      text={currentSlice.source} 
-                      start={currentSlice.annotation.source_start} 
+                    <SliceText
+                      text={currentSlice.source}
+                      start={currentSlice.annotation.source_start}
                       end={currentSlice.annotation.source_end}
                     />
                   </Card>
@@ -513,9 +494,9 @@ export default function Page() {
                           </Body1>
                         }
                       />
-                      <SliceText 
-                        text={currentSlice.summary} 
-                        start={currentSlice.annotation.summary_start} 
+                      <SliceText
+                        text={currentSlice.summary}
+                        start={currentSlice.annotation.summary_start}
                         end={currentSlice.annotation.summary_end}
                       />
                     </Card>

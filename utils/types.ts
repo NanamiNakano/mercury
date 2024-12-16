@@ -48,6 +48,13 @@ export function userSectionResponse(start: number, end: number, toDoc: boolean):
   }
 }
 
+export function mixedToBoolean(checked: "mixed" | boolean): boolean {
+  if (checked === "mixed") {
+    return true
+  }
+  return checked
+}
+
 export type RequestError = {
   error: string
 }
@@ -81,4 +88,12 @@ export type User = {
   id: string
   name: string
   email: string
+}
+
+export function isNumber(value: unknown)  {
+  return typeof value === "number" && !Number.isNaN(value)
+}
+
+export function isSafeNumber(value: unknown) {
+  return isNumber(value) ? (value as number) >= 0 : false
 }

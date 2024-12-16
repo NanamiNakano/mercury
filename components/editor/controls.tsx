@@ -67,17 +67,17 @@ export default function Controls() {
           }}
       >
         <Button icon={<HandRightRegular />} onClick={onReset} appearance={
-          editorStore.sourceSelection.start != -1 || editorStore.summarySelection.start != -1
+          editorStore.sourceSelection.start !== -1 || editorStore.summarySelection.start !== -1
               ? "primary"
               : null
         }>
-          De-select/highlight
+          Reset selection/highlight
         </Button>
         <Button icon={<ArrowExportRegular />} onClick={onExportJSON}>
-          Export Labels
+          Export labels
         </Button>
         <Button icon={<ShareRegular />} onClick={onShare}>
-          Share Link
+          Share this sample
         </Button>
         <UserPopover />
       </div>

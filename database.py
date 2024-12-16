@@ -170,6 +170,20 @@ class Database:
         # mercury_db.execute(
         #     "CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, user_name TEXT)"
         # )
+        # Comments
+        mercury_db.execute("""
+            CREATE TABLE IF NOT EXISTS comments (
+                comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                annot_id INTEGER NOT NULL,
+                sample_id INTEGER NOT NULL,
+                parent_id INTEGER,
+                text TEXT NOT NULL,
+                comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (annot_id) REFERENCES annotations (annot_id),
+                FOREIGN KEY (sample_id) REFERENCES chunks (sample_id)
+            )
+        """)
         mercury_db.enable_load_extension(True)
         sqlite_vec.load(mercury_db)
         mercury_db.enable_load_extension(False)
@@ -204,8 +218,9 @@ class Database:
         data_for_labeling = {}
         sectioned_chunks = {}
         # db = sqlite3.connect(sqlite_db_path)
-        texts = self.mercury_db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
-        """ texts = 
+        db = self.mercury_db
+        texts = db.execute("SELECT text, text_type, sample_id, chunk_offset FROM chunks").fetchall()
+        """ texts =
         [('The quick brown fox.', 'source', 1, 0),
         ('Jumps over a lazy dog.', 'source', 1, 1),
         ('We the people.', 'source', 2, 0),
@@ -218,7 +233,7 @@ class Database:
             sectioned_chunks.setdefault(sample_id, {}).setdefault(text_type, {})[chunk_offset] = text
             # levels: sample_id -> text_type -> chunk_offset -> text
 
-        # sort chunks by chunk_offset as dictionary 
+        # sort chunks by chunk_offset as dictionary
         for sample_id in sectioned_chunks:
             for text_type in sectioned_chunks[sample_id]:
                 sectioned_chunks[sample_id][text_type] = dict(sorted(sectioned_chunks[sample_id][text_type].items()))
@@ -229,7 +244,7 @@ class Database:
                 'source': {
                     0: 'The quick brown fox.',
                     1: 'Jumps over a lazy dog.'
-                }, 
+                },
                 'summary': {
                     0: '26 letters.'
                 }
@@ -238,7 +253,7 @@ class Database:
                 'source': {
                     0: 'We the people.',
                     1: 'Of the U.S.A.'
-                }, 
+                },
                 'summary': {
                     0: 'The U.S. Constitution.',
                     1: 'It is great.'
@@ -274,11 +289,71 @@ class Database:
         data_for_labeling.sort(key=lambda x: int(x["_id"]))
 
         return data_for_labeling
+    
+    @database_lock()
+    def get_annotation_comments(self, annot_id: int):
+        sql_cmd = "SELECT * FROM comments WHERE annot_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (annot_id,))
+        comments = res.fetchall()
+        return comments
+    
+    @database_lock()
+    def get_others_annotation(self, user_id: str, sample_id:int):
+        sql_cmd = "SELECT * FROM annotations WHERE annotator != ? AND sample_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (user_id, sample_id))
+        label_data = []
+        for annot_id, sample_id, annot_spans, annotator, label, note in res.fetchall():
+            annot_spans = json.loads(annot_spans)
+            label_data.append(convert_LabelData({
+                "annot_id": annot_id,
+                "sample_id": sample_id,
+                "annot_spans": annot_spans,
+                "annotator": annotator,
+                "label": json.loads(label),
+                "note": note
+            }, "new2old"))
+        return label_data
+    
+    @database_lock()
+    def commit_comment(self, user_id: str, annot_id: int, sample_id: int, parent_id: int | None, text: str):
+        sql_cmd = "SELECT annot_id FROM annotations WHERE annot_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (annot_id,))
+        if res.fetchone() is None:
+            return
+        if parent_id is not None:
+            sql_cmd = "SELECT comment_id FROM comments WHERE comment_id = ?"
+            res = self.mercury_db.execute(sql_cmd, (parent_id,))
+            if res.fetchone() is None:
+                return
+        sql_cmd = "INSERT INTO comments (user_id, annot_id, sample_id, parent_id, text) VALUES (?, ?, ?, ?)"
+        self.mercury_db.execute(sql_cmd, (user_id, annot_id, sample_id, parent_id, text))
+        self.mercury_db.commit()
 
     def fetch_configs(self):
         # db = sqlite3.connect(sqlite_db_path)
         configs = self.mercury_db.execute("SELECT key, value FROM config").fetchall()
         return {key: value for key, value in configs}
+
+    @database_lock()
+    def update_annotation(self, label_data: OldLabelData):
+        # find the record_id in the database
+        sql_cmd = "SELECT annotator FROM annotations WHERE annot_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (label_data["record_id"],))
+        annotation = res.fetchone()
+        if annotation is None:
+            return
+        # check annotator
+        if annotation[0] != label_data["annotator"]:
+            return
+        # update the record
+        sql_cmd = "UPDATE annotations SET annot_spans = ?, label = ?, note = ? WHERE annot_id = ?"
+        self.mercury_db.execute(sql_cmd, (
+            json.dumps(label_data["annot_spans"]),
+            label_data["label"],
+            label_data["note"],
+            label_data["record_id"],
+        ))
+        self.mercury_db.commit()
 
     @database_lock()
     def push_annotation(self, label_data: OldLabelData):

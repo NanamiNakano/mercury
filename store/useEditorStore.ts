@@ -1,6 +1,12 @@
 import { create } from "zustand"
 import { createTrackedSelector } from "react-tracked"
-import { handleRequestError, isRequestError, type LabelData, SectionResponse, SelectionRequest } from "../utils/types"
+import {
+  handleRequestError,
+  isRequestError,
+  type LabelData,
+  type SectionResponse,
+  type SelectionRequest,
+} from "../utils/types"
 import { produce } from "immer"
 import { getTaskHistory, selectText } from "../utils/request"
 
@@ -67,8 +73,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
           return
         }
         set({ serverSection: response })
-      }
-      else if (get().initiator === "summary") {
+      } else if (get().initiator === "summary") {
         const response = await selectText(index, get().summarySelection)
         if (isRequestError(response)) {
           handleRequestError(response)
@@ -76,8 +81,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
         set({ serverSection: response })
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e)
       throw e
     }
@@ -89,8 +93,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     try {
       const history = await getTaskHistory(labelIndex)
       set({ history })
-    }
-    catch (e) {
+    } catch (e) {
       set({ history: [] })
       console.log(e)
       throw e
