@@ -325,8 +325,35 @@ class Database:
             res = self.mercury_db.execute(sql_cmd, (parent_id,))
             if res.fetchone() is None:
                 return
-        sql_cmd = "INSERT INTO comments (user_id, annot_id, sample_id, parent_id, text) VALUES (?, ?, ?, ?)"
+        sql_cmd = "INSERT INTO comments (user_id, annot_id, sample_id, parent_id, text) VALUES (?, ?, ?, ?, ?)"
         self.mercury_db.execute(sql_cmd, (user_id, annot_id, sample_id, parent_id, text))
+        self.mercury_db.commit()
+
+    @database_lock()
+    def edit_comment(self, user_id: str, comment_id: int, text: str):
+        sql_cmd = "SELECT user_id FROM comments WHERE comment_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (comment_id,))
+        comment = res.fetchone()
+        if comment is None:
+            return
+        if comment[0] != user_id:
+            return
+        sql_cmd = "UPDATE comments SET text = ? WHERE comment_id = ?"
+        self.mercury_db.execute(sql_cmd, (text, comment_id))
+        self.mercury_db.commit()
+
+
+    @database_lock()
+    def delete_comment(self, user_id: str, comment_id: int):
+        sql_cmd = "SELECT user_id FROM comments WHERE comment_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (comment_id,))
+        comment = res.fetchone()
+        if comment is None:
+            return
+        if comment[0] != user_id:
+            return
+        sql_cmd = "DELETE FROM comments WHERE comment_id = ?"
+        self.mercury_db.execute(sql_cmd, (comment_id,))
         self.mercury_db.commit()
 
     def fetch_configs(self):
