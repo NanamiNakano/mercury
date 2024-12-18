@@ -26,7 +26,7 @@ import { processServerSection } from "../../utils/processServerSection"
 import PopupEditor from "./popup";
 import { useTrackedPopupStore } from "../../store/usePopupStore";
 
-export default function Editor({ dispatchToast }: { dispatchToast: (content: ReactNode, options?: unknown) => void }) {
+export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   const editorStore = useTrackedEditorStore()
   const taskStore = useTrackedTaskStore()
   const indexStore = useTrackedIndexStore()
@@ -346,7 +346,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: (content: Rea
                     }
                   </Card>
                 </div>
-                <ExistingPane onRestore={onRestoreViewingHistory} />
+                <ExistingPane />
               </Allotment>
             </Allotment.Pane>
           </Allotment>

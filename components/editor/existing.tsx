@@ -19,10 +19,6 @@ import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useTrackedPopupStore } from "../../store/usePopupStore";
 import TagGroups from "../tagGroups";
 
-type Props = {
-  onRestore?: () => void,
-}
-
 const emptyRestore = () => {}
 
 const useStyles = makeStyles({
@@ -34,7 +30,7 @@ const useStyles = makeStyles({
   },
 });
 
-export default function ExistingPane({ onRestore = emptyRestore }: Props) {
+export default function ExistingPane() {
   const editorStore = useTrackedEditorStore()
   const indexStore = useTrackedIndexStore()
   const taskStore = useTrackedTaskStore()
