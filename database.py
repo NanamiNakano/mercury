@@ -500,13 +500,13 @@ class Database:
 
     @database_lock()
     # def export_task_history(self, task_index: int, user_id: str) -> list[LabelData]:
-    def export_task_history(self, sample_id: int, annotator: str) -> list[LabelData]:
+    def export_task_history(self, sample_id: int) -> list[LabelData]:
         # return self.annotations[
         #         (self.annotations["user_id"] == user_id) &
         #         (self.annotations["task_index"] == task_index)
         #     ].to_dict(orient="records")
-        sql_cmd = "SELECT * FROM annotations WHERE annotator = ? AND sample_id = ?"
-        res = self.mercury_db.execute(sql_cmd, (annotator, sample_id))
+        sql_cmd = "SELECT * FROM annotations WHERE sample_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (sample_id,))
         annotations = res.fetchall()
         label_data = []
         for annot_id, sample_id, annot_spans, annotator, label, note in annotations:
