@@ -298,24 +298,8 @@ class Database:
         res = self.mercury_db.execute(sql_cmd, (annot_id,))
         comments = res.fetchall()
         return comments
-    
-    @database_lock()
-    def get_others_annotation(self, user_id: str, sample_id:int):
-        sql_cmd = "SELECT * FROM annotations WHERE annotator != ? AND sample_id = ?"
-        res = self.mercury_db.execute(sql_cmd, (user_id, sample_id))
-        label_data = []
-        for annot_id, sample_id, annot_spans, annotator, label, note in res.fetchall():
-            annot_spans = json.loads(annot_spans)
-            label_data.append(convert_LabelData({
-                "annot_id": annot_id,
-                "sample_id": sample_id,
-                "annot_spans": annot_spans,
-                "annotator": annotator,
-                "label": json.loads(label),
-                "note": note
-            }, "new2old"))
-        return label_data
-    
+
+
     @database_lock()
     def commit_comment(self, user_id: str, annot_id: int, sample_id: int, parent_id: int | None, text: str):
         sql_cmd = "SELECT annot_id FROM annotations WHERE annot_id = ?"
