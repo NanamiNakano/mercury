@@ -23,6 +23,7 @@ class OldLabelData(TypedDict):  # readable by frontend
     task_index: int  # traditionally, \d+ where \d is the sample number, e.g., 15
     user_id: str
     note: str
+    username: str
 
 
 class AnnotSpan(TypedDict):  # In future expansion, the fields can be any user-defined fields
@@ -40,7 +41,7 @@ class LabelData(TypedDict):  # human annotation on a sample
 
 
 def convert_LabelData(lb: LabelData | OldLabelData,
-                      direction: Literal["new2old", "old2new"]) -> LabelData | OldLabelData:
+                      direction: Literal["new2old", "old2new"], username: str) -> LabelData | OldLabelData:
     if direction == "old2new":
         return {
             "annot_id": lb["record_id"],
@@ -66,7 +67,8 @@ def convert_LabelData(lb: LabelData | OldLabelData,
             "consistent": lb["label"],
             "task_index": lb["sample_id"],
             "user_id": lb["annotator"],
-            "note": lb["note"]
+            "note": lb["note"],
+            "username": username
         }
 
 
@@ -509,8 +511,16 @@ class Database:
         res = self.mercury_db.execute(sql_cmd, (sample_id,))
         annotations = res.fetchall()
         label_data = []
+        usernames = {}
         for annot_id, sample_id, annot_spans, annotator, label, note in annotations:
             annot_spans = json.loads(annot_spans)
+            if annotator not in usernames:
+                username = self.get_user_name_without_lock(annotator)
+                if username is not None:
+                    usernames[annotator] = username
+                else:
+                    usernames[annotator] = "Unknown"
+
             label_data.append(convert_LabelData({
                 "annot_id": annot_id,
                 "sample_id": sample_id,
@@ -518,7 +528,7 @@ class Database:
                 "annotator": annotator,
                 "label": json.loads(label),
                 "note": note
-            }, "new2old"))
+            }, "new2old", usernames[annotator]))
         return label_data
 
     @database_lock()

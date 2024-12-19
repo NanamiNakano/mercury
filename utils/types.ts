@@ -81,7 +81,8 @@ export type LabelData = {
   consistent: string[]
   task_index: number
   user_id: string
-  note: string
+  note: string,
+  username: string,
 }
 
 export type User = {

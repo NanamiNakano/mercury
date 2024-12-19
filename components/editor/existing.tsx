@@ -153,7 +153,7 @@ export default function ExistingPane() {
                         <tr>
                           <td>Annotator</td>
                           <td>
-                            { record.user_id }
+                            { record.username }
                           </td>
                         </tr>
                         {record.note && (
