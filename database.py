@@ -178,12 +178,10 @@ class Database:
                 comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT NOT NULL,
                 annot_id INTEGER NOT NULL,
-                sample_id INTEGER NOT NULL,
                 parent_id INTEGER,
                 text TEXT NOT NULL,
                 comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (annot_id) REFERENCES annotations (annot_id),
-                FOREIGN KEY (sample_id) REFERENCES chunks (sample_id)
+                FOREIGN KEY (annot_id) REFERENCES annotations (annot_id)
             )
         """)
         mercury_db.enable_load_extension(True)
@@ -301,7 +299,7 @@ class Database:
 
 
     @database_lock()
-    def commit_comment(self, user_id: str, annot_id: int, sample_id: int, parent_id: int | None, text: str):
+    def commit_comment(self, user_id: str, annot_id: int, parent_id: int | None, text: str):
         sql_cmd = "SELECT annot_id FROM annotations WHERE annot_id = ?"
         res = self.mercury_db.execute(sql_cmd, (annot_id,))
         if res.fetchone() is None:
@@ -311,8 +309,8 @@ class Database:
             res = self.mercury_db.execute(sql_cmd, (parent_id,))
             if res.fetchone() is None:
                 return
-        sql_cmd = "INSERT INTO comments (user_id, annot_id, sample_id, parent_id, text) VALUES (?, ?, ?, ?, ?)"
-        self.mercury_db.execute(sql_cmd, (user_id, annot_id, sample_id, parent_id, text))
+        sql_cmd = "INSERT INTO comments (user_id, annot_id, parent_id, text) VALUES (?, ?, ?, ?)"
+        self.mercury_db.execute(sql_cmd, (user_id, annot_id, parent_id, text))
         self.mercury_db.commit()
 
     @database_lock()
