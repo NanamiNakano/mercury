@@ -76,6 +76,14 @@ class User(BaseModel):
     name: str
     email: str
 
+class Comment(BaseModel):
+    comment_id: int
+    user_id: str
+    annot_id: int | None
+    parent_id: int | None
+    text: str
+    comment_time: str
+
 
 @lru_cache
 class Config(BaseModel):
@@ -350,6 +358,46 @@ async def post_selections(task_index: int, selection: Selection):
     #         }
     #     )
     return selections
+
+
+@app.get("/annot/{annot_index}/comments")
+async def get_comments(annot_index: int):
+    comments = database.get_annotation_comments(annot_index)
+    comments_data = []
+    for comment_id, user_id, annot_id, parent_id, text, comment_time in comments:
+        comments_data.append({
+            "comment_id": comment_id,
+            "user_id": user_id,
+            "annot_id": annot_id,
+            "parent_id": parent_id,
+            "text": text,
+            "comment_time": comment_time
+        })
+    return comments_data
+
+
+@app.post("/annot/{annot_index}/comments")
+async def post_comments(annot_index: int, comment: Comment, user: Annotated[User, Depends(get_user)]):
+    database.commit_comment(user.id, annot_index, comment.parent_id, comment.text)
+    return {"message": "success"}
+
+
+@app.delete("/annot/{annot_index}/comments/{comment_id}")
+async def delete_comments(annot_index: int, comment_id: int, user: Annotated[User, Depends(get_user)]):
+    comment = database.get_comment_by_id(comment_id)
+    if comment[1] != user.id or comment[2] != annot_index:
+        raise HTTPException(status_code=403)
+    database.delete_comment(comment_id)
+    return {"message": "success"}
+
+
+@app.patch("/annot/{annot_index}/comments/{comment_id}")
+async def patch_comments(annot_index: int, comment_id: int, comment: Comment, user: Annotated[User, Depends(get_user)]):
+    target = database.get_comment_by_id(comment_id)
+    if target[1] != user.id or target[2] != annot_index:
+        raise HTTPException(status_code=403)
+    database.edit_comment(comment_id, comment.text)
+    return {"message": "success"}
 
 
 @app.delete("/record/{record_id}")

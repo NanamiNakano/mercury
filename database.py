@@ -299,6 +299,14 @@ class Database:
 
 
     @database_lock()
+    def get_comment_by_id(self, comment_id: int):
+        sql_cmd = "SELECT * FROM comments WHERE comment_id = ?"
+        res = self.mercury_db.execute(sql_cmd, (comment_id,))
+        comment = res.fetchone()
+        return comment
+
+
+    @database_lock()
     def commit_comment(self, user_id: str, annot_id: int, parent_id: int | None, text: str):
         sql_cmd = "SELECT annot_id FROM annotations WHERE annot_id = ?"
         res = self.mercury_db.execute(sql_cmd, (annot_id,))
