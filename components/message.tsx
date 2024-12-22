@@ -42,7 +42,7 @@ export default function Message({ data, setReplyTo, setReplying }: {
             fontSize: "0.8em",
             color: "gray",
           }}>
-            {new Date(data.comment_time).toLocaleString()}
+            {new Date(data.comment_time).toLocaleString()} #{data.comment_id}
           </div>
         </div>
         <Menu style={{

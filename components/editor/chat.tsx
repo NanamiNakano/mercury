@@ -47,6 +47,8 @@ export default function Chat({ id }: { id: number }) {
     if (!ignore) {
       onFetch().then((data) => {
         if (data) {
+          const sortedData = data.sort((a, b) => new Date(a.comment_time).getTime() - new Date(b.comment_time).getTime())
+          setMessages(sortedData)
           setMessages(data)
         }
       })
@@ -73,6 +75,7 @@ export default function Chat({ id }: { id: number }) {
       })
     })
     setValue("")
+    setReplying(false)
   }, [replying, replyTo, value])
 
   function onUnsetReply() {
@@ -91,7 +94,14 @@ export default function Chat({ id }: { id: number }) {
               {isLoading && <Loading />}
               {hasError && <HasError />}
               {!isLoading && !hasError && messages.map((message) => (
-                  <Message data={message} key={message.comment_id} setReplying={setReplying} setReplyTo={setReplyTo} />
+                  <div key={message.comment_id}>
+                    <div style={{
+                      color: "gray",
+                    }}>
+                      {message.parent_id ? `Reply to ${message.parent_id}` : null}
+                    </div>
+                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} />
+                  </div>
               ))}
             </DialogContent>
             <DialogActions>
