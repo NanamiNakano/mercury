@@ -19,6 +19,7 @@ import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useTrackedPopupStore } from "../../store/usePopupStore"
 import TagGroups from "../tagGroups"
 import { useTrackedUserStore } from "../../store/useUserStore"
+import Chat from "./chat"
 
 const emptyRestore = () => {
 }
@@ -184,6 +185,7 @@ export default function ExistingPane() {
                         >
                           Edit
                         </Button>
+                        <Chat id={parseInt(record.record_id)} />
                       </div>
                     </div>
                     {index !== viewing.length - 1 && <div style={{
