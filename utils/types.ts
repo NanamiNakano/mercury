@@ -94,6 +94,7 @@ export type User = {
 export type Comment = {
   comment_id: number
   user_id: number
+  username: string
   annot_id: number
   parent_id: number | null
   text: string

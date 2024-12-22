@@ -79,6 +79,7 @@ class User(BaseModel):
 class Comment(BaseModel):
     comment_id: int
     user_id: str
+    username: str
     annot_id: int
     parent_id: int | None
     text: str
@@ -369,10 +370,18 @@ async def post_selections(task_index: int, selection: Selection):
 async def get_comments(annot_index: int):
     comments = database.get_annotation_comments(annot_index)
     comments_data = []
+    usernames = {}
     for comment_id, user_id, annot_id, parent_id, text, comment_time in comments:
+        if user_id not in usernames:
+            username = database.get_user_name_without_lock(user_id)
+            if username is not None:
+                usernames[user_id] = username
+            else:
+                usernames[user_id] = "Unknown"
         comments_data.append({
             "comment_id": comment_id,
             "user_id": user_id,
+            "username": usernames[user_id],
             "annot_id": annot_id,
             "parent_id": parent_id,
             "text": text,

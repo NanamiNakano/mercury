@@ -6,7 +6,7 @@ export default function Message({ data }: { data: Comment }) {
         paddingBottom: "4px"
       }}>
         <div>
-          <strong>{data.user_id}</strong>
+          <strong>{data.username}</strong>
         </div>
         <div>
           {data.text}
