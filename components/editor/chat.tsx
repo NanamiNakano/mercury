@@ -13,6 +13,7 @@ import { Comment, CommentData } from "../../utils/types"
 import { commitComment, getComment } from "../../utils/request"
 import _ from "lodash"
 import { HasError, Loading } from "./fallback"
+import Message from "../message"
 
 export default function Chat({ id }: { id: number }) {
   const [messages, setMessages] = useState<Comment[]>([])
@@ -77,9 +78,7 @@ export default function Chat({ id }: { id: number }) {
               {isLoading && <Loading />}
               {hasError && <HasError />}
               {!isLoading && !hasError && messages.map((message) => (
-                  <div key={message.comment_id}>
-                    <p>{message.text}</p>
-                  </div>
+                  <Message data={message} key={message.comment_id} />
               ))}
             </DialogContent>
             <DialogActions>

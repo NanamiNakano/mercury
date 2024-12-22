@@ -21,9 +21,6 @@ import TagGroups from "../tagGroups"
 import { useTrackedUserStore } from "../../store/useUserStore"
 import Chat from "./chat"
 
-const emptyRestore = () => {
-}
-
 const useStyles = makeStyles({
   propsTable: {
     "& td:first-child": {
