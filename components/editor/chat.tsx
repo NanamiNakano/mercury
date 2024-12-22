@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  DialogTrigger, Input,
+  DialogTrigger, Field, Input, InputProps,
 } from "@fluentui/react-components"
 import { useCallback, useEffect, useState } from "react"
 import { Comment, CommentData } from "../../utils/types"
@@ -16,9 +16,16 @@ import { HasError, Loading } from "./fallback"
 import Message from "../message"
 
 export default function Chat({ id }: { id: number }) {
+  const [replyTo, setReplyTo] = useState<Comment>()
+  const [replying, setReplying] = useState(false)
   const [messages, setMessages] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const [value, setValue] = useState("")
+
+  const onChange: InputProps["onChange"] = (ev, data) => {
+    setValue(data.value)
+  }
 
   const debounceSetIsLoading = _.debounce(setIsLoading, 500)
 
@@ -50,11 +57,12 @@ export default function Chat({ id }: { id: number }) {
     }
   }, [])
 
-  const formSetMessage = useCallback(async (formData) => {
+  const onSubmitMessage = useCallback(async () => {
+    const parent_id = replying ? replyTo.comment_id : null
     const message = {
       annot_id: id,
-      parent_id: null,
-      text: formData.get("message"),
+      parent_id,
+      text: value,
     } as CommentData
     console.log(message)
     commitComment(message).then(() => {
@@ -64,7 +72,12 @@ export default function Chat({ id }: { id: number }) {
         }
       })
     })
-  }, [])
+    setValue("")
+  }, [replying, replyTo, value])
+
+  function onUnsetReply() {
+    setReplying(false)
+  }
 
   return (
       <Dialog>
@@ -78,19 +91,23 @@ export default function Chat({ id }: { id: number }) {
               {isLoading && <Loading />}
               {hasError && <HasError />}
               {!isLoading && !hasError && messages.map((message) => (
-                  <Message data={message} key={message.comment_id} />
+                  <Message data={message} key={message.comment_id} setReplying={setReplying} setReplyTo={setReplyTo} />
               ))}
             </DialogContent>
             <DialogActions>
-              <form
-                  style={{
-                    display: "flex",
-                    gap: "1em",
-                  }}
-                  action={formSetMessage}>
-                <Input type="text" name="message" />
-                <Button appearance="primary" type="submit">Send</Button>
-              </form>
+              {replying && (
+                  <Button
+                      appearance="subtle"
+                      style={{ textDecoration: "underline", padding: 0 }}
+                      onClick={onUnsetReply}
+                  >
+                    Dismiss
+                  </Button>
+              )}
+              <Field hint={replying && replyTo ? `Replying to ${replyTo.username}` : null}>
+                <Input type="text" name="message" value={value} onChange={onChange} />
+              </Field>
+              <Button appearance="primary" onClick={onSubmitMessage}>Send</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

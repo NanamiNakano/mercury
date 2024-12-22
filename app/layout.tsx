@@ -1,5 +1,6 @@
 "use client"
 import { FluentProvider, webLightTheme } from "@fluentui/react-components"
+import "react-contexify/ReactContexify.css"
 
 export default function RootLayout({ children }) {
   return (
@@ -11,6 +12,7 @@ export default function RootLayout({ children }) {
           style={{
             margin: "0",
             height: "100vh",
+            position: "relative",
           }}
       >
       <FluentProvider theme={webLightTheme}>
