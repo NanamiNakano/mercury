@@ -79,10 +79,15 @@ class User(BaseModel):
 class Comment(BaseModel):
     comment_id: int
     user_id: str
-    annot_id: int | None
+    annot_id: int
     parent_id: int | None
     text: str
     comment_time: str
+
+class CommentData(BaseModel):
+    annot_id: int
+    parent_id: int | None
+    text: str
 
 
 @lru_cache
@@ -377,7 +382,7 @@ async def get_comments(annot_index: int):
 
 
 @app.post("/annot/{annot_index}/comments")
-async def post_comments(annot_index: int, comment: Comment, user: Annotated[User, Depends(get_user)]):
+async def post_comments(annot_index: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
     database.commit_comment(user.id, annot_index, comment.parent_id, comment.text)
     return {"message": "success"}
 
@@ -392,7 +397,7 @@ async def delete_comments(annot_index: int, comment_id: int, user: Annotated[Use
 
 
 @app.patch("/annot/{annot_index}/comments/{comment_id}")
-async def patch_comments(annot_index: int, comment_id: int, comment: Comment, user: Annotated[User, Depends(get_user)]):
+async def patch_comments(annot_index: int, comment_id: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
     target = database.get_comment_by_id(comment_id)
     if target[1] != user.id or target[2] != annot_index:
         raise HTTPException(status_code=403)
