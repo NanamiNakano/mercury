@@ -5,7 +5,7 @@ import { deleteComment } from "../utils/request"
 
 export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
   data: Comment,
-  setReplyTo: (comment: Comment) => void,
+  setReplyTo: (id: number) => void,
   setReplying: (replying: boolean) => void,
   onRefresh: () => void
 }) {
@@ -23,7 +23,7 @@ export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
   }
 
   const onReply = useCallback(() => {
-    setReplyTo(data)
+    setReplyTo(data.comment_id)
     setReplying(true)
   }, [])
 

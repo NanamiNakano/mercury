@@ -16,14 +16,14 @@ import { HasError, Loading } from "./fallback"
 import Message from "../message"
 
 export default function Chat({ id }: { id: number }) {
-  const [replyTo, setReplyTo] = useState<Comment>()
+  const [replyTo, setReplyTo] = useState<number>()
   const [replying, setReplying] = useState(false)
   const [messages, setMessages] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [value, setValue] = useState("")
 
-  const onChange: InputProps["onChange"] = (ev, data) => {
+  const onChange: InputProps["onChange"] = (_, data) => {
     setValue(data.value)
   }
 
@@ -59,7 +59,7 @@ export default function Chat({ id }: { id: number }) {
   }, [])
 
   const onSubmitMessage = useCallback(async () => {
-    const parent_id = replying ? replyTo.comment_id : null
+    const parent_id = replying ? replyTo : null
     const message = {
       annot_id: id,
       parent_id,
@@ -109,7 +109,7 @@ export default function Chat({ id }: { id: number }) {
                     Dismiss
                   </Button>
               )}
-              <Field hint={replying && replyTo ? `Replying to ${replyTo.username}` : null}>
+              <Field hint={replying && replyTo ? `Replying to #${replyTo}` : null}>
                 <Input type="text" name="message" value={value} onChange={onChange} />
               </Field>
               <Button appearance="primary" onClick={onSubmitMessage}>Send</Button>
