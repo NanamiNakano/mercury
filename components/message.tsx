@@ -3,11 +3,14 @@ import { Item, Menu, useContextMenu } from "react-contexify"
 import { useCallback } from "react"
 import { deleteComment } from "../utils/request"
 
-export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
+export default function Message({ data, setReplyTo, setReplying, onRefresh, setEdit, setEditing, setValue }: {
   data: Comment,
   setReplyTo: (id: number) => void,
   setReplying: (replying: boolean) => void,
   onRefresh: () => void
+  setEdit: (id: number) => void,
+  setEditing: (editing: boolean) => void,
+  setValue: (value: string) => void,
 }) {
   const { show } = useContextMenu({
     id: data.comment_id,
@@ -25,6 +28,14 @@ export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
   const onReply = useCallback(() => {
     setReplyTo(data.comment_id)
     setReplying(true)
+    setEditing(false)
+  }, [])
+
+  const onEdit = useCallback(() => {
+    setEdit(data.comment_id)
+    setEditing(true)
+    setValue(data.text)
+    setReplying(false)
   }, [])
 
   const onDelete = useCallback(async () => {
@@ -41,7 +52,7 @@ export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
             <strong>{data.username}</strong>
           </div>
           <div style={{
-            overflowWrap: "break-word"
+            overflowWrap: "break-word",
           }}>
             {data.text}
           </div>
@@ -54,10 +65,11 @@ export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
         </div>
         <Menu style={{
           position: "unset",
-          maxWidth: "30px"
+          maxWidth: "30px",
         }} id={data.comment_id}>
           <Item onClick={onReply}>Reply</Item>
           <Item onClick={onDelete}>Delete</Item>
+          <Item onClick={onEdit}>Edit</Item>
         </Menu>
       </>
   )

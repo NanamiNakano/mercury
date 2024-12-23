@@ -270,4 +270,5 @@ export {
   getComment,
   commitComment,
   deleteComment,
+  patchComment,
 }

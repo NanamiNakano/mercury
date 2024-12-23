@@ -410,7 +410,7 @@ async def patch_comments(annot_index: int, comment_id: int, comment: CommentData
     target = database.get_comment_by_id(comment_id)
     if target[1] != user.id or target[2] != annot_index:
         raise HTTPException(status_code=403)
-    database.edit_comment(comment_id, comment.text)
+    database.edit_comment(user.id, comment_id, comment.text)
     return {"message": "success"}
 
 

@@ -8,9 +8,9 @@ import {
   DialogTitle,
   DialogTrigger, Field, Input, InputProps,
 } from "@fluentui/react-components"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Comment, CommentData } from "../../utils/types"
-import { commitComment, getComment } from "../../utils/request"
+import { commitComment, getComment, patchComment } from "../../utils/request"
 import _ from "lodash"
 import { HasError, Loading } from "./fallback"
 import Message from "../message"
@@ -22,6 +22,8 @@ export default function Chat({ id }: { id: number }) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [value, setValue] = useState("")
+  const [edit, setEdit] = useState<number>()
+  const [editing, setEditing] = useState(false)
 
   const onChange: InputProps["onChange"] = (_, data) => {
     setValue(data.value)
@@ -65,17 +67,40 @@ export default function Chat({ id }: { id: number }) {
       parent_id,
       text: value,
     } as CommentData
-    console.log(message)
-    commitComment(message).then(() => {
-      onFetch()
-    })
+    if (editing) {
+      patchComment(edit, message).then(() => {
+        onFetch()
+      })
+    } else {
+      commitComment(message).then(() => {
+        onFetch()
+      })
+    }
     setValue("")
     setReplying(false)
+    setEditing(false)
   }, [replying, replyTo, value])
 
   function onUnsetReply() {
     setReplying(false)
   }
+
+  function onUnsetEdit() {
+    setEditing(false)
+  }
+
+  const hint = useMemo(() => {
+    if (replying) {
+      if (replyTo) {
+        return `Replying to #${replyTo}`
+      }
+    } else if (editing) {
+      if (edit) {
+        return `Editing #${edit}`
+      }
+    }
+    return null
+  }, [replying, replyTo, editing, edit])
 
   return (
       <Dialog>
@@ -95,7 +120,8 @@ export default function Chat({ id }: { id: number }) {
                     }}>
                       {message.parent_id ? `Reply to ${message.parent_id}` : null}
                     </div>
-                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} onRefresh={onFetch} />
+                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} onRefresh={onFetch}
+                             setEdit={setEdit} setEditing={setEditing} setValue={setValue} />
                   </div>
               ))}
             </DialogContent>
@@ -109,7 +135,16 @@ export default function Chat({ id }: { id: number }) {
                     Dismiss
                   </Button>
               )}
-              <Field hint={replying && replyTo ? `Replying to #${replyTo}` : null}>
+              {editing && (
+                  <Button
+                      appearance="subtle"
+                      style={{ textDecoration: "underline", padding: 0 }}
+                      onClick={onUnsetEdit}
+                  >
+                    Dismiss
+                  </Button>
+              )}
+              <Field hint={hint}>
                 <Input type="text" name="message" value={value} onChange={onChange} />
               </Field>
               <Button appearance="primary" onClick={onSubmitMessage}>Send</Button>
