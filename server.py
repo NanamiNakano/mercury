@@ -401,7 +401,7 @@ async def delete_comments(annot_index: int, comment_id: int, user: Annotated[Use
     comment = database.get_comment_by_id(comment_id)
     if comment[1] != user.id or comment[2] != annot_index:
         raise HTTPException(status_code=403)
-    database.delete_comment(comment_id)
+    database.delete_comment(user.id, comment_id)
     return {"message": "success"}
 
 

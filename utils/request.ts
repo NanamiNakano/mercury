@@ -269,4 +269,5 @@ export {
   updateRecord,
   getComment,
   commitComment,
+  deleteComment,
 }

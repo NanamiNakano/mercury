@@ -33,7 +33,12 @@ export default function Chat({ id }: { id: number }) {
     setHasError(false)
     debounceSetIsLoading(true)
     try {
-      return await getComment(id)
+      const data = await getComment(id)
+      if (data) {
+        const sortedData = data.sort((a, b) => new Date(a.comment_time).getTime() - new Date(b.comment_time).getTime())
+        setMessages(sortedData)
+        setMessages(data)
+      }
     } catch (e) {
       setHasError(true)
     } finally {
@@ -45,13 +50,7 @@ export default function Chat({ id }: { id: number }) {
     let ignore = false
 
     if (!ignore) {
-      onFetch().then((data) => {
-        if (data) {
-          const sortedData = data.sort((a, b) => new Date(a.comment_time).getTime() - new Date(b.comment_time).getTime())
-          setMessages(sortedData)
-          setMessages(data)
-        }
-      })
+      onFetch()
     }
 
     return () => {
@@ -68,11 +67,7 @@ export default function Chat({ id }: { id: number }) {
     } as CommentData
     console.log(message)
     commitComment(message).then(() => {
-      onFetch().then((data) => {
-        if (data) {
-          setMessages(data)
-        }
-      })
+      onFetch()
     })
     setValue("")
     setReplying(false)
@@ -100,7 +95,7 @@ export default function Chat({ id }: { id: number }) {
                     }}>
                       {message.parent_id ? `Reply to ${message.parent_id}` : null}
                     </div>
-                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} />
+                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} onRefresh={onFetch} />
                   </div>
               ))}
             </DialogContent>

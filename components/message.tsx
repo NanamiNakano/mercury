@@ -1,11 +1,13 @@
 import { Comment } from "../utils/types"
 import { Item, Menu, useContextMenu } from "react-contexify"
 import { useCallback } from "react"
+import { deleteComment } from "../utils/request"
 
-export default function Message({ data, setReplyTo, setReplying }: {
+export default function Message({ data, setReplyTo, setReplying, onRefresh }: {
   data: Comment,
   setReplyTo: (comment: Comment) => void,
-  setReplying: (replying: boolean) => void
+  setReplying: (replying: boolean) => void,
+  onRefresh: () => void
 }) {
   const { show } = useContextMenu({
     id: data.comment_id,
@@ -23,6 +25,11 @@ export default function Message({ data, setReplyTo, setReplying }: {
   const onReply = useCallback(() => {
     setReplyTo(data)
     setReplying(true)
+  }, [])
+
+  const onDelete = useCallback(async () => {
+    await deleteComment(data.comment_id, data.annot_id)
+    onRefresh()
   }, [])
 
   return (
@@ -50,6 +57,7 @@ export default function Message({ data, setReplyTo, setReplying }: {
           maxWidth: "30px"
         }} id={data.comment_id}>
           <Item onClick={onReply}>Reply</Item>
+          <Item onClick={onDelete}>Delete</Item>
         </Menu>
       </>
   )
