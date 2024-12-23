@@ -109,7 +109,12 @@ export default function Chat({ id }: { id: number }) {
         </DialogTrigger>
         <DialogSurface>
           <DialogBody>
-            <DialogTitle>Chat</DialogTitle>
+            <DialogTitle>
+              Chat&nbsp;
+              <Button onClick={onFetch}>
+                Refresh
+              </Button>
+            </DialogTitle>
             <DialogContent>
               {isLoading && <Loading />}
               {hasError && <HasError />}
