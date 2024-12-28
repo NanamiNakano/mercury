@@ -105,7 +105,7 @@ export default function Chat({ id }: { id: number }) {
   return (
       <Dialog>
         <DialogTrigger disableButtonEnhancement>
-          <Button>Discussion</Button>
+          <Button>Discuss</Button>
         </DialogTrigger>
         <DialogSurface>
           <DialogBody>

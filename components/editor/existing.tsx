@@ -108,7 +108,7 @@ export default function ExistingPane() {
                   <Checkbox
                       checked={viewYour}
                       onChange={(_, data) => setViewYour(data.checked)}
-                      label="Your"
+                      label="Yours"
                   />
                   <Checkbox
                       checked={viewOthers}
