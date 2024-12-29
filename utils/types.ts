@@ -81,13 +81,30 @@ export type LabelData = {
   consistent: string[]
   task_index: number
   user_id: string
-  note: string
+  note: string,
+  username?: string,
 }
 
 export type User = {
   id: string
   name: string
   email: string
+}
+
+export type Comment = {
+  comment_id: number
+  user_id: number
+  username: string
+  annot_id: number
+  parent_id: number | null
+  text: string
+  comment_time: string
+}
+
+export type CommentData = {
+  annot_id: number
+  parent_id: number | null
+  text: string
 }
 
 export function isNumber(value: unknown)  {

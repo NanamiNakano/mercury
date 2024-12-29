@@ -76,6 +76,20 @@ class User(BaseModel):
     name: str
     email: str
 
+class Comment(BaseModel):
+    comment_id: int
+    user_id: str
+    username: str
+    annot_id: int
+    parent_id: int | None
+    text: str
+    comment_time: str
+
+class CommentData(BaseModel):
+    annot_id: int
+    parent_id: int | None
+    text: str
+
 
 @lru_cache
 class Config(BaseModel):
@@ -174,8 +188,8 @@ async def get_task(task_index: int = 0):
 
 
 @app.get("/task/{task_index}/history")
-async def get_task_history(task_index: int, user: Annotated[User, Depends(get_user)]):
-    return database.export_task_history(task_index, user.id)
+async def get_task_history(task_index: int, _: Annotated[User, Depends(get_user)]):
+    return database.export_task_history(task_index)
 
 @app.get("/task/{task_index}/other/annotations")
 async def get_other_annotations(task_index: int, user: Annotated[User, Depends(get_user)]):
@@ -350,6 +364,54 @@ async def post_selections(task_index: int, selection: Selection):
     #         }
     #     )
     return selections
+
+
+@app.get("/annot/{annot_index}/comments")
+async def get_comments(annot_index: int):
+    comments = database.get_annotation_comments(annot_index)
+    comments_data = []
+    usernames = {}
+    for comment_id, user_id, annot_id, parent_id, text, comment_time in comments:
+        if user_id not in usernames:
+            username = database.get_user_name_without_lock(user_id)
+            if username is not None:
+                usernames[user_id] = username
+            else:
+                usernames[user_id] = "Unknown"
+        comments_data.append({
+            "comment_id": comment_id,
+            "user_id": user_id,
+            "username": usernames[user_id],
+            "annot_id": annot_id,
+            "parent_id": parent_id,
+            "text": text,
+            "comment_time": comment_time
+        })
+    return comments_data
+
+
+@app.post("/annot/{annot_index}/comments")
+async def post_comments(annot_index: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
+    database.commit_comment(user.id, annot_index, comment.parent_id, comment.text)
+    return {"message": "success"}
+
+
+@app.delete("/annot/{annot_index}/comments/{comment_id}")
+async def delete_comments(annot_index: int, comment_id: int, user: Annotated[User, Depends(get_user)]):
+    comment = database.get_comment_by_id(comment_id)
+    if comment[1] != user.id or comment[2] != annot_index:
+        raise HTTPException(status_code=403)
+    database.delete_comment(user.id, comment_id)
+    return {"message": "success"}
+
+
+@app.patch("/annot/{annot_index}/comments/{comment_id}")
+async def patch_comments(annot_index: int, comment_id: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
+    target = database.get_comment_by_id(comment_id)
+    if target[1] != user.id or target[2] != annot_index:
+        raise HTTPException(status_code=403)
+    database.edit_comment(user.id, comment_id, comment.text)
+    return {"message": "success"}
 
 
 @app.delete("/record/{record_id}")

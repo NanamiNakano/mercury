@@ -17,6 +17,7 @@
     "next": "latest",
     "rangy": "^1.3.2",
     "react": "^18.2.0",
+    "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
     "react-table-column-resizer": "^1.2.3",
     "react-tracked": "^2.0.1",

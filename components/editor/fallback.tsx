@@ -11,7 +11,7 @@ export function Loading() {
 }
 
 type hasErrorProps = {
-  onRetry?: () => Promise<void>
+  onRetry?: Function
 }
 
 export function HasError({ onRetry = null }: hasErrorProps) {

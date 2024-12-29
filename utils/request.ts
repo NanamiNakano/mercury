@@ -1,5 +1,5 @@
 import type {
-  AllTasksLength,
+  AllTasksLength, Comment, CommentData,
   LabelData,
   LabelRequest,
   Normal, RequestError,
@@ -207,6 +207,52 @@ const updateRecord = async (taskIndex: number, recordId: string, labelData: Labe
   return data as Normal
 }
 
+const getComment = async (annotId: number) => {
+  const response = await fetch(`${backend}/annot/${annotId}/comments`)
+  const data = await response.json()
+  return data as Comment[]
+}
+
+const commitComment = async (comment: CommentData) => {
+  const access_token = getAccessToken()
+  const response = await fetch(`${backend}/annot/${comment.annot_id}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`,
+    },
+    body: JSON.stringify(comment),
+  })
+  const data = await response.json()
+  return data as Normal
+}
+
+const patchComment = async (id: number, comment: CommentData) => {
+  const access_token = getAccessToken()
+  const response = await fetch(`${backend}/annot/${comment.annot_id}/comments/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`,
+    },
+    body: JSON.stringify(comment),
+  })
+  const data = await response.json()
+  return data as Normal
+}
+
+const deleteComment = async (id: number, annotId: number) => {
+  const access_token = getAccessToken()
+  const response = await fetch(`${backend}/annot/${annotId}/comments/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    },
+  })
+  const data = await response.json()
+  return data as Normal
+}
+
 export {
   getAllTasksLength,
   getSingleTask,
@@ -220,5 +266,9 @@ export {
   checkUserMe,
   getUserMe,
   login,
-  updateRecord
+  updateRecord,
+  getComment,
+  commitComment,
+  deleteComment,
+  patchComment,
 }
