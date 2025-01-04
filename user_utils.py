@@ -110,8 +110,8 @@ def main():
     user_commands_parser = main_parser.add_subparsers(dest="command", required=True)
 
     user_commands_parser.add_parser("export", help="Export users to a CSV file")
-    apply_parser = user_commands_parser.add_parser("apply", help="Import users from a CSV file")
-    apply_parser.add_argument("-d", "--destructive", action="store_true", help="")
+    apply_parser = user_commands_parser.add_parser("apply", help="Apply changes from a CSV file")
+    apply_parser.add_argument("-d", "--destructive", action="store_true", help="Delete users")
 
     args = main_parser.parse_args()
 
