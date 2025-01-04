@@ -80,16 +80,19 @@ class UserUtils:
             user_name = row["user_name"]
             email = row["email"]
             delete = row["delete"]
-            if (user_id is None or self.get_user_by_id(user_id) is None) and delete != "1":
+            if user_id is None:
                 new_password = self.new_user(user_name, email, password)
                 print(f"Created new user {user_name} with email {email} and password {new_password}")
-                break
+                continue
             if delete == "1":
                 if destructive:
                     self.delete_user(user_id)
                     print(f"Deleted user {user_id}")
                 else:
                     print(f"To delete user {user_id}, use the --destructive or -d flag")
+                continue
+            if self.get_user_by_id(user_id) is None:
+                print(f"User {user_id} does not exist, ignored.")
                 continue
             if password is not None and password != "":
                 self.reset_user_password(user_id, password)
