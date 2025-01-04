@@ -86,6 +86,8 @@ Administration is done via Python script and csv file.
    
    If you want to delete users, confirm with `-d` flag: `python3 user_utils.py apply -d`
 
+**Note** that this script does not have any validation. Please make sure the csv file is correct if you get errors.
+
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
