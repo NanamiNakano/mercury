@@ -63,8 +63,29 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
 3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical labels.
 4. Generate and set a JWT secret key: `export SECRET_KEY=$(openssl rand -base64 32)`. You can rerun the command above to generate a new secret key when needed, especially when the old one is compromised. Note that changing the JWT token will log out all users. Optionally, you can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
-5. Administer the users: `python3 user_utils.py -h`. You need to create users before they can work on the annotation task. You can register new users, reset passwords, and delete users. User credentials are stored in a separate SQLite database, denoted as `USER_DB` in the following steps. 
-6. Start the Mercury annotation server: `python3 server.py --mercury_db {MERCURY_DB} --user_db {USER_DB}`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
+5. Start the Mercury annotation server: `python3 server.py --mercury_db {MERCURY_DB} --user_db {USER_DB}`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
+
+### Administer the users
+
+Administration is done via Python script and csv file.
+
+1. Export user data: `python3 user_utils.py export`
+2. Edit csv file
+
+   | user_id | user_name | email        | password                                          | delete                     |
+   |---------|-----------|--------------|---------------------------------------------------|----------------------------|
+   | user_id | user_name | unique email | empty. fill new password if you want to change it | initial: 0 (not to delete) |
+
+   1. Do not edit `user_id`. If you want to create a new user, create a raw and left `user_id` empty.
+   
+      When creating new user, left `password` empty to let the script generate a random password.
+   2. Edit `user_name`, `email`, `password` if you want to change them. Left them unchanged or empty if you don't.
+   3. Change `delete` to 1 if you want to delete a user. If `user_id` is empty, this has no effect and a new user will be created.
+
+3. Apply changes: `python3 user_utils.py apply`
+   
+   If you want to delete users, confirm with `-d` flag: `python3 user_utils.py apply -d`
+
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
