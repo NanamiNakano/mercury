@@ -447,12 +447,6 @@ class Database:
         self.mercury_db.commit()
 
     @database_lock()
-    def add_user(self, user_id: str, user_name: str):  # TODO: remove this method since now only admin can add user
-        sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
-        self.mercury_db.execute(sql_cmd, (user_id, user_name))
-        self.mercury_db.commit()
-
-    @database_lock()
     def change_user_name(self, user_id: str, user_name: str):
         self.user_db.execute("UPDATE users SET user_name = ? WHERE user_id = ?", (user_name, user_id))
         self.user_db.commit()
