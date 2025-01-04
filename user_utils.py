@@ -47,7 +47,9 @@ class UserUtils:
         self.cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         return self.cursor.fetchone()
 
-    def new_user(self, user_name, email, password=generate_random_string()):
+    def new_user(self, user_name, email, password):
+        if password is None or password == "":
+            password = generate_random_string()
         hashed_password = self.ph.hash(password)
         user_id = uuid.uuid4().hex
         self.cursor.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
@@ -63,13 +65,13 @@ class UserUtils:
     def export(self):
         csv_fp = open(self.csv_path, "w", newline="")
         writer = csv.writer(csv_fp)
-        writer.writerow(["user_id", "user_name", "email", "password"])
+        writer.writerow(["user_id", "user_name", "email", "password", "delete"])
         rows = self.cursor.execute("SELECT * FROM users")
         for user_id, user_name, email, _ in rows:
-            writer.writerow([user_id, user_name, email, ""]) # Passwords are hashed, so we don't export them
+            writer.writerow([user_id, user_name, email, "", 0]) # Passwords are hashed, so we don't export them
         csv_fp.close()
 
-    def apply(self):
+    def apply(self, destructive: bool):
         csv_fp = open(self.csv_path, newline="")
         reader = csv.DictReader(csv_fp)
         for row in reader:
@@ -77,6 +79,18 @@ class UserUtils:
             password = row["password"]
             user_name = row["user_name"]
             email = row["email"]
+            delete = row["delete"]
+            if (user_id is None or self.get_user_by_id(user_id) is None) and delete != "1":
+                new_password = self.new_user(user_name, email, password)
+                print(f"Created new user {user_name} with email {email} and password {new_password}")
+                break
+            if delete == "1":
+                if destructive:
+                    self.delete_user(user_id)
+                    print(f"Deleted user {user_id}")
+                else:
+                    print(f"To delete user {user_id}, use the --destructive or -d flag")
+                continue
             if password is not None and password != "":
                 self.reset_user_password(user_id, password)
             if user_name is not None and user_name != "":
@@ -96,7 +110,8 @@ def main():
     user_commands_parser = main_parser.add_subparsers(dest="command", required=True)
 
     user_commands_parser.add_parser("export", help="Export users to a CSV file")
-    user_commands_parser.add_parser("apply", help="Import users from a CSV file")
+    apply_parser = user_commands_parser.add_parser("apply", help="Import users from a CSV file")
+    apply_parser.add_argument("-d", "--destructive", action="store_true", help="")
 
     args = main_parser.parse_args()
 
@@ -106,7 +121,7 @@ def main():
         case "export":
             db_utils.export()
         case "apply":
-            db_utils.apply()
+            db_utils.apply(args.destructive)
         case _:
             print("Invalid command")
 
