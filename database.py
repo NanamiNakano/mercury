@@ -165,7 +165,8 @@ class Database:
         print("Open db at ", mercury_db_path)
         version = mercury_db.execute("SELECT value FROM config WHERE key = 'version'").fetchone()
         if version is None:
-            mercury_db.execute("INSERT INTO config (key, value) VALUES ('version', ?)", (__version__,))
+            print("Can not determine database version.")
+            exit(1)
         else:
             if version[0] != __version__:
                 print("Database version mismatch. Please migrate the database.")

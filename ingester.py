@@ -119,7 +119,7 @@ class Ingester:
             f"CREATE VIRTUAL TABLE embeddings USING vec0(embedding float[{self.embedding_dimension}])"
         )
         self.db.execute(
-            "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)"
+            "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY UNIQUE , value TEXT)"
         )
         self.db.execute(
             "CREATE TABLE IF NOT EXISTS sample_meta (sample_id INTEGER PRIMARY KEY, json_meta TEXT)"
