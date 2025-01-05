@@ -26,6 +26,7 @@ import sqlite3
 import sqlite_vec
 from ingester import Embedder
 from database import Database
+from version import __version__
 
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -441,6 +442,7 @@ if __name__ == "__main__":
     parser.add_argument("--mercury_db", type=str, required=True, default="./mercury.sqlite")
     parser.add_argument("--user_db", type=str, required=True, default="./user.sqlite")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--version", action="version", version="__version__")
     args = parser.parse_args()
 
     env_secret_key = os.getenv("SECRET_KEY")
@@ -450,6 +452,7 @@ if __name__ == "__main__":
     expire = int(os.getenv("EXPIRE_MINUTES", 10080))
     env_config = Config(secret_key=env_secret_key, expire=expire)
 
+    print("Mercury version: ", __version__)
     print("Using Mercury SQLite db: ", args.mercury_db)
     print("Using User SQLite db: ", args.user_db)
 
