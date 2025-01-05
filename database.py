@@ -698,6 +698,7 @@ if __name__ == "__main__":
     parser.add_argument("--mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
     parser.add_argument("--user_db_path", type=str, required=True, help="Path to the user SQLite database")
     parser.add_argument("--dump_file", type=str, required=True, default="mercury_annotations.json")
+    parser.add_argument("--version", action="version", version="__version__")
     args = parser.parse_args()
 
     # db = Database(args.annotation_corpus_id)
