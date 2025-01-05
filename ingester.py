@@ -9,6 +9,7 @@ import numpy as np
 
 from dotenv import load_dotenv
 from tqdm.auto import tqdm
+from version import __version__
 
 import struct
 
@@ -137,6 +138,10 @@ class Ingester:
         self.db.execute(
             "INSERT OR REPLACE INTO config (key, value) VALUES ('embedding_dimension', ?)",
             [self.embedding_dimension],
+        )
+        self.db.execute(
+            "INSERT OR REPLACE INTO config (key, value) VALUES ('version', ?)",
+            [__version__]
         )
         
         self.db.commit()
