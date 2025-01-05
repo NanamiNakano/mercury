@@ -55,14 +55,14 @@ class Migrator:
         old_embeddings = self.old_db_cursor.execute("SELECT * FROM main.embeddings").fetchall()
         for rowid, old_embedding in old_embeddings:
             metadata = self.old_db_cursor.execute(
-                "SELECT chunk_id, text, text_type, sample_id, char_offset, chunk_offset FROM main.chunks WHERE rowid = ?",
+                "SELECT chunk_id, text, text_type, sample_id, char_offset, chunk_offset FROM main.chunks WHERE chunk_id = ?",
                 (rowid,)).fetchone()
             self.old_db_cursor.execute(
                 "INSERT INTO temp1.chunks (chunk_id, text, text_type, sample_id, char_offset, chunk_offset, embedding) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (*metadata, old_embedding))
 
+        self.old_db_cursor.execute("INSERT OR REPLACE INTO temp1.config (key, value) VALUES ('version', '0.1.1')")
         self.old_conn.commit()
-        self.old_db_cursor.execute("INSERT OR REPLACE INTO temp1.config (key, value) VALUES ('version', '0.1.1)")
         self.old_db_cursor.execute("DETACH DATABASE temp1")
         os.remove(self.old_db_path)
         os.rename("./temp.sqlite", self.old_db_path)
@@ -71,7 +71,7 @@ class Migrator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Migrate the database from version 0.1.0 to 0.1.1")
-    parser.add_argument("--db_path", help="Path to the database", default="./mercury.sqlite")
+    parser.add_argument("--db_path", help="Path to the database", default="../mercury.sqlite")
     args = parser.parse_args()
     migrator = Migrator(args.db_path)
     migrator.migrate()
