@@ -57,6 +57,7 @@ class Label(BaseModel):
     consistent: list[str]
     note: str
 
+
 class Selection(BaseModel):
     start: int
     end: int
@@ -77,6 +78,7 @@ class User(BaseModel):
     name: str
     email: str
 
+
 class Comment(BaseModel):
     comment_id: int
     user_id: str
@@ -85,6 +87,7 @@ class Comment(BaseModel):
     parent_id: int | None
     text: str
     comment_time: str
+
 
 class CommentData(BaseModel):
     annot_id: int
@@ -117,7 +120,8 @@ def create_access_token(data: dict, secret_key: str, expires_delta: timedelta | 
 
 
 @app.post("/login")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], config: Config = Depends(get_config)) -> Token:
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+                config: Config = Depends(get_config)) -> Token:
     auth_success, user_id = database.auth_user(form_data.username,
                                                form_data.password)
     if not auth_success:  # username here is actually email, since OAuth2 requires key be username
@@ -192,9 +196,11 @@ async def get_task(task_index: int = 0):
 async def get_task_history(task_index: int, _: Annotated[User, Depends(get_user)]):
     return database.export_task_history(task_index)
 
+
 @app.get("/task/{task_index}/other/annotations")
 async def get_other_annotations(task_index: int, user: Annotated[User, Depends(get_user)]):
     return database.get_others_annotation(user.id, task_index)
+
 
 @app.post("/task/{task_index}/label")
 async def post_task(task_index: int, label: Label, user: Annotated[User, Depends(get_user)]):
@@ -230,6 +236,7 @@ async def post_task(task_index: int, label: Label, user: Annotated[User, Depends
     })  # the label_data is in databse.OldLabelData format
     return {"message": "success"}
 
+
 @app.patch("/task/{task_index}/label/{record_id}")
 async def patch_task(task_index: int, record_id: int, label: Label, user: Annotated[User, Depends(get_user)]):
     sample_id = task_index
@@ -252,6 +259,7 @@ async def patch_task(task_index: int, record_id: int, label: Label, user: Annota
         "note": label.note
     })
     return {"message": "success"}
+
 
 @app.post(
     "/task/{task_index}/select")  # TODO: to be updated by Forrest using openAI's API or local model to embed text on the fly
@@ -306,10 +314,10 @@ async def post_selections(task_index: int, selection: Selection):
     # print ("Embedding: ", embedding)
     sql_cmd = " \
         SELECT  \
-            rowid, \
+            chunk_id, \
             distance \
-        FROM embeddings " \
-              " WHERE rowid IN ({0})" \
+        FROM chunks " \
+              " WHERE chunk_id IN ({0})" \
               "AND embedding MATCH '{1}'  \
               ORDER BY distance \
               LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
@@ -407,7 +415,8 @@ async def delete_comments(annot_index: int, comment_id: int, user: Annotated[Use
 
 
 @app.patch("/annot/{annot_index}/comments/{comment_id}")
-async def patch_comments(annot_index: int, comment_id: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
+async def patch_comments(annot_index: int, comment_id: int, comment: CommentData,
+                         user: Annotated[User, Depends(get_user)]):
     target = database.get_comment_by_id(comment_id)
     if target[1] != user.id or target[2] != annot_index:
         raise HTTPException(status_code=403)
