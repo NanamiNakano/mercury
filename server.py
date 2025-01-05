@@ -290,37 +290,38 @@ async def post_selections(task_index: int, selection: Selection):
     embedding = embedder.embed([query], embedding_dimension=configs["embedding_dimension"])[0]
 
     # Then get the chunk_id's from the opposite document
-    sql_cmd = "SELECT chunk_id, text FROM chunks WHERE text_type = ? AND sample_id = ?"
+    # sql_cmd = "SELECT chunk_id, text FROM chunks WHERE text_type = ? AND sample_id = ?"
     if selection.from_summary:
         text_type = "source"
     else:
         text_type = "summary"
 
-    chunk_id_and_text = database.mercury_db.execute(sql_cmd, [text_type, task_index]).fetchall()
-    search_chunk_ids = [row[0] for row in chunk_id_and_text]
-    vecter_db_row_ids = [str(x + 1) for x in search_chunk_ids]  # rowid starts from 1 while chunk_id starts from 0
+    # chunk_id_and_text = database.mercury_db.execute(sql_cmd, [text_type, task_index]).fetchall()
+    # search_chunk_ids = [row[0] for row in chunk_id_and_text]
+    # vecter_db_row_ids = [str(x + 1) for x in search_chunk_ids]  # rowid starts from 1 while chunk_id starts from 0
 
-    if len(search_chunk_ids) == 1:  # no need for vector search
-        selections = [{
-            "score": 1.0,
-            "offset": 0,
-            "len": len(chunk_id_and_text[0][1]),
-            "to_doc": selection.from_summary,
-        }]
-        return selections
+    # if len(search_chunk_ids) == 1:  # no need for vector search
+    #     selections = [{
+    #         "score": 1.0,
+    #         "offset": 0,
+    #         "len": len(chunk_id_and_text[0][1]),
+    #         "to_doc": selection.from_summary,
+    #     }]
+    #     return selections
 
     # Do vector search on the `embeddings` table when rowid is in chunk_ids
     # print ("Search for row ids: ", search_chunk_ids)
     # print ("Embedding: ", embedding)
-    sql_cmd = " \
-        SELECT  \
-            chunk_id, \
-            distance \
-        FROM chunks " \
-              " WHERE chunk_id IN ({0})" \
-              "AND embedding MATCH '{1}'  \
-              ORDER BY distance \
-              LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
+    # sql_cmd = " \
+    #     SELECT  \
+    #         chunk_id, \
+    #         distance \
+    #     FROM chunks " \
+    #           " WHERE chunk_id IN ({0})" \
+    #           "AND embedding MATCH '{1}'  \
+    #           ORDER BY distance \
+    #           LIMIT 5;".format(', '.join(vecter_db_row_ids), embedding)
+    sql_cmd = f"SELECT chunk_id, distance FROM chunks WHERE k =5 AND sample_id = {task_index} AND text_type = '{text_type}' AND embedding MATCH '{embedding}' ORDER BY distance"
     # print ("SQL_CMD", sql_cmd)
 
     # vector_search_result = database.db.execute(sql_cmd, [*search_chunk_ids, serialize_f32(embedding)]).fetchall()
