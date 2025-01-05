@@ -16,6 +16,7 @@ class Migrator:
         self.conn.execute("CREATE TABLE config(key TEXT PRIMARY KEY UNIQUE , value TEXT)")
         self.conn.execute("INSERT INTO config SELECT key, value FROM config_old")
         self.conn.execute("INSERT INTO config VALUES ('version', '0.1.0')")
+        self.conn.execute("DROP TABLE config_old")
         self.conn.commit()
         print("Migration completed")
 
