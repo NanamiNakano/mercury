@@ -9,6 +9,7 @@ import numpy as np
 
 from dotenv import load_dotenv
 from tqdm.auto import tqdm
+from version import __version__
 
 import struct
 
@@ -138,6 +139,10 @@ class Ingester:
             "INSERT OR REPLACE INTO config (key, value) VALUES ('embedding_dimension', ?)",
             [self.embedding_dimension],
         )
+        self.db.execute(
+            "INSERT OR REPLACE INTO config (key, value) VALUES ('version', ?)",
+            [__version__]
+        )
         
         self.db.commit()
 
@@ -249,9 +254,11 @@ if __name__ == "__main__":
         default="summary",
         help="The name of the 2nd column to ingest",
     )
+    parser.add_argument("--version", action="version", version="__version__")
 
     args = parser.parse_args()
 
+    print("Mercury version: ", __version__)
     print("Ingesting data")
     ingester = Ingester(
         file_to_ingest=args.file_to_ingest,

@@ -10,6 +10,7 @@ import sqlite3
 import sqlite_vec
 
 from dotenv import load_dotenv
+from version import __version__
 
 
 class OldLabelData(TypedDict):  # readable by frontend
@@ -162,6 +163,13 @@ class Database:
         # prepare the database
         mercury_db = sqlite3.connect(mercury_db_path)
         print("Open db at ", mercury_db_path)
+        version = mercury_db.execute("SELECT value FROM config WHERE key = 'version'").fetchone()
+        if version is None:
+            mercury_db.execute("INSERT INTO config (key, value) VALUES ('version', ?)", (__version__,))
+        else:
+            if version[0] != __version__:
+                print("Database version mismatch. Please migrate the database.")
+                exit(1)
         mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
                    annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
                    sample_id INTEGER, \
@@ -690,6 +698,7 @@ if __name__ == "__main__":
     parser.add_argument("--mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
     parser.add_argument("--user_db_path", type=str, required=True, help="Path to the user SQLite database")
     parser.add_argument("--dump_file", type=str, required=True, default="mercury_annotations.json")
+    parser.add_argument("--version", action="version", version="__version__")
     args = parser.parse_args()
 
     # db = Database(args.annotation_corpus_id)
