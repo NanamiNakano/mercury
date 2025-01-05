@@ -167,8 +167,7 @@ class Database:
         if version is None:
             print("Can not determine database version.")
             exit(1)
-        else:
-            if version[0] != __version__:
+        elif version[0] != __version__:
                 print("Database version mismatch. Please migrate the database.")
                 exit(1)
         mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
