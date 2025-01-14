@@ -165,10 +165,10 @@ class Database:
         print("Open db at ", mercury_db_path)
         version = mercury_db.execute("SELECT value FROM config WHERE key = 'version'").fetchone()
         if version is None:
-            print("Can not determine database version.")
+            print("Cannot find Mercury version in the database. Please migrate the database.")
             exit(1)
         elif version[0] != __version__:
-                print("Database version mismatch. Please migrate the database.")
+                print (f"Mercury version mismatch between the code and the database file. The version in the database is {version[0]}, but the code version is {__version__}. Please migrate the database.")
                 exit(1)
         mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
                    annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
