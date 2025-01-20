@@ -140,7 +140,7 @@ class UserUtils:
         self.conn.commit()
 
         print(f"User created with user_id {user_id}, email {email}, password {password}")
-        print ("Please save the email and password in a secure location. You will not be able to password again.")
+        print ("Please save the email and password in a secure location. You will not be able to reveal password again.")
 
     # def delete_user(self, user_id):
     #     self.cursor.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
