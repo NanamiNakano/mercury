@@ -63,25 +63,28 @@ class UserUtils:
             field_to_update = field_to_update_mapping[field_to_update]
 
         if field_new_value is None:
-            field_new_value = input(prompt_mapping[field_to_update])
+            field_new_value = input(prompt_mapping[field_to_update]).strip()
 
         plain_field_value = field_new_value
-        if field_to_update == "password": # password 
+        if field_to_update == "password": # password
             if field_new_value == "":
-                plain_field_value = generate_random_string(length=6)                
+                generated_password = generate_random_string(length=6)
+                plain_field_value = field_new_value
+                field_new_value = self.ph.hash(generated_password)
+            print(field_new_value)
+            sql_cmd = f"UPDATE users SET hashed_password = '{field_new_value}' WHERE {look_up_method} = '{look_up_value}'"
+        else:
+            if field_new_value == "":
+                print("Field value cannot be empty.")
+                return
+            sql_cmd = f"UPDATE users SET {field_to_update} = '{field_new_value}' WHERE {look_up_method} = '{look_up_value}'"
 
-        if field_to_update == "password": # change name only right before SQL command
-            field_to_update = "hashed_password"
-            field_new_value = self.ph.hash(plain_field_value)
-
-        sql_cmd = f"UPDATE users SET {field_to_update} = '{field_new_value}' WHERE {look_up_method} = '{look_up_value}'"
-
-        self.cursor.execute(sql_cmd)
+        self.cursor.execute(sql_cmd).fetchone()
         self.conn.commit()
 
-        print (f"Successfully updated `{'password' if field_to_update=='hashed_password' else field_to_update}` TO `{plain_field_value}` \n for user whose `{look_up_method}` IS `{look_up_value}` ") # FIXME: The if statement is ugly. 
-        
-        
+        print (f"Successfully updated `{field_to_update}` TO `{plain_field_value}` \n for user whose `{look_up_method}` IS `{look_up_value}` ")
+
+
     def list_users(self):
         # get schema of the table users
         self.cursor.execute("PRAGMA table_info(users)")
@@ -134,7 +137,7 @@ class UserUtils:
             user_name = input("User name (for display only, not as credential) for the user: ")
 
         hashed_password = self.ph.hash(password)
-        user_id = uuid.uuid4().hex        
+        user_id = uuid.uuid4().hex
         self.cursor.execute("INSERT INTO users (user_id, user_name, email, hashed_password) VALUES (?, ?, ?, ?)",
                             (user_id, user_name, email, hashed_password))
         self.conn.commit()
@@ -157,7 +160,7 @@ class UserUtils:
 
     # def apply(self, csv_path: str, destructive: bool):
     #     """Import users from a CSV file into SQLite database.
-    #     Disabled as of Jan 13, 2025. 
+    #     Disabled as of Jan 13, 2025.
     #     """
     #     csv_fp = open(csv_path, newline="")
     #     reader = csv.DictReader(csv_fp)
@@ -196,11 +199,11 @@ class UserUtils:
 def main():
     main_parser = argparse.ArgumentParser(description="Manage users")
     main_parser.add_argument("--user_db", type=str, help="Path to SQLite database storing user info", default="./users.sqlite")
-    
+
     user_commands_parser = main_parser.add_subparsers(dest="command", required=True)
 
     user_commands_parser.add_parser("list", help="List users")
-    
+
     new_parser = user_commands_parser.add_parser("new", help="Create a new user")
     new_parser.add_argument("-e", "--email", type=str, help="Email of the user. Must be unique. For login.")
     new_parser.add_argument("-p", "--password", type=str, help="Password of the user. Leave empty for a random one.")
