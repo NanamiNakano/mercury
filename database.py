@@ -165,10 +165,10 @@ class Database:
         print("Open db at ", mercury_db_path)
         version = mercury_db.execute("SELECT value FROM config WHERE key = 'version'").fetchone()
         if version is None:
-            print("Can not determine database version.")
+            print("Cannot find Mercury version in the database. Please migrate the database.")
             exit(1)
         elif version[0] != __version__:
-                print("Database version mismatch. Please migrate the database.")
+                print (f"Mercury version mismatch between the code and the database file. The version in the database is {version[0]}, but the code version is {__version__}. Please migrate the database.")
                 exit(1)
         mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
                    annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
@@ -452,12 +452,6 @@ class Database:
         # self.vectara_client.delete_document(self.annotation_corpus_id, record_id)
         sql_cmd = "DELETE FROM annotations WHERE annot_id = ? AND annotator = ?"
         self.mercury_db.execute(sql_cmd, (int(record_id), annotator))
-        self.mercury_db.commit()
-
-    @database_lock()
-    def add_user(self, user_id: str, user_name: str):  # TODO: remove this method since now only admin can add user
-        sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
-        self.mercury_db.execute(sql_cmd, (user_id, user_name))
         self.mercury_db.commit()
 
     @database_lock()

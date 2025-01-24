@@ -140,14 +140,6 @@ async def get_labels() -> list:  # get all candidate labels for human annotators
     return labels
 
 
-@app.get("/user/new")  # please update the route name to be more meaningful, e.g., /user/new_user
-async def create_new_user():
-    user_id = uuid.uuid4().hex
-    user_name = "New User"
-    database.add_user(user_id, user_name)
-    return {"key": user_id, "name": user_name}
-
-
 @app.get("/user/me")
 async def get_user(token: Annotated[str, Depends(oauth2_scheme)], config: Config = Depends(get_config)) -> User:
     credentials_exception = HTTPException(
