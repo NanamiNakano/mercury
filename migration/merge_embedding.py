@@ -1,7 +1,8 @@
+import argparse
 import os
 import sqlite3
+
 import sqlite_vec
-import argparse
 
 
 class Migrator:
@@ -31,21 +32,51 @@ class Migrator:
         new_db_conn.close()
         self.old_db_cursor.execute("ATTACH DATABASE './temp.sqlite' AS temp1")
         # Copy unchanged tables
-        config_exist = self.old_db_cursor.execute("SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='config'").fetchone()
+        config_exist = self.old_db_cursor.execute(
+            "SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='config'").fetchone()
         if config_exist[0] == 1:
+            self.old_db_cursor.execute(
+                "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY UNIQUE , value TEXT)"
+            )
             self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS temp1.config AS SELECT * FROM main.config")
-        annotations_exist = self.old_db_cursor.execute("SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='annotations'").fetchone()
+
+        annotations_exist = self.old_db_cursor.execute(
+            "SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='annotations'").fetchone()
         if annotations_exist[0] == 1:
+            self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS temp1.annotations (\
+                annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                sample_id INTEGER, \
+                annot_spans TEXT, \
+                annotator TEXT, \
+                label TEXT, \
+                note TEXT)")
             self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS temp1.annotations AS SELECT * FROM main.annotations")
-        comments_exist = self.old_db_cursor.execute("SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='comments'").fetchone()
+
+        comments_exist = self.old_db_cursor.execute(
+            "SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='comments'").fetchone()
         if comments_exist[0] == 1:
+            self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS comments (\
+                comment_id INTEGER PRIMARY KEY AUTOINCREMENT,\
+                user_id TEXT NOT NULL,\
+                annot_id INTEGER NOT NULL,\
+                parent_id INTEGER,\
+                text TEXT NOT NULL,\
+                comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,\
+                FOREIGN KEY (annot_id) REFERENCES annotations (annot_id)\
+                )")
             self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS temp1.comments AS SELECT * FROM main.comments")
-        sample_meta_exist = self.old_db_cursor.execute("SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='sample_meta'").fetchone()
+
+        sample_meta_exist = self.old_db_cursor.execute(
+            "SELECT count(*) FROM main.sqlite_master WHERE type='table' AND name='sample_meta'").fetchone()
         if sample_meta_exist[0] == 1:
+            self.old_db_cursor.execute(
+                "CREATE TABLE IF NOT EXISTS sample_meta (sample_id INTEGER PRIMARY KEY, json_meta TEXT)"
+            )
             self.old_db_cursor.execute("CREATE TABLE IF NOT EXISTS temp1.sample_meta AS SELECT * FROM main.sample_meta")
 
         # Migrate chunks and embeddings
-        dimension = self.old_db_cursor.execute("SELECT value FROM main.config WHERE key = 'embedding_dimension'").fetchone()[0]
+        dimension = \
+            self.old_db_cursor.execute("SELECT value FROM main.config WHERE key = 'embedding_dimension'").fetchone()[0]
         if dimension is None:
             print("No embedding dimension found")
             return
