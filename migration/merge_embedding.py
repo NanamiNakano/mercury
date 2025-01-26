@@ -61,7 +61,7 @@ class Migrator:
                 "INSERT INTO temp1.chunks (chunk_id, text, text_type, sample_id, char_offset, chunk_offset, embedding) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (*metadata, old_embedding))
 
-        self.old_db_cursor.execute("INSERT OR REPLACE INTO temp1.config (key, value) VALUES ('version', '0.1.1')")
+        self.old_db_cursor.execute("UPDATE temp1.config SET value = '0.1.1' WHERE key = 'version'")
         self.old_conn.commit()
         self.old_db_cursor.execute("DETACH DATABASE temp1")
         os.remove(self.old_db_path)
