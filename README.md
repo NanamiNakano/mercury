@@ -11,7 +11,7 @@ Currently, Mercury only supports labeling inconsistencies between the source and
 
 ![Header](usage/selection_from_highlight.png)
 
-## Dependencies
+## Dependencies and setup
 
 > [!NOTE]
 > You need Python and Node.js.
@@ -22,7 +22,9 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 
 2. If you don't have `pnpm` installed, please install with `npm install -g pnpm` - you may need `sudo`. If you don't have `npm`, try `sudo apt install npm`.
 
-3. To use `sqlite-vec` via Python's built-in `sqlite3` module, you must have SQLite>3.41 (otherwise `LIMIT` or `k=?` will not work properly with `rowid IN (?)` for vector search) installed and ensure Python's built-in `sqlite3` module is built for SQLite>3.41. Note that Python's built-in `sqlite3` module uses its own binary library that is independent of the OS's SQLite. So upgrading the OS's SQLite will not upgrade Python's `sqlite3` module.
+3. Compile the frontend: `pnpm install && pnpm build`
+
+4. To use `sqlite-vec` via Python's built-in `sqlite3` module, you must have SQLite>3.41 (otherwise `LIMIT` or `k=?` will not work properly with `rowid IN (?)` for vector search) installed and ensure Python's built-in `sqlite3` module is built for SQLite>3.41. Note that Python's built-in `sqlite3` module uses its own binary library that is independent of the OS's SQLite. So upgrading the OS's SQLite will not upgrade Python's `sqlite3` module.
    To manually upgrade Python's `sqlite3` module to use SQLite>3.41, here are the steps: 
     * Download and compile SQLite>3.41.0 from source
          ```bash
@@ -48,7 +50,7 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
     * If you are using Mac and run into troubles, please follow
       SQLite-vec's [instructions](https://alexgarcia.xyz/sqlite-vec/python.html#updated-sqlite).
 
-4. To use `sqlite-vec` directly in `sqlite` prompt, simply [compile
+5. To use `sqlite-vec` directly in `sqlite` prompt, simply [compile
    `sqlite-vec` from source](https://alexgarcia.xyz/sqlite-vec/compiling.html) and load the compiled `vec0.o`. The usage
    can be found in the SQLite-vec's [README](https://github.com/asg017/sqlite-vec?tab=readme-ov-file#sample-usage).
 
@@ -58,13 +60,14 @@ Mercury uses [`sqlite-vec`](https://github.com/asg017/sqlite-vec) to store and s
 
    Run `python3 ingester.py -h` to see the options.
 
-   The ingester takes a CSV, JSON, or JSONL file and loads texts from two text columns (configurable via option `ingest_column_1` and `ingest_column_2` which default to `source` and `summary`) of the file. After ingestion, the data will be stored in the SQLite database, denoted as `MERCURY_DB` in the following steps.
+   The ingester takes a CSV, JSON, or JSONL file and loads texts from two text columns (configurable via option `ingest_column_1` and `ingest_column_2` which default to `source` and `summary`) of the file. After ingestion, the data will be stored in the SQLite database, denoted as `CORPUS_DB` in the following steps.
 
-2. `pnpm install && pnpm build` (You need to recompile the frontend each time the UI code changes.)
-3. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical labels.
-4. Generate and set a JWT secret key: `export SECRET_KEY=$(openssl rand -base64 32)`. You can rerun the command above to generate a new secret key when needed, especially when the old one is compromised. Note that changing the JWT token will log out all users. Optionally, you can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
-5. Administer the users: `python3 user_utils.py -h`. You need to create users before they can work on the annotation task. You can register new users, reset passwords, and delete users. User credentials are stored in a separate SQLite database, denoted as `USER_DB` in the following steps. 
-6. Start the Mercury annotation server: `python3 server.py --mercury_db {MERCURY_DB} --user_db {USER_DB}`. Be sure to set the candidate labels to choose from in the `labels.yaml` file.
+2. Manually set the labels for annotators to choose from in the `labels.yaml` file. Mercury supports hierarchical labels.
+3. Generate and set a JWT secret key: `export SECRET_KEY=$(openssl rand -base64 32)`. You can rerun the command above to generate a new secret key when needed, especially when the old one is compromised. Note that changing the JWT token will log out all users. Optionally, you can also set `EXPIRE_MINUTES` to change the expiration time of the JWT token. The default is 7 days (10080 minutes).
+4. Start the Mercury annotation server: `python3 server.py --corpus_db {CORPUS_DB} --user_db {USER_DB}`. 
+
+   Be sure to set the candidate labels to choose from in the `labels.yaml` file. The server will run on `http://localhost:8000` by default. The default `USER_DB`, namely `users.sqlite`, is distributed with the code repo with the default Email and password as `test@example.com` and `test`, respectively.
+5. **Optional** To add/update/list users in a `USER_DB`, see [User administration in Mercury](user_admin.md) for more details.
 
 The annotations are stored in the `annotations` table in a SQLite database (hardcoded name `mercury.sqlite`). See the
 section [`annotations` table](#annotations-table-the-human-annotations) for the schema.
