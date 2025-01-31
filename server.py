@@ -266,7 +266,7 @@ async def post_selections(task_index: int, selection: Selection):
         if not selection.from_summary
         else tasks[task_index]["summary"][selection.start: selection.end]
     )
-    id_ = tasks[task_index]["_id"]
+    # id_ = tasks[task_index]["_id"]
 
     # response = vectara_client.query(
     #     corpus_id=use_id,
@@ -328,7 +328,7 @@ async def post_selections(task_index: int, selection: Selection):
         ', '.join('?' for _ in chunk_ids_of_top_k))
     search_chunk_ids = [row[0] for row in vector_search_result]
     response = database.mercury_db.execute(sql_cmd, search_chunk_ids).fetchall()
-    # [(1, 'This is a test.', 0, 14), (2, 'This is a test.', 15, 14)]
+    # [(1, 'This is a test.', 0), (2, 'This is a test.', 15)]
 
     # organize into a dict of keys "score", "offset", "len", "to_doc"
     # and append to a list of selections
