@@ -119,7 +119,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
         await onFetchServerSection()
       })
     }
-  }, [editorStore.initiator, editorStore.editable])
+  }, [editorStore.initiator, editorStore.editable, onFetchServerSection])
 
   useEffect(() => {
     let ignore = false
