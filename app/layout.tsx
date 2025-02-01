@@ -1,6 +1,7 @@
 "use client"
 import { FluentProvider, webLightTheme } from "@fluentui/react-components"
 import "react-contexify/ReactContexify.css"
+import "@/app/globals.css"
 
 export default function RootLayout({ children }) {
   return (
