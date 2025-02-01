@@ -10,6 +10,7 @@ import sqlite3
 import sqlite_vec
 
 from dotenv import load_dotenv
+from version import __version__
 
 
 class OldLabelData(TypedDict):  # readable by frontend
@@ -162,6 +163,13 @@ class Database:
         # prepare the database
         mercury_db = sqlite3.connect(mercury_db_path)
         print("Open db at ", mercury_db_path)
+        version = mercury_db.execute("SELECT value FROM config WHERE key = 'version'").fetchone()
+        if version is None:
+            print("Cannot find Mercury version in the database. Please migrate the database.")
+            exit(1)
+        elif version[0] != __version__:
+                print (f"Mercury version mismatch between the code and the database file. The version in the database is {version[0]}, but the code version is {__version__}. Please migrate the database.")
+                exit(1)
         mercury_db.execute("CREATE TABLE IF NOT EXISTS annotations (\
                    annot_id INTEGER PRIMARY KEY AUTOINCREMENT, \
                    sample_id INTEGER, \
@@ -447,12 +455,6 @@ class Database:
         self.mercury_db.commit()
 
     @database_lock()
-    def add_user(self, user_id: str, user_name: str):  # TODO: remove this method since now only admin can add user
-        sql_cmd = "INSERT INTO users (user_id, user_name) VALUES (?, ?)"
-        self.mercury_db.execute(sql_cmd, (user_id, user_name))
-        self.mercury_db.commit()
-
-    @database_lock()
     def change_user_name(self, user_id: str, user_name: str):
         self.user_db.execute("UPDATE users SET user_name = ? WHERE user_id = ?", (user_name, user_id))
         self.user_db.commit()
@@ -690,6 +692,7 @@ if __name__ == "__main__":
     parser.add_argument("--mercury_db_path", type=str, required=True, help="Path to the Mercury SQLite database")
     parser.add_argument("--user_db_path", type=str, required=True, help="Path to the user SQLite database")
     parser.add_argument("--dump_file", type=str, required=True, default="mercury_annotations.json")
+    parser.add_argument("--version", action="version", version="__version__")
     args = parser.parse_args()
 
     # db = Database(args.annotation_corpus_id)
