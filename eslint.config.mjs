@@ -9,5 +9,6 @@ export default antfu({
   rules: {
     "node/prefer-global/process": "off",
     "ts/ban-ts-comment": "off",
+    "style/brace-style": ["warn", "1tbs", { allowSingleLine: true }],
   },
 })

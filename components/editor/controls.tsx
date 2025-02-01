@@ -27,8 +27,7 @@ export default function Controls() {
       downloadLink.download = "label.json"
       downloadLink.click()
       URL.revokeObjectURL(downloadUrl)
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Failed to export JSON:", error)
     }
   }, [])
@@ -37,8 +36,7 @@ export default function Controls() {
     const url = `${window.location.origin}${window.location.pathname}?sample=${indexStore.index}`
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(url)
-    }
-    else {
+    } else {
       const textArea = document.createElement("textarea")
       textArea.value = url
       textArea.style.position = "absolute"
@@ -49,11 +47,9 @@ export default function Controls() {
 
       try {
         document.execCommand("copy")
-      }
-      catch (error) {
+      } catch (error) {
         console.error(error)
-      }
-      finally {
+      } finally {
         textArea.remove()
       }
     }

@@ -33,8 +33,7 @@ export default function Login() {
       const success = await login(formData.get("email"), formData.get("password"))
       if (success) {
         router.push("/")
-      }
-      else {
+      } else {
         dispatchToast(
           <Toast>
             <ToastTitle>User does not exist or mismatched email and password</ToastTitle>

@@ -13,8 +13,7 @@ function mergeArrays(a: SectionResponse, b: SectionResponseSlice): SectionRespon
     if (start >= bStart && end <= bEnd) {
       deletes.push(i)
       i++
-    }
-    else if (start <= bEnd && end >= bStart) {
+    } else if (start <= bEnd && end >= bStart) {
       if (start < bStart) {
         c[i][1] = bStart - 1
       }
@@ -22,8 +21,7 @@ function mergeArrays(a: SectionResponse, b: SectionResponseSlice): SectionRespon
         c[i][0] = bEnd + 1
       }
       i++
-    }
-    else {
+    } else {
       i++
     }
   }

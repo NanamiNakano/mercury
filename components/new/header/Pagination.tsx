@@ -18,8 +18,7 @@ export default function Pagination() {
     const page = Number.parseInt(pageInput, 10)
     if (!Number.isNaN(page) && page >= 1 && page <= indexStore.max + 1) {
       indexStore.setIndex(page - 1)
-    }
-    else {
+    } else {
       setPageInput(String(indexStore.index + 1))
     }
   }
@@ -32,8 +31,7 @@ export default function Pagination() {
     if (e.key === "Enter") {
       commitPageChange()
       setIsEditing(false)
-    }
-    else if (e.key === "Escape") {
+    } else if (e.key === "Escape") {
       setPageInput(String(indexStore.index + 1))
       setIsEditing(false)
     }

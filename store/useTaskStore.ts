@@ -19,8 +19,7 @@ export const useTaskStore = create<TaskState>()(set => ({
         return
       }
       set({ current: task })
-    }
-    catch (e) {
+    } catch (e) {
       set({ current: null })
       console.warn(e)
       throw e

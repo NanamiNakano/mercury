@@ -44,12 +44,10 @@ export default function Chat({ id }: { id: number }) {
         setMessages(sortedData)
         setMessages(data)
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       setHasError(true)
-    }
-    finally {
+    } finally {
       debounceSetIsLoading(false)
     }
   }, [id])
@@ -77,8 +75,7 @@ export default function Chat({ id }: { id: number }) {
       patchComment(edit, message).then(() => {
         onFetch()
       })
-    }
-    else {
+    } else {
       commitComment(message).then(() => {
         onFetch()
       })
@@ -101,8 +98,7 @@ export default function Chat({ id }: { id: number }) {
       if (replyTo) {
         return `Replying to #${replyTo}`
       }
-    }
-    else if (editing) {
+    } else if (editing) {
       if (edit) {
         return `Editing #${edit}`
       }

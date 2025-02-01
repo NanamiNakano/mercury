@@ -16,13 +16,14 @@ export const useUserStore = create<UserState>()(set => ({
     try {
       const user = await getUserMe()
       set({ user })
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       throw e
     }
   },
-  setName: (name: string) => set(produce((state: UserState) => { state.user.name = name })),
+  setName: (name: string) => set(produce((state: UserState) => {
+    state.user.name = name
+  })),
 }))
 
 export const useTrackedUserStore = createTrackedSelector(useUserStore)

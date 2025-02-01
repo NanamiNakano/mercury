@@ -76,8 +76,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
           return
         }
         set({ serverSection: response })
-      }
-      else if (get().initiator === "summary") {
+      } else if (get().initiator === "summary") {
         const response = await selectText(index, get().summarySelection)
         if (isRequestError(response)) {
           handleRequestError(response)
@@ -85,8 +84,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
         set({ serverSection: response })
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       throw e
     }
@@ -98,8 +96,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     try {
       const history = await getTaskHistory(labelIndex)
       set({ history })
-    }
-    catch (e) {
+    } catch (e) {
       set({ history: [] })
       console.warn(e)
       throw e
@@ -109,8 +106,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     if (viewing === null) {
       state.editable = true
       state.viewingID = null
-    }
-    else {
+    } else {
       state.sourceSelection.start = viewing.source_start
       state.sourceSelection.end = viewing.source_end
       state.summarySelection.start = viewing.summary_start

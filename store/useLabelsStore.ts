@@ -13,8 +13,7 @@ export const useLabelsStore = create<LabelsState>()(set => ({
     try {
       const labels = await getAllLabels()
       set({ labels })
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       throw e
     }

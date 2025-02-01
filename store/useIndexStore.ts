@@ -28,8 +28,7 @@ export const useIndexStore = create<IndexState>()(set => ({
         if (state.index > state.max)
           state.index = 0
       }))
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       throw e
     }

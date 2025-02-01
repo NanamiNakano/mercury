@@ -55,8 +55,7 @@ export default function ExistingPane() {
     debounceSetIsLoading(true)
     try {
       await editorStore.updateHistory(indexStore.index)
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       setHasError(true)
     }

@@ -59,8 +59,7 @@ function makeUsers(slices: DumpSlice[]): Users {
     for (const annotation of slice.annotations) {
       if (annotation.annotator in users) {
         users[annotation.annotator].count++
-      }
-      else {
+      } else {
         users[annotation.annotator] = {
           count: 1,
           name: annotation.annotator_name,

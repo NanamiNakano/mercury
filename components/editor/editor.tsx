@@ -54,8 +54,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
     debounceSetIsLoading(true)
     try {
       await taskStore.fetch(indexStore.index)
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e)
       setHasError(true)
     }
@@ -65,8 +64,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   const onFetchServerSection = useCallback(async () => {
     try {
       await editorStore.fetchServerSection(indexStore.index)
-    }
-    catch (e) {
+    } catch (e) {
       dispatchToast(
         <Toast>
           <ToastTitle
@@ -101,8 +99,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
     if (range.toString().trim() === "") {
       if (target === "source") {
         editorStore.clearSourceSelection()
-      }
-      else {
+      } else {
         editorStore.clearSummarySelection()
       }
       return
@@ -113,8 +110,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
 
     if (target === "source") {
       editorStore.setSourceSelection(start, end)
-    }
-    else {
+    } else {
       editorStore.setSummarySelection(start, end)
     }
 
@@ -173,8 +169,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
           message="Check all types that apply below."
         />,
       )
-    }
-    else {
+    } else {
       segments.push(
         <span style={{
           backgroundColor: "#79c5fb",
@@ -272,8 +267,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
                   }).then(() => {
                     editorStore.updateHistory(indexStore.index)
                   })
-                }
-                else {
+                } else {
                   popUpStore.clearAll()
                 }
               }}

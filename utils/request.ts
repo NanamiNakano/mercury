@@ -124,8 +124,7 @@ async function labelText(taskIndex: number, req: LabelRequest, single?: "source"
       if (single === "source") {
         draft.summary_start = -1
         draft.summary_end = -1
-      }
-      else {
+      } else {
         draft.source_start = -1
         draft.source_end = -1
       }
