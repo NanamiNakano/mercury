@@ -7,6 +7,12 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <title>Mercury</title>
+        {process.env.NODE_ENV === "development" && (
+          <script
+            src="https://unpkg.com/react-scan/dist/auto.global.js"
+            async
+          />
+        )}
       </head>
       <body
         style={{
