@@ -34,7 +34,6 @@
     "scheduler": "^0.23.2",
     "tailwind-merge": "^3.0.1",
     "tailwindcss": "^4.0.2",
-    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
@@ -59,6 +58,7 @@
     "eslint-plugin-react-refresh": "^0.4.18",
     "eslint-plugin-storybook": "^0.11.2",
     "storybook": "^8.5.2",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.4.3"
   },
   "eslintConfig": {

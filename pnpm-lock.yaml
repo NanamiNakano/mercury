@@ -77,9 +77,6 @@ importers:
       tailwindcss:
         specifier: ^4.0.2
         version: 4.0.2
-      tailwindcss-animate:
-        specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@4.0.2)
       zustand:
         specifier: ^5.0.1
         version: 5.0.1(@types/react@18.2.33)(immer@10.1.1)(react@18.2.0)
@@ -147,6 +144,9 @@ importers:
       storybook:
         specifier: ^8.5.2
         version: 8.5.2
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7(tailwindcss@4.0.2)
       typescript:
         specifier: ^5.4.3
         version: 5.4.3
