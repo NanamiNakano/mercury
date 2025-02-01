@@ -9,6 +9,7 @@ interface IndexState {
   previous: () => void
   next: () => void
   setIndex: (index: number) => void
+  setMax: (max: number) => void
   fetchMax: () => Promise<void>
 }
 
@@ -18,6 +19,7 @@ export const useIndexStore = create<IndexState>()(set => ({
   previous: () => set(state => ({ index: state.index - 1 })),
   next: () => set(state => ({ index: state.index + 1 })),
   setIndex: (index: number) => set({ index }),
+  setMax: (max: number) => set({ max }),
   fetchMax: async () => {
     try {
       const task = await getAllTasksLength()
