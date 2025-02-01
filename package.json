@@ -21,14 +21,14 @@
     "react": "^18.2.0",
     "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
-    "react-table-column-resizer": "^1.2.3",
+    "react-table-column-resizer": "^1.2.4",
     "react-tracked": "^2.0.1",
     "scheduler": "^0.23.2",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.1.0",
-    "@eslint-react/eslint-plugin": "^1.24.1",
+    "@eslint-react/eslint-plugin": "^1.26.0",
     "@types/lodash": "^4.17.0",
     "@types/node": "20.8.10",
     "@types/rangy": "^0.0.38",
@@ -37,6 +37,6 @@
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.18",
-    "typescript": "^5.2.2"
+    "typescript": "^5.4.3"
   }
 }
