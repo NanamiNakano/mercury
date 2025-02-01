@@ -1,8 +1,8 @@
-import { create } from "zustand"
-import { User } from "../utils/types"
-import { getUserMe } from "../utils/request"
-import { createTrackedSelector } from "react-tracked"
+import type { User } from "../utils/types"
 import { produce } from "immer"
+import { createTrackedSelector } from "react-tracked"
+import { create } from "zustand"
+import { getUserMe } from "../utils/request"
 
 interface UserState {
   user: User
@@ -10,13 +10,14 @@ interface UserState {
   setName: (name: string) => void
 }
 
-export const useUserStore = create<UserState>()((set) => ({
+export const useUserStore = create<UserState>()(set => ({
   user: {} as User,
   fetch: async () => {
     try {
       const user = await getUserMe()
       set({ user })
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e)
       throw e
     }

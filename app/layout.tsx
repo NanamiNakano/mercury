@@ -4,22 +4,22 @@ import "react-contexify/ReactContexify.css"
 
 export default function RootLayout({ children }) {
   return (
-      <html lang="en">
+    <html lang="en">
       <head>
         <title>Mercury</title>
       </head>
       <body
-          style={{
-            margin: "0",
-            height: "100vh",
-            position: "relative",
-          }}
+        style={{
+          margin: "0",
+          height: "100vh",
+          position: "relative",
+        }}
       >
-      <FluentProvider theme={webLightTheme}>
-        <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
-      </FluentProvider>
+        <FluentProvider theme={webLightTheme}>
+          <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
+        </FluentProvider>
       </body>
-      </html>
+    </html>
   )
 }
 

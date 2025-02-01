@@ -1,16 +1,16 @@
-import { Comment } from "../utils/types"
-import { Item, Menu, useContextMenu } from "react-contexify"
+import type { Comment } from "../utils/types"
 import { useCallback } from "react"
+import { Item, Menu, useContextMenu } from "react-contexify"
 import { deleteComment } from "../utils/request"
 
 export default function Message({ data, setReplyTo, setReplying, onRefresh, setEdit, setEditing, setValue }: {
-  data: Comment,
-  setReplyTo: (id: number) => void,
-  setReplying: (replying: boolean) => void,
+  data: Comment
+  setReplyTo: (id: number) => void
+  setReplying: (replying: boolean) => void
   onRefresh: () => void
-  setEdit: (id: number) => void,
-  setEditing: (editing: boolean) => void,
-  setValue: (value: string) => void,
+  setEdit: (id: number) => void
+  setEditing: (editing: boolean) => void
+  setValue: (value: string) => void
 }) {
   const { show } = useContextMenu({
     id: data.comment_id,
@@ -44,33 +44,44 @@ export default function Message({ data, setReplyTo, setReplying, onRefresh, setE
   }, [])
 
   return (
-      <>
-        <div style={{
+    <>
+      <div
+        style={{
           paddingBottom: "4px",
-        }} onContextMenu={handleContextMenu}>
-          <div>
-            <strong>{data.username}</strong>
-          </div>
-          <div style={{
-            overflowWrap: "break-word",
-          }}>
-            {data.text}
-          </div>
-          <div style={{
-            fontSize: "0.8em",
-            color: "gray",
-          }}>
-            {new Date(data.comment_time).toLocaleString()} #{data.comment_id}
-          </div>
+        }}
+        onContextMenu={handleContextMenu}
+      >
+        <div>
+          <strong>{data.username}</strong>
         </div>
-        <Menu style={{
+        <div style={{
+          overflowWrap: "break-word",
+        }}
+        >
+          {data.text}
+        </div>
+        <div style={{
+          fontSize: "0.8em",
+          color: "gray",
+        }}
+        >
+          {new Date(data.comment_time).toLocaleString()}
+          {" "}
+          #
+          {data.comment_id}
+        </div>
+      </div>
+      <Menu
+        style={{
           position: "unset",
           maxWidth: "30px",
-        }} id={data.comment_id}>
-          <Item onClick={onReply}>Reply</Item>
-          <Item onClick={onDelete}>Delete</Item>
-          <Item onClick={onEdit}>Edit</Item>
-        </Menu>
-      </>
+        }}
+        id={data.comment_id}
+      >
+        <Item onClick={onReply}>Reply</Item>
+        <Item onClick={onDelete}>Delete</Item>
+        <Item onClick={onEdit}>Edit</Item>
+      </Menu>
+    </>
   )
 }

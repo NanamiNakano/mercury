@@ -1,30 +1,33 @@
 "use client"
 
-import { useTrackedEditorStore } from "../../store/useEditorStore"
-import { useTrackedTaskStore } from "../../store/useTaskStore"
-import { type ReactNode, useCallback, useEffect, useMemo, useState, useTransition } from "react"
-import { Allotment } from "allotment"
-import "allotment/dist/style.css"
 import {
-  Body1, Button, Card,
+  Body1,
+  Button,
+  Card,
   CardHeader,
   Text,
   Toast,
-  ToastTitle, ToastTrigger,
+  ToastTitle,
+  ToastTrigger,
 } from "@fluentui/react-components"
-import ExistingPane from "./existing"
-import { useTrackedIndexStore } from "../../store/useIndexStore"
-import { HasError, Loading } from "./fallback"
+import { Allotment } from "allotment"
 import _ from "lodash"
-import { labelText, updateRecord } from "../../utils/request"
-import Tooltip from "../tooltip"
-import { useTrackedLabelsStore } from "../../store/useLabelsStore"
 import rangy from "rangy"
-import "rangy/lib/rangy-textrange"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { useTrackedEditorStore } from "../../store/useEditorStore"
+import { useTrackedIndexStore } from "../../store/useIndexStore"
+import { useTrackedLabelsStore } from "../../store/useLabelsStore"
+import { useTrackedPopupStore } from "../../store/usePopupStore"
+import { useTrackedTaskStore } from "../../store/useTaskStore"
 import { getColor, normalizationScore } from "../../utils/color"
 import { processServerSection } from "../../utils/processServerSection"
-import PopupEditor from "./popup";
-import { useTrackedPopupStore } from "../../store/usePopupStore";
+import { labelText, updateRecord } from "../../utils/request"
+import Tooltip from "../tooltip"
+import ExistingPane from "./existing"
+import { HasError, Loading } from "./fallback"
+import PopupEditor from "./popup"
+import "allotment/dist/style.css"
+import "rangy/lib/rangy-textrange"
 
 export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   const editorStore = useTrackedEditorStore()
@@ -69,29 +72,32 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
     }
     catch (e) {
       dispatchToast(
-          <Toast>
-            <ToastTitle
-                action={
-                  <ToastTrigger>
-                    <Button onClick={onFetchServerSection}>
-                      Retry
-                    </Button>
-                  </ToastTrigger>
-                }
-            >
-              Fail fetching server section
-            </ToastTitle>
-          </Toast>,
-          { intent: "error" },
+        <Toast>
+          <ToastTitle
+            action={(
+              <ToastTrigger>
+                <Button onClick={onFetchServerSection}>
+                  Retry
+                </Button>
+              </ToastTrigger>
+            )}
+          >
+            Fail fetching server section
+          </ToastTitle>
+        </Toast>,
+        { intent: "error" },
       )
     }
   }, [indexStore.index])
 
   const handleMouseUp = useCallback((target: "source" | "summary") => {
-    if (typeof window === "undefined") return
+    if (typeof window === "undefined")
+      return
     const selection = rangy.getSelection()
-    if (!selection || selection.rangeCount <= 0) return
-    if (!editorStore.editable) return
+    if (!selection || selection.rangeCount <= 0)
+      return
+    if (!editorStore.editable)
+      return
     const range = selection.getRangeAt(0)
 
     if (range.toString().trim() === "") {
@@ -136,47 +142,52 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   function renderHighlight(target: "source" | "summary") {
     const selection = target === "source" ? editorStore.sourceSelection : editorStore.summarySelection
     const text = target === "source" ? taskStore.current.doc : taskStore.current.sum
-    if (selection.start === -1) return text
+    if (selection.start === -1)
+      return text
 
     const segments = []
-    if (selection.start > 0) segments.push(text.slice(0, selection.start))
+    if (selection.start > 0)
+      segments.push(text.slice(0, selection.start))
     if (editorStore.editable) {
       segments.push(
-          <Tooltip
-              start={selection.start}
-              end={selection.end}
-              key={`slice-${selection.start}-${selection.end}`}
-              backgroundColor={editorStore.initiator === target ? "#79c5fb" : "#85e834"}
-              textColor="black"
-              text={text.slice(selection.start, selection.end)}
-              score={editorStore.initiator === target ? null : 2}
-              labels={labelsStore.labels}
-              onLabel={async (label, note) => {
-                await labelText(indexStore.index, {
-                  source_start: editorStore.sourceSelection.start,
-                  source_end: editorStore.sourceSelection.end,
-                  summary_start: editorStore.summarySelection.start,
-                  summary_end: editorStore.summarySelection.end,
-                  consistent: label,
-                  note: note,
-                }, editorStore.initiator === target ? target : null)
-                editorStore.updateHistory(indexStore.index).then(() => {
-                  editorStore.clearAllSelection()
-                })
-              }}
-              message="Check all types that apply below."
-          />,
-      )
-    } else {
-      segments.push(
-      <span style={{
-        backgroundColor: "#79c5fb"
-      }}>
-        {text.slice(selection.start, selection.end)}
-      </span>
+        <Tooltip
+          start={selection.start}
+          end={selection.end}
+          key={`slice-${selection.start}-${selection.end}`}
+          backgroundColor={editorStore.initiator === target ? "#79c5fb" : "#85e834"}
+          textColor="black"
+          text={text.slice(selection.start, selection.end)}
+          score={editorStore.initiator === target ? null : 2}
+          labels={labelsStore.labels}
+          onLabel={async (label, note) => {
+            await labelText(indexStore.index, {
+              source_start: editorStore.sourceSelection.start,
+              source_end: editorStore.sourceSelection.end,
+              summary_start: editorStore.summarySelection.start,
+              summary_end: editorStore.summarySelection.end,
+              consistent: label,
+              note,
+            }, editorStore.initiator === target ? target : null)
+            editorStore.updateHistory(indexStore.index).then(() => {
+              editorStore.clearAllSelection()
+            })
+          }}
+          message="Check all types that apply below."
+        />,
       )
     }
-    if (selection.end < text.length) segments.push(text.slice(selection.end))
+    else {
+      segments.push(
+        <span style={{
+          backgroundColor: "#79c5fb",
+        }}
+        >
+          {text.slice(selection.start, selection.end)}
+        </span>,
+      )
+    }
+    if (selection.end < text.length)
+      segments.push(text.slice(selection.end))
     return segments
   }
 
@@ -186,7 +197,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
     const processedServerSection = processServerSection(editorStore.serverSection, toDoc)
 
     const normalizedColors = normalizationScore(editorStore.serverSection.map(
-        (section) => section.score,
+      section => section.score,
     ))
 
     const segments = []
@@ -200,34 +211,35 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
       const sectionEnd = section.offset + section.len
 
       segments.push(
-          <Tooltip
-              start={sectionStart}
-              end={sectionEnd}
-              key={`slice-${sectionStart}-${sectionEnd}`}
-              backgroundColor={getColor(normalizedColors[section.index])}
-              textColor="black"
-              text={text.slice(sectionStart, sectionEnd)}
-              score={section.score}
-              labels={labelsStore.labels}
-              onLabel={async (label, note) => {
-                await labelText(indexStore.index, {
-                  source_start: editorStore.initiator === "source" ? editorStore.sourceSelection.start : sectionStart,
-                  source_end: editorStore.initiator === "source" ? editorStore.sourceSelection.end : sectionEnd,
-                  summary_start: editorStore.initiator === "summary" ? editorStore.summarySelection.start : sectionStart,
-                  summary_end: editorStore.initiator === "summary" ? editorStore.summarySelection.end : sectionEnd,
-                  consistent: label,
-                  note: note,
-                })
-                editorStore.updateHistory(indexStore.index).then(() => {
-                  editorStore.clearAllSelection()
-                })
-              }}
-              message="Check all types that apply below."
-          />,
+        <Tooltip
+          start={sectionStart}
+          end={sectionEnd}
+          key={`slice-${sectionStart}-${sectionEnd}`}
+          backgroundColor={getColor(normalizedColors[section.index])}
+          textColor="black"
+          text={text.slice(sectionStart, sectionEnd)}
+          score={section.score}
+          labels={labelsStore.labels}
+          onLabel={async (label, note) => {
+            await labelText(indexStore.index, {
+              source_start: editorStore.initiator === "source" ? editorStore.sourceSelection.start : sectionStart,
+              source_end: editorStore.initiator === "source" ? editorStore.sourceSelection.end : sectionEnd,
+              summary_start: editorStore.initiator === "summary" ? editorStore.summarySelection.start : sectionStart,
+              summary_end: editorStore.initiator === "summary" ? editorStore.summarySelection.end : sectionEnd,
+              consistent: label,
+              note,
+            })
+            editorStore.updateHistory(indexStore.index).then(() => {
+              editorStore.clearAllSelection()
+            })
+          }}
+          message="Check all types that apply below."
+        />,
       )
       lastIndex = section.offset + section.len
     }
-    if (lastIndex < text.length) segments.push(text.slice(lastIndex))
+    if (lastIndex < text.length)
+      segments.push(text.slice(lastIndex))
     return segments
   }
 
@@ -241,32 +253,76 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
   }
 
   return (
-      <div
-          style={{
-            height: "80vh",
-            margin: "auto",
-          }}
-      >
-        {isLoading && <Loading />}
-        {hasError && <HasError />}
-        {!isLoading && !hasError && taskStore.current &&
-          <Allotment>
-            <Allotment.Pane>
-              <PopupEditor
-                  open={popUpStore.editingID !== null}
-                  onEditedDone={async (state, labelData) => {
-                    if (state) {
-                      updateRecord(indexStore.index, popUpStore.editingID, labelData).then(() => {
-                        popUpStore.clearAll()
-                      }).then(() => {
-                        editorStore.updateHistory(indexStore.index)
-                      })
-                    } else {
-                      popUpStore.clearAll()
-                    }
-                  }}
-                  labels={labelsStore.labels}
-              />
+    <div
+      style={{
+        height: "80vh",
+        margin: "auto",
+      }}
+    >
+      {isLoading && <Loading />}
+      {hasError && <HasError />}
+      {!isLoading && !hasError && taskStore.current
+      && (
+        <Allotment>
+          <Allotment.Pane>
+            <PopupEditor
+              open={popUpStore.editingID !== null}
+              onEditedDone={async (state, labelData) => {
+                if (state) {
+                  updateRecord(indexStore.index, popUpStore.editingID, labelData).then(() => {
+                    popUpStore.clearAll()
+                  }).then(() => {
+                    editorStore.updateHistory(indexStore.index)
+                  })
+                }
+                else {
+                  popUpStore.clearAll()
+                }
+              }}
+              labels={labelsStore.labels}
+            />
+            <div
+              style={{
+                overflowY: "scroll",
+                height: "100%",
+              }}
+            >
+              <Card
+                style={{
+                  userSelect: isSuspendingSource ? "none" : "auto",
+                  color: isSuspendingSource ? "gray" : "black",
+                }}
+              >
+                <CardHeader
+                  header={(
+                    <Body1>
+                      <strong>Source</strong>
+                    </Body1>
+                  )}
+                />
+                {(
+                  isSuspendingSource
+                    ? <SuspendText text={taskStore.current.doc} />
+                    : (
+                        <Text
+                          id="source"
+                          as="p"
+                          style={{
+                            whiteSpace: "pre-wrap",
+                          }}
+                          onMouseUp={(_) => {
+                            handleMouseUp("source")
+                          }}
+                        >
+                          {render("source")}
+                        </Text>
+                      )
+                )}
+              </Card>
+            </div>
+          </Allotment.Pane>
+          <Allotment.Pane>
+            <Allotment vertical>
               <div
                 style={{
                   overflowY: "scroll",
@@ -275,92 +331,53 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
               >
                 <Card
                   style={{
-                    userSelect: isSuspendingSource ? "none" : "auto",
-                    color: isSuspendingSource ? "gray" : "black",
+                    userSelect: isSuspendingSummary ? "none" : "auto",
+                    color: isSuspendingSummary ? "gray" : "black",
                   }}
                 >
                   <CardHeader
-                    header={
+                    header={(
                       <Body1>
-                        <strong>Source</strong>
+                        <strong>Summary</strong>
                       </Body1>
-                    }
+                    )}
                   />
-                  {(
-                      isSuspendingSource ?
-                          <SuspendText text={taskStore.current.doc} />
-                          :
+                  {
+                    isSuspendingSummary
+                      ? <SuspendText text={taskStore.current.sum} />
+                      : (
                           <Text
-                              id="source"
-                              as="p"
-                              style={{
-                                whiteSpace: "pre-wrap",
-                              }}
-                              onMouseUp={_ => {
-                                handleMouseUp("source")
-                              }}
-                          >
-                            {render("source")}
-                          </Text>
-                  )}
-                </Card>
-              </div>
-            </Allotment.Pane>
-            <Allotment.Pane>
-              <Allotment vertical>
-                <div
-                  style={{
-                    overflowY: "scroll",
-                    height: "100%",
-                  }}
-                >
-                  <Card
-                    style={{
-                      userSelect: isSuspendingSummary ? "none" : "auto",
-                      color: isSuspendingSummary ? "gray" : "black",
-                    }}
-                  >
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Summary</strong>
-                        </Body1>
-                      }
-                    />
-                    {
-                      isSuspendingSummary ?
-                          <SuspendText text={taskStore.current.sum} />
-                          :
-                          <Text
-                              id="summary"
-                              as="p"
-                              style={{
-                                whiteSpace: "pre-wrap",
-                              }}
-                              onMouseUp={_ => {
-                                handleMouseUp("summary")
-                              }}
+                            id="summary"
+                            as="p"
+                            style={{
+                              whiteSpace: "pre-wrap",
+                            }}
+                            onMouseUp={(_) => {
+                              handleMouseUp("summary")
+                            }}
                           >
                             {render("summary")}
                           </Text>
-                    }
-                  </Card>
-                </div>
-                <ExistingPane />
-              </Allotment>
-            </Allotment.Pane>
-          </Allotment>
-        }
-      </div>
+                        )
+                  }
+                </Card>
+              </div>
+              <ExistingPane />
+            </Allotment>
+          </Allotment.Pane>
+        </Allotment>
+      )}
+    </div>
   )
 }
 
 function SuspendText({ text }: { text: string }) {
   return (
-      <Text
-          id="summary"
-          as="p">
-        {text}
-      </Text>
+    <Text
+      id="summary"
+      as="p"
+    >
+      {text}
+    </Text>
   )
 }

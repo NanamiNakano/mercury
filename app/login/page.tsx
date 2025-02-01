@@ -5,13 +5,16 @@ import {
   Field,
   Input,
   makeResetStyles,
-  Title1, Toast, Toaster, ToastTitle,
+  Title1,
+  Toast,
+  Toaster,
+  ToastTitle,
   tokens,
   useId,
   useToastController,
 } from "@fluentui/react-components"
-import { login } from "../../utils/request"
 import { useRouter } from "next/navigation"
+import { login } from "../../utils/request"
 
 const useStackClassName = makeResetStyles({
   display: "flex",
@@ -30,32 +33,33 @@ export default function Login() {
       const success = await login(formData.get("email"), formData.get("password"))
       if (success) {
         router.push("/")
-      } else {
+      }
+      else {
         dispatchToast(
-            <Toast>
-              <ToastTitle>User does not exist or mismatched email and password</ToastTitle>
-            </Toast>,
-            { position: "bottom-start", intent: "error" },
+          <Toast>
+            <ToastTitle>User does not exist or mismatched email and password</ToastTitle>
+          </Toast>,
+          { position: "bottom-start", intent: "error" },
         )
       }
     }
   }
 
   return (
-      <>
-        <Toaster toasterId={toasterId} />
-        <Title1>Login</Title1>
-        <form className={useStackClassName()} action={formAction}>
-          <Field label="Email" required>
-            <Input name="email" />
-          </Field>
-          <Field label="Password" required>
-            <Input name="password" />
-          </Field>
-          <Button appearance="primary" type="submit">
-            Login
-          </Button>
-        </form>
-      </>
+    <>
+      <Toaster toasterId={toasterId} />
+      <Title1>Login</Title1>
+      <form className={useStackClassName()} action={formAction}>
+        <Field label="Email" required>
+          <Input name="email" />
+        </Field>
+        <Field label="Password" required>
+          <Input name="password" />
+        </Field>
+        <Button appearance="primary" type="submit">
+          Login
+        </Button>
+      </form>
+    </>
   )
 }

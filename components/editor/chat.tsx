@@ -1,3 +1,5 @@
+import type { InputProps } from "@fluentui/react-components"
+import type { Comment, CommentData } from "../../utils/types"
 import {
   Button,
   Dialog,
@@ -6,14 +8,15 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  DialogTrigger, Field, Input, InputProps,
+  DialogTrigger,
+  Field,
+  Input,
 } from "@fluentui/react-components"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { Comment, CommentData } from "../../utils/types"
-import { commitComment, getComment, patchComment } from "../../utils/request"
 import _ from "lodash"
-import { HasError, Loading } from "./fallback"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { commitComment, getComment, patchComment } from "../../utils/request"
 import Message from "../message"
+import { HasError, Loading } from "./fallback"
 
 export default function Chat({ id }: { id: number }) {
   const [replyTo, setReplyTo] = useState<number>()
@@ -41,9 +44,11 @@ export default function Chat({ id }: { id: number }) {
         setMessages(sortedData)
         setMessages(data)
       }
-    } catch (e) {
+    }
+    catch (e) {
       setHasError(true)
-    } finally {
+    }
+    finally {
       debounceSetIsLoading(false)
     }
   }, [])
@@ -71,7 +76,8 @@ export default function Chat({ id }: { id: number }) {
       patchComment(edit, message).then(() => {
         onFetch()
       })
-    } else {
+    }
+    else {
       commitComment(message).then(() => {
         onFetch()
       })
@@ -94,7 +100,8 @@ export default function Chat({ id }: { id: number }) {
       if (replyTo) {
         return `Replying to #${replyTo}`
       }
-    } else if (editing) {
+    }
+    else if (editing) {
       if (edit) {
         return `Editing #${edit}`
       }
@@ -103,59 +110,67 @@ export default function Chat({ id }: { id: number }) {
   }, [replying, replyTo, editing, edit])
 
   return (
-      <Dialog>
-        <DialogTrigger disableButtonEnhancement>
-          <Button>Discuss</Button>
-        </DialogTrigger>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>
-              Chat&nbsp;
-              <Button onClick={onFetch}>
-                Refresh
+    <Dialog>
+      <DialogTrigger disableButtonEnhancement>
+        <Button>Discuss</Button>
+      </DialogTrigger>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>
+            Chat&nbsp;
+            <Button onClick={onFetch}>
+              Refresh
+            </Button>
+          </DialogTitle>
+          <DialogContent>
+            {isLoading && <Loading />}
+            {hasError && <HasError />}
+            {!isLoading && !hasError && messages.map(message => (
+              <div key={message.comment_id}>
+                <div style={{
+                  color: "gray",
+                }}
+                >
+                  {message.parent_id ? `Reply to ${message.parent_id}` : null}
+                </div>
+                <Message
+                  data={message}
+                  setReplying={setReplying}
+                  setReplyTo={setReplyTo}
+                  onRefresh={onFetch}
+                  setEdit={setEdit}
+                  setEditing={setEditing}
+                  setValue={setValue}
+                />
+              </div>
+            ))}
+          </DialogContent>
+          <DialogActions>
+            {replying && (
+              <Button
+                appearance="subtle"
+                style={{ textDecoration: "underline", padding: 0 }}
+                onClick={onUnsetReply}
+              >
+                Dismiss
               </Button>
-            </DialogTitle>
-            <DialogContent>
-              {isLoading && <Loading />}
-              {hasError && <HasError />}
-              {!isLoading && !hasError && messages.map((message) => (
-                  <div key={message.comment_id}>
-                    <div style={{
-                      color: "gray",
-                    }}>
-                      {message.parent_id ? `Reply to ${message.parent_id}` : null}
-                    </div>
-                    <Message data={message} setReplying={setReplying} setReplyTo={setReplyTo} onRefresh={onFetch}
-                             setEdit={setEdit} setEditing={setEditing} setValue={setValue} />
-                  </div>
-              ))}
-            </DialogContent>
-            <DialogActions>
-              {replying && (
-                  <Button
-                      appearance="subtle"
-                      style={{ textDecoration: "underline", padding: 0 }}
-                      onClick={onUnsetReply}
-                  >
-                    Dismiss
-                  </Button>
-              )}
-              {editing && (
-                  <Button
-                      appearance="subtle"
-                      style={{ textDecoration: "underline", padding: 0 }}
-                      onClick={onUnsetEdit}
-                  >
-                    Dismiss
-                  </Button>
-              )}
-              <Field hint={hint}>
-                <Input type="text" name="message" value={value} onChange={onChange} />
-              </Field>
-              <Button appearance="primary" onClick={onSubmitMessage}>Send</Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+            )}
+            {editing && (
+              <Button
+                appearance="subtle"
+                style={{ textDecoration: "underline", padding: 0 }}
+                onClick={onUnsetEdit}
+              >
+                Dismiss
+              </Button>
+            )}
+            <Field hint={hint}>
+              <Input type="text" name="message" value={value} onChange={onChange} />
+            </Field>
+            <Button appearance="primary" onClick={onSubmitMessage}>Send</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
   )
 }

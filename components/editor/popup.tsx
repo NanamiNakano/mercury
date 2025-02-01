@@ -2,30 +2,36 @@
 
 "use client"
 
+import type { LabelData } from "../../utils/types"
 import {
   Body1,
-  Card, CardHeader,
+  Button,
+  Card,
+  CardHeader,
   Dialog,
+  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
+  DialogTrigger,
+  makeStyles,
+  shorthands,
   Text,
-  makeStyles, DialogActions, Button, shorthands, Textarea, DialogTrigger
-} from "@fluentui/react-components";
-import { useTrackedTaskStore } from "../../store/useTaskStore";
-import { useTrackedPopupStore } from "../../store/usePopupStore";
-import CustomOption from "../customOption";
-import type { LabelData } from "../../utils/types";
-import { useTrackedIndexStore } from "../../store/useIndexStore";
-import { useReducer, useState } from "react";
-import { deleteRecord } from "../../utils/request";
-import { useTrackedEditorStore } from "../../store/useEditorStore";
+  Textarea,
+} from "@fluentui/react-components"
+import { useReducer, useState } from "react"
+import { useTrackedEditorStore } from "../../store/useEditorStore"
+import { useTrackedIndexStore } from "../../store/useIndexStore"
+import { useTrackedPopupStore } from "../../store/usePopupStore"
+import { useTrackedTaskStore } from "../../store/useTaskStore"
+import { deleteRecord } from "../../utils/request"
+import CustomOption from "../customOption"
 
-type PopupEditorProps = {
-  onEditedDone: (changed: boolean, labelData?: LabelData) => Promise<void>,
-  open: boolean,
-  labels: (string|object)[]
+interface PopupEditorProps {
+  onEditedDone: (changed: boolean, labelData?: LabelData) => Promise<void>
+  open: boolean
+  labels: (string | object)[]
 }
 
 const useStyles = makeStyles({
@@ -33,45 +39,48 @@ const useStyles = makeStyles({
     backgroundColor: "#f0f0f0",
     boxShadow: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
     ...shorthands.padding("1rem", "1rem"),
-    ...shorthands.flex(1)
+    ...shorthands.flex(1),
   },
   dangerButton: {
-    backgroundColor: "#f44336",
-    color: "white",
+    "backgroundColor": "#f44336",
+    "color": "white",
     "&:hover": {
       backgroundColor: "#d32f2f",
       color: "white",
-    }
+    },
   },
   largeSurface: {
     maxWidth: "98vw",
-  }
+  },
 })
 
-type SimpleSelectionProps = {
-  text: string,
+interface SimpleSelectionProps {
+  text: string
   onSelectChange: (range: [number, number]) => void
 }
 
-const SimpleSelection = (props: SimpleSelectionProps) => {
+function SimpleSelection(props: SimpleSelectionProps) {
   const [select, setSelect] = useState(false)
   return (
     <Text
       as="p"
       style={{
-        whiteSpace: "pre-wrap"
+        whiteSpace: "pre-wrap",
       }}
       ref={(el) => {
-        if (!el) return;
+        if (!el)
+          return
 
         el.addEventListener("mousedown", () => {
           setSelect(true)
         })
         el.addEventListener("mouseup", () => {
-          if (!select) return;
+          if (!select)
+            return
           const selection = window.getSelection()
-          if (!selection || selection.rangeCount <= 0) return;
-          const range = selection.getRangeAt(0);
+          if (!selection || selection.rangeCount <= 0)
+            return
+          const range = selection.getRangeAt(0)
           props.onSelectChange([range.startOffset, range.endOffset])
           setSelect(false)
         })
@@ -82,23 +91,24 @@ const SimpleSelection = (props: SimpleSelectionProps) => {
   )
 }
 
-type SimpleSelectionShowProps = {
-  text: string,
+interface SimpleSelectionShowProps {
+  text: string
   range: [number, number]
 }
 
-const SimpleSelectionShow = (props: SimpleSelectionShowProps) => {
+function SimpleSelectionShow(props: SimpleSelectionShowProps) {
   return (
     <Text
       as="p"
       style={{
-        whiteSpace: "pre-wrap"
+        whiteSpace: "pre-wrap",
       }}
     >
       {props.text.slice(0, props.range[0])}
       <span style={{
-        backgroundColor: "#ffbb55"
-      }}>
+        backgroundColor: "#ffbb55",
+      }}
+      >
         {props.text.slice(props.range[0], props.range[1])}
       </span>
       {props.text.slice(props.range[1])}
@@ -106,8 +116,8 @@ const SimpleSelectionShow = (props: SimpleSelectionShowProps) => {
   )
 }
 
-const PopupEditor = (props: PopupEditorProps) => {
-  const [forceUpdateKey, forceUpdate] = useReducer(x => x + 1, 0);
+function PopupEditor(props: PopupEditorProps) {
+  const [forceUpdateKey, forceUpdate] = useReducer(x => x + 1, 0)
   const popUpStore = useTrackedPopupStore()
   const taskStore = useTrackedTaskStore()
   const styles = useStyles()
@@ -115,15 +125,16 @@ const PopupEditor = (props: PopupEditorProps) => {
   const editorStore = useTrackedEditorStore()
 
   return (
-    <Dialog open={props.open} >
+    <Dialog open={props.open}>
       <DialogSurface className={styles.largeSurface}>
         <DialogBody>
           <DialogTitle
-            action={
+            action={(
               <div style={{
                 display: "flex",
                 gap: 4,
-              }}>
+              }}
+              >
                 <Dialog modalType="non-modal">
                   <DialogTrigger disableButtonEnhancement>
                     <Button className={styles.dangerButton}>
@@ -188,7 +199,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                       consistent: popUpStore.consistent,
                       task_index: indexStore.index,
                       user_id: "",
-                      note: popUpStore.note
+                      note: popUpStore.note,
                     })
                   }}
                   appearance="primary"
@@ -196,7 +207,7 @@ const PopupEditor = (props: PopupEditorProps) => {
                   Save
                 </Button>
               </div>
-            }
+            )}
           >
             Editing
           </DialogTitle>
@@ -210,12 +221,13 @@ const PopupEditor = (props: PopupEditorProps) => {
             >
               <Card className={styles.card}>
                 <CardHeader
-                  header={
+                  header={(
                     <Body1>
                       <strong>Source</strong>
                     </Body1>
-                  }
-                  action={popUpStore.sourceSelectionRange[0] > 0 &&
+                  )}
+                  action={popUpStore.sourceSelectionRange[0] > 0
+                  && (
                     <Button
                       onClick={() => {
                         popUpStore.setSourceSelectionRange([-1, -1])
@@ -223,56 +235,61 @@ const PopupEditor = (props: PopupEditorProps) => {
                     >
                       Clear highlight
                     </Button>
-                  }
+                  )}
                 />
                 {
-                  popUpStore.editingID && (popUpStore.sourceSelectionRange[1] > 0 ? (
-                    <SimpleSelectionShow
-                      text={taskStore.current.doc}
-                      range={popUpStore.sourceSelectionRange}
-                    />
-                  ) : (
-                    <SimpleSelection
-                      text={taskStore.current.doc}
-                      onSelectChange={(range) => {
-                        popUpStore.setSourceSelectionRange(range)
-                      }}
-                    />
-                  ))
+                  popUpStore.editingID && (popUpStore.sourceSelectionRange[1] > 0
+                    ? (
+                        <SimpleSelectionShow
+                          text={taskStore.current.doc}
+                          range={popUpStore.sourceSelectionRange}
+                        />
+                      )
+                    : (
+                        <SimpleSelection
+                          text={taskStore.current.doc}
+                          onSelectChange={(range) => {
+                            popUpStore.setSourceSelectionRange(range)
+                          }}
+                        />
+                      ))
                 }
               </Card>
 
               <Card className={styles.card}>
                 <CardHeader
-                  header={
+                  header={(
                     <Body1>
                       <strong>Summary</strong>
                     </Body1>
-                  }
-                  action={popUpStore.summarySelectionRange[0] > 0 &&
-                      <Button
-                          onClick={() => {
-                            popUpStore.setSummarySelectionRange([-1, -1])
-                          }}
-                      >
-                          Clear highlight
-                      </Button>
-                  }
+                  )}
+                  action={popUpStore.summarySelectionRange[0] > 0
+                  && (
+                    <Button
+                      onClick={() => {
+                        popUpStore.setSummarySelectionRange([-1, -1])
+                      }}
+                    >
+                      Clear highlight
+                    </Button>
+                  )}
                 />
                 {
-                  popUpStore.editingID && (popUpStore.summarySelectionRange[1] > 0 ? (
-                    <SimpleSelectionShow
-                      text={taskStore.current.sum}
-                      range={popUpStore.summarySelectionRange}
-                    />
-                  ) : (
-                    <SimpleSelection
-                      text={taskStore.current.sum}
-                      onSelectChange={(range) => {
-                        popUpStore.setSummarySelectionRange(range)
-                      }}
-                    />
-                  ))
+                  popUpStore.editingID && (popUpStore.summarySelectionRange[1] > 0
+                    ? (
+                        <SimpleSelectionShow
+                          text={taskStore.current.sum}
+                          range={popUpStore.summarySelectionRange}
+                        />
+                      )
+                    : (
+                        <SimpleSelection
+                          text={taskStore.current.sum}
+                          onSelectChange={(range) => {
+                            popUpStore.setSummarySelectionRange(range)
+                          }}
+                        />
+                      ))
                 }
               </Card>
             </div>
@@ -282,11 +299,11 @@ const PopupEditor = (props: PopupEditorProps) => {
             <CustomOption
               labels={props.labels}
               syncLabels={(labels) => {
-                popUpStore.setConsistent(Object.keys(labels).filter((label) => labels[label]))
+                popUpStore.setConsistent(Object.keys(labels).filter(label => labels[label]))
               }}
               initialLabels={popUpStore.consistent}
               style={{
-                width: "fit-content"
+                width: "fit-content",
               }}
               key={forceUpdateKey}
             />
@@ -297,7 +314,7 @@ const PopupEditor = (props: PopupEditorProps) => {
               resize="both"
               style={{
                 width: "40vw",
-                minHeight: "5rem"
+                minHeight: "5rem",
               }}
               placeholder="Add an optional note"
               value={popUpStore.note}
@@ -310,4 +327,4 @@ const PopupEditor = (props: PopupEditorProps) => {
   )
 }
 
-export default PopupEditor;
+export default PopupEditor

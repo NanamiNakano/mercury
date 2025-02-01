@@ -1,9 +1,9 @@
-import { Tag, TagGroup } from "@fluentui/react-components";
+import { Tag, TagGroup } from "@fluentui/react-components"
 
-const TagGroups = (props: { tags: string[] }) => {
+function TagGroups(props: { tags: string[] }) {
   return (
     <TagGroup role="list">
-      {props.tags.map((tag) => (
+      {props.tags.map(tag => (
         <Tag key={`tag-${tag}`} role="listitem">
           {tag}
         </Tag>

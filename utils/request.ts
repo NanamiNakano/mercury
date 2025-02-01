@@ -1,8 +1,11 @@
 import type {
-  AllTasksLength, Comment, CommentData,
+  AllTasksLength,
+  Comment,
+  CommentData,
   LabelData,
   LabelRequest,
-  Normal, RequestError,
+  Normal,
+  RequestError,
   SectionResponse,
   SelectionRequest,
   Task,
@@ -43,7 +46,7 @@ const backend = process.env.NEXT_PUBLIC_BACKEND || ""
 //     return Promise.resolve(key)
 //   }
 // }
-const getAccessToken = (): string => {
+function getAccessToken(): string {
   const accessToken = localStorage.getItem("access_token")
   if (accessToken === "" || accessToken === null) {
     console.log("Please login")
@@ -51,7 +54,7 @@ const getAccessToken = (): string => {
   return accessToken
 }
 
-const getUserMe = async (): Promise<User> => {
+async function getUserMe(): Promise<User> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/me`, {
     headers: {
@@ -61,7 +64,7 @@ const getUserMe = async (): Promise<User> => {
   return response.json()
 }
 
-const checkUserMe = async (access_token: string): Promise<boolean> => {
+async function checkUserMe(access_token: string): Promise<boolean> {
   const response = await fetch(`${backend}/user/me`, {
     headers: {
       Authorization: `Bearer ${access_token}`,
@@ -70,13 +73,13 @@ const checkUserMe = async (access_token: string): Promise<boolean> => {
   return response.ok
 }
 
-const changeName = async (name: string): Promise<Normal> => {
+async function changeName(name: string): Promise<Normal> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/name`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify({ name }),
   })
@@ -85,25 +88,25 @@ const changeName = async (name: string): Promise<Normal> => {
   return data as Normal
 }
 
-const getAllLabels = async (): Promise<(string | object)[]> => {
+async function getAllLabels(): Promise<(string | object)[]> {
   const response = await fetch(`${backend}/candidate_labels`)
   const data = await response.json()
   return data as string[]
 }
 
-const getAllTasksLength = async (): Promise<AllTasksLength> => {
+async function getAllTasksLength(): Promise<AllTasksLength> {
   const response = await fetch(`${backend}/task`)
   const data = await response.json()
   return data as AllTasksLength
 }
 
-const getSingleTask = async (taskIndex: number): Promise<Task | RequestError> => {
+async function getSingleTask(taskIndex: number): Promise<Task | RequestError> {
   const response = await fetch(`${backend}/task/${taskIndex}`)
   const data = await response.json()
   return data as Task | RequestError
 }
 
-const selectText = async (taskIndex: number, req: SelectionRequest): Promise<SectionResponse | RequestError> => {
+async function selectText(taskIndex: number, req: SelectionRequest): Promise<SectionResponse | RequestError> {
   const response = await fetch(`${backend}/task/${taskIndex}/select`, {
     method: "POST",
     headers: {
@@ -115,13 +118,14 @@ const selectText = async (taskIndex: number, req: SelectionRequest): Promise<Sec
   return data as SectionResponse | RequestError
 }
 
-const labelText = async (taskIndex: number, req: LabelRequest, single?: "source" | "summary"): Promise<Normal> => {
-  const processedReq = produce(req, draft => {
+async function labelText(taskIndex: number, req: LabelRequest, single?: "source" | "summary"): Promise<Normal> {
+  const processedReq = produce(req, (draft) => {
     if (single) {
       if (single === "source") {
         draft.summary_start = -1
         draft.summary_end = -1
-      } else {
+      }
+      else {
         draft.source_start = -1
         draft.source_end = -1
       }
@@ -132,7 +136,7 @@ const labelText = async (taskIndex: number, req: LabelRequest, single?: "source"
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify(processedReq),
   })
@@ -140,7 +144,7 @@ const labelText = async (taskIndex: number, req: LabelRequest, single?: "source"
   return data as Normal
 }
 
-const exportLabel = async (): Promise<LabelData[]> => {
+async function exportLabel(): Promise<LabelData[]> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/user/export`, {
     headers: {
@@ -151,7 +155,7 @@ const exportLabel = async (): Promise<LabelData[]> => {
   return data as LabelData[]
 }
 
-const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
+async function getTaskHistory(taskIndex: number): Promise<LabelData[]> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/history`, {
     headers: {
@@ -165,7 +169,7 @@ const getTaskHistory = async (taskIndex: number): Promise<LabelData[]> => {
   return []
 }
 
-const deleteRecord = async (recordId: string): Promise<Normal> => {
+async function deleteRecord(recordId: string): Promise<Normal> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/record/${recordId}`, {
     method: "DELETE",
@@ -177,13 +181,13 @@ const deleteRecord = async (recordId: string): Promise<Normal> => {
   return data as Normal
 }
 
-const login = async (email: string, password: string): Promise<boolean> => {
+async function login(email: string, password: string): Promise<boolean> {
   const response = await fetch(`${backend}/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ username: email, password: password }),
+    body: new URLSearchParams({ username: email, password }),
   })
   const data = await response.json()
   if ("access_token" in data) {
@@ -193,13 +197,13 @@ const login = async (email: string, password: string): Promise<boolean> => {
   return false
 }
 
-const updateRecord = async (taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> => {
+async function updateRecord(taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/task/${taskIndex}/label/${recordId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify(labelData),
   })
@@ -207,19 +211,19 @@ const updateRecord = async (taskIndex: number, recordId: string, labelData: Labe
   return data as Normal
 }
 
-const getComment = async (annotId: number) => {
+async function getComment(annotId: number) {
   const response = await fetch(`${backend}/annot/${annotId}/comments`)
   const data = await response.json()
   return data as Comment[]
 }
 
-const commitComment = async (comment: CommentData) => {
+async function commitComment(comment: CommentData) {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/annot/${comment.annot_id}/comments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify(comment),
   })
@@ -227,13 +231,13 @@ const commitComment = async (comment: CommentData) => {
   return data as Normal
 }
 
-const patchComment = async (id: number, comment: CommentData) => {
+async function patchComment(id: number, comment: CommentData) {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/annot/${comment.annot_id}/comments/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
+      "Authorization": `Bearer ${access_token}`,
     },
     body: JSON.stringify(comment),
   })
@@ -241,7 +245,7 @@ const patchComment = async (id: number, comment: CommentData) => {
   return data as Normal
 }
 
-const deleteComment = async (id: number, annotId: number) => {
+async function deleteComment(id: number, annotId: number) {
   const access_token = getAccessToken()
   const response = await fetch(`${backend}/annot/${annotId}/comments/${id}`, {
     method: "DELETE",
@@ -254,21 +258,21 @@ const deleteComment = async (id: number, annotId: number) => {
 }
 
 export {
-  getAllTasksLength,
-  getSingleTask,
-  selectText,
-  labelText,
-  exportLabel,
-  getTaskHistory,
-  deleteRecord,
-  getAllLabels,
   changeName,
   checkUserMe,
-  getUserMe,
-  login,
-  updateRecord,
-  getComment,
   commitComment,
   deleteComment,
+  deleteRecord,
+  exportLabel,
+  getAllLabels,
+  getAllTasksLength,
+  getComment,
+  getSingleTask,
+  getTaskHistory,
+  getUserMe,
+  labelText,
+  login,
   patchComment,
+  selectText,
+  updateRecord,
 }

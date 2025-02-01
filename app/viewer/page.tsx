@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { Body1, Button, Card, CardHeader, Dialog, DialogBody, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, makeStyles, MessageBar, MessageBarBody, MessageBarTitle, Persona, ProgressBar, Option, Text, Title1, tokens, DialogContent, DialogActions } from "@fluentui/react-components";
-import { ArrowLeftRegular, ArrowRightRegular, ArrowUploadRegular, DocumentArrowLeftRegular, DocumentArrowRightRegular, FilterRegular } from "@fluentui/react-icons";
-import { Allotment } from "allotment";
-import { useEffect, useRef, useState } from "react";
-import "allotment/dist/style.css";
-import TagGroups from "../../components/tagGroups";
-import { isNumber } from "../../utils/types";
+import { Body1, Button, Card, CardHeader, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, makeStyles, MessageBar, MessageBarBody, MessageBarTitle, Option, Persona, ProgressBar, Text, Title1, tokens } from "@fluentui/react-components"
+import { ArrowLeftRegular, ArrowRightRegular, ArrowUploadRegular, DocumentArrowLeftRegular, DocumentArrowRightRegular, FilterRegular } from "@fluentui/react-icons"
+import { Allotment } from "allotment"
+import { useEffect, useRef, useState } from "react"
+import TagGroups from "../../components/tagGroups"
+import { isNumber } from "../../utils/types"
+import "allotment/dist/style.css"
 
-type Annotation = {
+interface Annotation {
   annot_id: number
   sample_id: number
   annotator: string
@@ -23,21 +23,21 @@ type Annotation = {
   source_end?: number
 }
 
-type DumpSlice = {
+interface DumpSlice {
   sample_id: number
   source: string
   summary: string
   annotations: Annotation[]
 }
 
-type DumpAnnotationSlice = {
+interface DumpAnnotationSlice {
   sample_id: number
   source: string
   summary: string
   annotation: Annotation
 }
 
-type UserInfo = {
+interface UserInfo {
   name?: string
   count: number
 }
@@ -51,18 +51,19 @@ const useStyles = makeStyles({
       paddingRight: "1rem",
     },
   },
-});
+})
 
-const makeUsers = (slices: DumpSlice[]): Users => {
+function makeUsers(slices: DumpSlice[]): Users {
   const users: Users = {}
   for (const slice of slices) {
     for (const annotation of slice.annotations) {
       if (annotation.annotator in users) {
         users[annotation.annotator].count++
-      } else {
+      }
+      else {
         users[annotation.annotator] = {
           count: 1,
-          name: annotation.annotator_name
+          name: annotation.annotator_name,
         }
       }
     }
@@ -70,7 +71,7 @@ const makeUsers = (slices: DumpSlice[]): Users => {
   return users
 }
 
-const SliceText = (props: { text: string, start?: number, end?: number }) => {
+function SliceText(props: { text: string, start?: number, end?: number }) {
   const { text, start, end } = props
   if (start === undefined || end === undefined) {
     return <Text as="p">{text}</Text>
@@ -78,10 +79,15 @@ const SliceText = (props: { text: string, start?: number, end?: number }) => {
   return (
     <Text as="p">
       {text.slice(0, start)}
-      <Text as="span" style={{
-        backgroundColor: "#00a6ff",
-        color: "white",
-      }}>{text.slice(start, end)}</Text>
+      <Text
+        as="span"
+        style={{
+          backgroundColor: "#00a6ff",
+          color: "white",
+        }}
+      >
+        {text.slice(start, end)}
+      </Text>
       {text.slice(end)}
     </Text>
   )
@@ -101,7 +107,7 @@ export default function Page() {
   const [filterUsers, setFilterUsers] = useState<string[]>([])
   const [users, setUsers] = useState<Users | null>(null)
   const fetchLock = useRef(false)
-  const styles = useStyles();
+  const styles = useStyles()
 
   useEffect(() => {
     if (fetchLock.current) {
@@ -109,7 +115,7 @@ export default function Page() {
     }
     fetchLock.current = true
     fetch("/labels")
-      .then((data) => data.json())
+      .then(data => data.json())
       .then((data) => {
         const slice: DumpSlice[] = data.filter((slice: DumpSlice) => slice.annotations.length > 0)
         setFilterUsers([])
@@ -136,7 +142,7 @@ export default function Page() {
       sample_id: nowSlices[sampleIndex].sample_id,
       source: nowSlices[sampleIndex].source,
       summary: nowSlices[sampleIndex].summary,
-      annotation: nowSlices[sampleIndex].annotations[annotationIndex]
+      annotation: nowSlices[sampleIndex].annotations[annotationIndex],
     })
 
     setMaxAnnotation(nowSlices[sampleIndex].annotations.length)
@@ -161,12 +167,12 @@ export default function Page() {
 
     const newSlices: DumpSlice[] = []
     // for (const slice of fullSlices) {
-      for (const slice of filteredSlices) {
-      const annotations = slice.annotations.filter((annotation) => filterUsers.includes(annotation.annotator))
+    for (const slice of filteredSlices) {
+      const annotations = slice.annotations.filter(annotation => filterUsers.includes(annotation.annotator))
       if (annotations.length > 0) {
         newSlices.push({
           ...slice,
-          annotations
+          annotations,
         })
       }
     }
@@ -187,7 +193,11 @@ export default function Page() {
           <tbody>
             <tr>
               <td>Sample ID</td>
-              <td>{props.sample_id + 1} (in current batch)</td>
+              <td>
+                {props.sample_id + 1}
+                {" "}
+                (in current batch)
+              </td>
             </tr>
             <tr>
               <td>Annotator</td>
@@ -234,7 +244,8 @@ export default function Page() {
   return (
     <>
       <Title1>Mercury Label Viewer</Title1>
-      <br /><br />
+      <br />
+      <br />
       <div
         style={{
           display: "flex",
@@ -282,11 +293,13 @@ export default function Page() {
                 <Text as="p">
                   Find the labels by specific users. Select the users you want to filter.
                 </Text>
-                <br /><br />
+                <br />
+                <br />
                 <div style={{
                   display: "flex",
                   flexDirection: "column",
-                }}>
+                }}
+                >
                   <label id="user-filter">Users</label>
                   <Dropdown
                     aria-labelledby="user-filter"
@@ -299,23 +312,25 @@ export default function Page() {
                     }}
                     value={
                       filterUsers
-                        .map((user) => users[user].name ?? user)
+                        .map(user => users[user].name ?? user)
                         .join(", ")
                     }
                   >
                     {
-                      users === null ? null : Object.keys(users).map((user) => (
-                        <Option text={users[user].name ?? user} key={user} value={user}>
-                          <Persona
-                            avatar={{
-                              color: "colorful",
-                              "aria-hidden": true,
-                            }}
-                            name={users[user].name ?? user}
-                            secondaryText={`${users[user].count} labels`}
-                          />
-                        </Option>
-                      ))
+                      users === null
+                        ? null
+                        : Object.keys(users).map(user => (
+                            <Option text={users[user].name ?? user} key={user} value={user}>
+                              <Persona
+                                avatar={{
+                                  "color": "colorful",
+                                  "aria-hidden": true,
+                                }}
+                                name={users[user].name ?? user}
+                                secondaryText={`${users[user].count} labels`}
+                              />
+                            </Option>
+                          ))
                     }
                   </Dropdown>
                 </div>
@@ -339,7 +354,8 @@ export default function Page() {
           </DialogSurface>
         </Dialog>
       </div>
-      <br /><br />
+      <br />
+      <br />
       <div
         style={{
           display: "flex",
@@ -353,7 +369,7 @@ export default function Page() {
           icon={<DocumentArrowLeftRegular />}
           disabled={sampleIndex <= 0}
           style={{
-            width: "15%"
+            width: "15%",
           }}
           onClick={() => {
             setSampleIndex(sampleIndex - 1)
@@ -369,7 +385,7 @@ export default function Page() {
           // TODO: Please fix above
           validationState="none"
           style={{
-            flexGrow: 1
+            flexGrow: 1,
           }}
         >
           <ProgressBar
@@ -383,7 +399,7 @@ export default function Page() {
           disabled={sampleIndex >= maxSample - 1}
           iconPosition="after"
           style={{
-            width: "15%"
+            width: "15%",
           }}
           onClick={() => {
             setSampleIndex(sampleIndex + 1)
@@ -407,7 +423,7 @@ export default function Page() {
           icon={<ArrowLeftRegular />}
           disabled={annotationIndex <= 0}
           style={{
-            width: "15%"
+            width: "15%",
           }}
           onClick={() => {
             setAnnotationIndex(annotationIndex - 1)
@@ -420,7 +436,7 @@ export default function Page() {
           validationMessage={`Annotation ${annotationIndex + 1} / ${maxAnnotation} `}
           validationState="none"
           style={{
-            flexGrow: 1
+            flexGrow: 1,
           }}
         >
           <ProgressBar
@@ -435,7 +451,7 @@ export default function Page() {
           disabled={annotationIndex >= maxAnnotation - 1}
           iconPosition="after"
           style={{
-            width: "15%"
+            width: "15%",
           }}
           onClick={() => {
             setAnnotationIndex(annotationIndex + 1)
@@ -444,83 +460,90 @@ export default function Page() {
           Next annotation
         </Button>
       </div>
-      <br /><br />
+      <br />
+      <br />
       {
-        currentSlice === null ? (
-          <MessageBar shape="square" intent="info">
-            <MessageBarBody>
-              <MessageBarTitle>No labels</MessageBarTitle>
-              Please upload a json file to start.
-            </MessageBarBody>
-          </MessageBar>
-        ) : (
-          <div style={{
-            height: "69vh",
-            margin: "auto",
-          }}>
-            <Allotment>
-              <Allotment.Pane>
-                <div style={{
-                  overflowY: "scroll",
-                  height: "100%"
-                }}>
-                  <Card>
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Source</strong>
-                        </Body1>
-                      }
-                    />
-                    <SliceText
-                      text={currentSlice.source}
-                      start={currentSlice.annotation.source_start}
-                      end={currentSlice.annotation.source_end}
-                    />
-                  </Card>
-                </div>
-              </Allotment.Pane>
-              <Allotment.Pane>
-                <Allotment vertical>
-                  <div style={{
-                    overflowY: "scroll",
-                    height: "100%"
-                  }}>
-                    <Card>
-                      <CardHeader
-                        header={
-                          <Body1>
-                            <strong>Summary</strong>
-                          </Body1>
-                        }
-                      />
-                      <SliceText
-                        text={currentSlice.summary}
-                        start={currentSlice.annotation.summary_start}
-                        end={currentSlice.annotation.summary_end}
-                      />
-                    </Card>
-                  </div>
-                  <div style={{
-                    overflowY: "scroll",
-                    height: "100%"
-                  }}>
-                    <Card>
-                      <CardHeader
-                        header={
-                          <Body1>
-                            <strong>Info</strong>
-                          </Body1>
-                        }
-                      />
-                      <LabelInfoPanel {...currentSlice} />
-                    </Card>
-                  </div>
+        currentSlice === null
+          ? (
+              <MessageBar shape="square" intent="info">
+                <MessageBarBody>
+                  <MessageBarTitle>No labels</MessageBarTitle>
+                  Please upload a json file to start.
+                </MessageBarBody>
+              </MessageBar>
+            )
+          : (
+              <div style={{
+                height: "69vh",
+                margin: "auto",
+              }}
+              >
+                <Allotment>
+                  <Allotment.Pane>
+                    <div style={{
+                      overflowY: "scroll",
+                      height: "100%",
+                    }}
+                    >
+                      <Card>
+                        <CardHeader
+                          header={(
+                            <Body1>
+                              <strong>Source</strong>
+                            </Body1>
+                          )}
+                        />
+                        <SliceText
+                          text={currentSlice.source}
+                          start={currentSlice.annotation.source_start}
+                          end={currentSlice.annotation.source_end}
+                        />
+                      </Card>
+                    </div>
+                  </Allotment.Pane>
+                  <Allotment.Pane>
+                    <Allotment vertical>
+                      <div style={{
+                        overflowY: "scroll",
+                        height: "100%",
+                      }}
+                      >
+                        <Card>
+                          <CardHeader
+                            header={(
+                              <Body1>
+                                <strong>Summary</strong>
+                              </Body1>
+                            )}
+                          />
+                          <SliceText
+                            text={currentSlice.summary}
+                            start={currentSlice.annotation.summary_start}
+                            end={currentSlice.annotation.summary_end}
+                          />
+                        </Card>
+                      </div>
+                      <div style={{
+                        overflowY: "scroll",
+                        height: "100%",
+                      }}
+                      >
+                        <Card>
+                          <CardHeader
+                            header={(
+                              <Body1>
+                                <strong>Info</strong>
+                              </Body1>
+                            )}
+                          />
+                          <LabelInfoPanel {...currentSlice} />
+                        </Card>
+                      </div>
+                    </Allotment>
+                  </Allotment.Pane>
                 </Allotment>
-              </Allotment.Pane>
-            </Allotment>
-          </div>
-        )
+              </div>
+            )
       }
     </>
   )

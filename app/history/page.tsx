@@ -1,5 +1,7 @@
 "use client"
 
+import type { HistorySlice } from "../../utils/mergeArray"
+import type { LabelData, Task } from "../../utils/types"
 import {
   Body1,
   Button,
@@ -18,12 +20,11 @@ import {
   Text,
   Title1,
 } from "@fluentui/react-components"
+import { DeleteRegular, DismissRegular, EyeRegular } from "@fluentui/react-icons"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { type HistorySlice, historyTextToSlice } from "../../utils/mergeArray"
-import { exportLabel, getSingleTask, deleteRecord } from "../../utils/request"
-import type { LabelData, Task } from "../../utils/types"
-import { DeleteRegular, DismissRegular, EyeRegular } from "@fluentui/react-icons";
+import { historyTextToSlice } from "../../utils/mergeArray"
+import { deleteRecord, exportLabel, getSingleTask } from "../../utils/request"
 
 export default function Page() {
   const [history, setHistory] = useState<LabelData[]>([])
@@ -38,18 +39,22 @@ export default function Page() {
   const queryDone = useRef(false)
 
   useEffect(() => {
-    if (queryDone.current) return
-    exportLabel().then(data => {
+    if (queryDone.current)
+      return
+    exportLabel().then((data) => {
       setHistory(data)
       queryDone.current = true
     })
   }, [])
 
   useEffect(() => {
-    if (taskIndex === null || historyIndex === null) return
-    if (history.length === 0) return
-    if (historyIndex < 0 || historyIndex >= history.length) return
-    getSingleTask(taskIndex).then(data => {
+    if (taskIndex === null || historyIndex === null)
+      return
+    if (history.length === 0)
+      return
+    if (historyIndex < 0 || historyIndex >= history.length)
+      return
+    getSingleTask(taskIndex).then((data) => {
       if ("doc" in data) {
         setTaskData({ ...history[historyIndex], ...data })
         const consistent = history[historyIndex].consistent
@@ -82,142 +87,176 @@ export default function Page() {
           <DialogBody>
             <DialogTitle>Preview</DialogTitle>
             <DialogContent>
-              {taskData === null || doc === null || summary === null ? (
-                <MessageBar shape="square">
-                  <MessageBarBody>
-                    <MessageBarTitle>Loading...</MessageBarTitle>
-                    Please wait while the data is being fetched.
-                  </MessageBarBody>
-                </MessageBar>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <Card
-                    style={{
-                      flex: 1,
-                      alignSelf: "stretch",
-                    }}
-                  >
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Source</strong>
-                        </Body1>
-                      }
-                    />
-                    <Text as="p">
-                      {doc.map((part, index) => (
-                        <span
-                          key={`doc-${part.labeled}-${index}`}
-                          style={{ background: part.labeled ? "#00a6ff" : "none" }}
-                        >
-                          {part.text}
-                        </span>
-                      ))}
-                    </Text>
-                  </Card>
-                  <Card style={{
-                    marginLeft: ".5rem",
-                    marginRight: ".5rem",
-                    alignSelf: "center",
-                  }}>
-                    <Text as="span">
-                      <strong>{taskData.consistent ? "Consistent" : "Not Consistent"}</strong>
-                    </Text>
-                  </Card>
-                  <Card
-                    style={{
-                      flex: 1,
-                      alignSelf: "stretch",
-                    }}
-                  >
-                    <CardHeader
-                      header={
-                        <Body1>
-                          <strong>Summary</strong>
-                        </Body1>
-                      }
-                    />
-                    <Text as="p">
-                      {summary.map((part, index) => (
-                        <span
-                          key={`summary-${part.labeled}-${index}`}
-                          style={{ background: part.labeled ? "#00a6ff" : "none" }}
-                        >
-                          {part.text}
-                        </span>
-                      ))}
-                    </Text>
-                  </Card>
-                </div>
-              )}
+              {taskData === null || doc === null || summary === null
+                ? (
+                    <MessageBar shape="square">
+                      <MessageBarBody>
+                        <MessageBarTitle>Loading...</MessageBarTitle>
+                        Please wait while the data is being fetched.
+                      </MessageBarBody>
+                    </MessageBar>
+                  )
+                : (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "baseline",
+                      }}
+                    >
+                      <Card
+                        style={{
+                          flex: 1,
+                          alignSelf: "stretch",
+                        }}
+                      >
+                        <CardHeader
+                          header={(
+                            <Body1>
+                              <strong>Source</strong>
+                            </Body1>
+                          )}
+                        />
+                        <Text as="p">
+                          {doc.map((part, index) => (
+                            <span
+                              key={`doc-${part.labeled}-${index}`}
+                              style={{ background: part.labeled ? "#00a6ff" : "none" }}
+                            >
+                              {part.text}
+                            </span>
+                          ))}
+                        </Text>
+                      </Card>
+                      <Card style={{
+                        marginLeft: ".5rem",
+                        marginRight: ".5rem",
+                        alignSelf: "center",
+                      }}
+                      >
+                        <Text as="span">
+                          <strong>{taskData.consistent ? "Consistent" : "Not Consistent"}</strong>
+                        </Text>
+                      </Card>
+                      <Card
+                        style={{
+                          flex: 1,
+                          alignSelf: "stretch",
+                        }}
+                      >
+                        <CardHeader
+                          header={(
+                            <Body1>
+                              <strong>Summary</strong>
+                            </Body1>
+                          )}
+                        />
+                        <Text as="p">
+                          {summary.map((part, index) => (
+                            <span
+                              key={`summary-${part.labeled}-${index}`}
+                              style={{ background: part.labeled ? "#00a6ff" : "none" }}
+                            >
+                              {part.text}
+                            </span>
+                          ))}
+                        </Text>
+                      </Card>
+                    </div>
+                  )}
             </DialogContent>
             <DialogActions>
-              <Button icon={<DeleteRegular />} onClick={() => {
-                deleteRecord(taskData.record_id).then(() => {
-                  setDialogOpen(false)
-                  setHistory(history.filter((_, index) => index !== historyIndex))
-                })
-              }}>Delete</Button>
+              <Button
+                icon={<DeleteRegular />}
+                onClick={() => {
+                  deleteRecord(taskData.record_id).then(() => {
+                    setDialogOpen(false)
+                    setHistory(history.filter((_, index) => index !== historyIndex))
+                  })
+                }}
+              >
+                Delete
+              </Button>
               <Button icon={<DismissRegular />} onClick={() => setDialogOpen(false)}>Close</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>
       </Dialog>
       <br />
-      {history.length === 0 ? (
-        <MessageBar shape="square">
-          <MessageBarBody>
-            <MessageBarTitle>No history</MessageBarTitle>
-            There is no history to display. Go to the <Link href="/">home</Link> page to start labeling.
-          </MessageBarBody>
-        </MessageBar>
-      ) : (
-        history.map((label, index) => (
-          <Card
-            key={`history-${label.sample_id}-${index}`}
-            size="large"
-            style={{ marginBottom: "1rem", marginTop: "1rem" }}
-          >
-            <CardHeader
-              header={
-                <Body1>
-                  <strong>Record ID:</strong> {label.record_id}
-                </Body1>
-              }
-            />
-            <Text as="p">
-              <strong>Task Index:</strong> {label.task_index}
-              <br />
-              <strong>Summary:</strong> {label.summary_start} - {label.summary_end}
-              <br />
-              <strong>Source:</strong> {label.source_start} - {label.source_end}
-              <br />
-              <strong>Consistent:</strong> {label.consistent.join(", ")}
-              <br />
-              <strong>Note:</strong> {label.note}
-            </Text>
-            <CardFooter>
-              <Button
-                icon={<EyeRegular />}
-                onClick={() => {
-                  setTaskIndex(label.task_index)
-                  setHistoryIndex(index)
-                  setDialogOpen(true)
-                }}
+      {history.length === 0
+        ? (
+            <MessageBar shape="square">
+              <MessageBarBody>
+                <MessageBarTitle>No history</MessageBarTitle>
+                There is no history to display. Go to the
+                {" "}
+                <Link href="/">home</Link>
+                {" "}
+                page to start labeling.
+              </MessageBarBody>
+            </MessageBar>
+          )
+        : (
+            history.map((label, index) => (
+              <Card
+                key={`history-${label.sample_id}-${index}`}
+                size="large"
+                style={{ marginBottom: "1rem", marginTop: "1rem" }}
               >
-                View
-              </Button>
-            </CardFooter>
-          </Card>
-        ))
-      )}
+                <CardHeader
+                  header={(
+                    <Body1>
+                      <strong>Record ID:</strong>
+                      {" "}
+                      {label.record_id}
+                    </Body1>
+                  )}
+                />
+                <Text as="p">
+                  <strong>Task Index:</strong>
+                  {" "}
+                  {label.task_index}
+                  <br />
+                  <strong>Summary:</strong>
+                  {" "}
+                  {label.summary_start}
+                  {" "}
+                  -
+                  {" "}
+                  {label.summary_end}
+                  <br />
+                  <strong>Source:</strong>
+                  {" "}
+                  {label.source_start}
+                  {" "}
+                  -
+                  {" "}
+                  {label.source_end}
+                  <br />
+                  <strong>Consistent:</strong>
+                  {" "}
+                  {label.consistent.join(", ")}
+                  <br />
+                  <strong>Note:</strong>
+                  {" "}
+                  {label.note}
+                </Text>
+                <CardFooter>
+                  <Button
+                    icon={<EyeRegular />}
+                    onClick={() => {
+                      setTaskIndex(label.task_index)
+                      setHistoryIndex(index)
+                      setDialogOpen(true)
+                    }}
+                  >
+                    View
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))
+          )}
     </>
   )
 }

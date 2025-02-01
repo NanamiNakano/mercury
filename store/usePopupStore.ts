@@ -1,15 +1,15 @@
-import { create } from "zustand";
-import { createTrackedSelector } from "react-tracked";
-import type { LabelData } from "../utils/types";
+import type { LabelData } from "../utils/types"
+import { createTrackedSelector } from "react-tracked"
+import { create } from "zustand"
 
 interface PopupState {
   editingID: string | null
-  summarySelectionRange: [number, number],
-  sourceSelectionRange: [number, number],
-  consistent: string[],
-  note: string,
+  summarySelectionRange: [number, number]
+  sourceSelectionRange: [number, number]
+  consistent: string[]
+  note: string
 
-  restore: LabelData | null,
+  restore: LabelData | null
 
   setEditingID: (id: string | null) => void
   setSummarySelectionRange: (range: [number, number]) => void
@@ -21,7 +21,7 @@ interface PopupState {
   clearAll: () => void
 }
 
-export const usePopupStore = create<PopupState>((set) => ({
+export const usePopupStore = create<PopupState>(set => ({
   editingID: null,
 
   summarySelectionRange: [-1, -1],
@@ -33,19 +33,19 @@ export const usePopupStore = create<PopupState>((set) => ({
   restore: null,
 
   setEditingID: (id: string | null) => set({
-    editingID: id
+    editingID: id,
   }),
   setSummarySelectionRange: (range: [number, number]) => set({
-    summarySelectionRange: range
+    summarySelectionRange: range,
   }),
   setSourceSelectionRange: (range: [number, number]) => set({
-    sourceSelectionRange: range
+    sourceSelectionRange: range,
   }),
   setConsistent: (consistent: string[]) => set({
-    consistent: consistent
+    consistent,
   }),
   setNote: (note: string) => set({
-    note: note
+    note,
   }),
   setLabelData: (data: LabelData) => set({
     editingID: data.record_id,
@@ -53,7 +53,7 @@ export const usePopupStore = create<PopupState>((set) => ({
     sourceSelectionRange: [data.source_start, data.source_end],
     consistent: data.consistent,
     note: data.note,
-    restore: data
+    restore: data,
   }),
 
   clearAll: () => set({

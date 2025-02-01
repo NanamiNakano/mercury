@@ -1,12 +1,12 @@
 "use client"
 
-import { exportLabel } from "../../utils/request"
 import { Button } from "@fluentui/react-components"
 import { ArrowExportRegular, HandRightRegular, ShareRegular } from "@fluentui/react-icons"
-import UserPopover from "../userPopover"
-import { useTrackedIndexStore } from "../../store/useIndexStore"
-import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useCallback } from "react"
+import { useTrackedEditorStore } from "../../store/useEditorStore"
+import { useTrackedIndexStore } from "../../store/useIndexStore"
+import { exportLabel } from "../../utils/request"
+import UserPopover from "../userPopover"
 
 export default function Controls() {
   const indexStore = useTrackedIndexStore()
@@ -60,26 +60,30 @@ export default function Controls() {
   }, [indexStore.index])
 
   return (
-      <div
-          style={{
-            display: "flex",
-            gap: "1em",
-          }}
-      >
-        <Button icon={<HandRightRegular />} onClick={onReset} appearance={
+    <div
+      style={{
+        display: "flex",
+        gap: "1em",
+      }}
+    >
+      <Button
+        icon={<HandRightRegular />}
+        onClick={onReset}
+        appearance={
           editorStore.sourceSelection.start !== -1 || editorStore.summarySelection.start !== -1
-              ? "primary"
-              : null
-        }>
-          Reset selection/highlight
-        </Button>
-        <Button icon={<ArrowExportRegular />} onClick={onExportJSON}>
-          Export labels
-        </Button>
-        <Button icon={<ShareRegular />} onClick={onShare}>
-          Share this sample
-        </Button>
-        <UserPopover />
-      </div>
+            ? "primary"
+            : null
+        }
+      >
+        Reset selection/highlight
+      </Button>
+      <Button icon={<ArrowExportRegular />} onClick={onExportJSON}>
+        Export labels
+      </Button>
+      <Button icon={<ShareRegular />} onClick={onShare}>
+        Share this sample
+      </Button>
+      <UserPopover />
+    </div>
   )
 }

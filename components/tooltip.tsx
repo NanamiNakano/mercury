@@ -13,12 +13,11 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react"
-import { Button, Text, Textarea, Subtitle2 } from "@fluentui/react-components"
+import { Button, Subtitle2, Text, Textarea } from "@fluentui/react-components"
 import { useEffect, useState } from "react"
-import CustomOption from "./customOption";
+import CustomOption from "./customOption"
 
-
-const Tooltip = (props: {
+function Tooltip(props: {
   backgroundColor: string
   textColor: string
   text: string
@@ -28,7 +27,7 @@ const Tooltip = (props: {
   start: number
   end: number
   message: string
-}) => {
+}) {
   const [isOpen, setOpen] = useState(false)
   const [note, setNote] = useState("")
   const [lock, setLock] = useState(false)
@@ -124,10 +123,10 @@ const Tooltip = (props: {
               event.stopPropagation()
               event.preventDefault()
               props.onLabel(
-                Object.keys(labelsStates).filter((label) => labelsStates[label]),
-                note
+                Object.keys(labelsStates).filter(label => labelsStates[label]),
+                note,
               )
-              .then(() => setOpen(false))
+                .then(() => setOpen(false))
             }}
           >
             Save

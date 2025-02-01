@@ -1,14 +1,13 @@
-import { create } from "zustand"
+import type { LabelData, SectionResponse, SelectionRequest } from "../utils/types"
+import { produce } from "immer"
 import { createTrackedSelector } from "react-tracked"
+import { create } from "zustand"
+import { getTaskHistory, selectText } from "../utils/request"
 import {
   handleRequestError,
   isRequestError,
-  type LabelData,
-  type SectionResponse,
-  type SelectionRequest,
+
 } from "../utils/types"
-import { produce } from "immer"
-import { getTaskHistory, selectText } from "../utils/request"
 
 interface EditorState {
   sourceSelection: SelectionRequest
@@ -23,7 +22,7 @@ interface EditorState {
   clearSummarySelection: () => void
   fetchServerSection: (index: number) => Promise<void>
 
-  history: LabelData[],
+  history: LabelData[]
   viewingID: string | null
   updateHistory: (labelIndex: number) => Promise<void>
   setViewing: (viewingRecord: LabelData) => void
@@ -37,11 +36,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   editable: true,
   setSourceSelection: (start: number, end: number) => set(produce((state: EditorState) => {
     state.sourceSelection = { start, end, from_summary: false }
-    if (state.initiator === null) state.initiator = "source"
+    if (state.initiator === null)
+      state.initiator = "source"
   })),
   setSummarySelection: (start: number, end: number) => set(produce((state: EditorState) => {
     state.summarySelection = { start, end, from_summary: true }
-    if (state.initiator === null) state.initiator = "summary"
+    if (state.initiator === null)
+      state.initiator = "summary"
   })),
   clearAllSelection: () => set(produce((state: EditorState) => {
     state.sourceSelection = { start: -1, end: -1, from_summary: false }
@@ -54,14 +55,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     state.sourceSelection = { start: -1, end: -1, from_summary: false }
     if (state.initiator === "source") {
       state.initiator = null
-      if (state.serverSection.length > 0) state.serverSection = []
+      if (state.serverSection.length > 0)
+        state.serverSection = []
     }
   })),
   clearSummarySelection: () => set(produce((state: EditorState) => {
     state.summarySelection = { start: -1, end: -1, from_summary: true }
     if (state.initiator === "summary") {
       state.initiator = null
-      if (state.serverSection.length > 0) state.serverSection = []
+      if (state.serverSection.length > 0)
+        state.serverSection = []
     }
   })),
   fetchServerSection: async (index: number) => {
@@ -73,7 +76,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
           return
         }
         set({ serverSection: response })
-      } else if (get().initiator === "summary") {
+      }
+      else if (get().initiator === "summary") {
         const response = await selectText(index, get().summarySelection)
         if (isRequestError(response)) {
           handleRequestError(response)
@@ -81,7 +85,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         }
         set({ serverSection: response })
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e)
       throw e
     }
@@ -93,7 +98,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     try {
       const history = await getTaskHistory(labelIndex)
       set({ history })
-    } catch (e) {
+    }
+    catch (e) {
       set({ history: [] })
       console.log(e)
       throw e
@@ -103,7 +109,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     if (viewing === null) {
       state.editable = true
       state.viewingID = null
-    } else {
+    }
+    else {
       state.sourceSelection.start = viewing.source_start
       state.sourceSelection.end = viewing.source_end
       state.summarySelection.start = viewing.summary_start

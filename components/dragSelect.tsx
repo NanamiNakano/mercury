@@ -1,17 +1,17 @@
 "use client"
 // No drag now
 
-import { Fragment, useState } from "react";
-import { makeStyles, shorthands } from "@fluentui/react-components";
+import { makeStyles, shorthands } from "@fluentui/react-components"
+import { Fragment, useState } from "react"
 
-type DragSelectProps = {
-  text: string,
-  range: [number, number],
-  onRangeChange: (range: [number, number]) => void,
-  idPrefix: string,
+interface DragSelectProps {
+  text: string
+  range: [number, number]
+  onRangeChange: (range: [number, number]) => void
+  idPrefix: string
 }
 
-const splitText = (text: string, range: [number, number]) => {
+function splitText(text: string, range: [number, number]) {
   return [
     text.slice(0, range[0]),
     text.slice(range[0], range[1]),
@@ -19,7 +19,7 @@ const splitText = (text: string, range: [number, number]) => {
   ]
 }
 
-const sortRange = (range: [number, number]): [number, number] => {
+function sortRange(range: [number, number]): [number, number] {
   return range[0] < range[1] ? range : [range[1], range[0]]
 }
 
@@ -32,20 +32,21 @@ const useStyles = makeStyles({
     backgroundColor: "#976728",
     ...shorthands.margin(0),
     ...shorthands.padding(0),
-  }
+  },
 })
 
-const DragSelect = (props: DragSelectProps) => {
+function DragSelect(props: DragSelectProps) {
   const { text, range, onRangeChange, idPrefix } = props
   const [ownRange, setOwnRange] = useState<[number, number]>([range[0], range[1]])
   const styles = useStyles()
 
   const handleMouseUp = (e: MouseEvent, id: string) => {
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount <= 0) return;
-    const range = selection.getRangeAt(0);
+    if (!selection || selection.rangeCount <= 0)
+      return
+    const range = selection.getRangeAt(0)
     // @ts-ignore: exists
-    const direction = selection.direction as "forward" | "backward" | "none";
+    const direction = selection.direction as "forward" | "backward" | "none"
     // TODO: Handle selection direction (start, forward too much & end, backward too much)
     if (id === `${idPrefix}-start`) {
       if (direction === "forward") {
@@ -83,17 +84,18 @@ const DragSelect = (props: DragSelectProps) => {
       }
     }
 
-    selection.removeAllRanges();
+    selection.removeAllRanges()
   }
 
   return (
     <div
       id={`${idPrefix}-box`}
       style={{
-        whiteSpace: "pre-wrap"
+        whiteSpace: "pre-wrap",
       }}
-      ref={el => {
-        if (!el) return
+      ref={(el) => {
+        if (!el)
+          return
         el.addEventListener("selectstart", (e) => {
           // @ts-ignore: exists
           if (e.currentTarget.nodeType === Node.TEXT_NODE) {
@@ -106,46 +108,49 @@ const DragSelect = (props: DragSelectProps) => {
       {splitText(text, ownRange).map((part, index) => (
         index === 1
           ? (
-            <Fragment key={`${idPrefix}-fragment`}>
-              <div
-                className={styles.pin}
-                id={`${idPrefix}-start`}
-                ref={el => {
-                  if (!el) return
-                  const onMouseUp = (e: MouseEvent) => {
-                    handleMouseUp(e, `${idPrefix}-start`)
-                    document.removeEventListener("mouseup", onMouseUp)
-                  }
-                  el.addEventListener("mousedown", () => {
-                    document.addEventListener("mouseup", onMouseUp)
-                  })
-                }}
-              />
-              <span
-                style={{
-                  backgroundColor: "#ffbb55"
-                }}
-              >
-                {part}
-              </span>
-              <div
-                className={styles.pin}
-                id={`${idPrefix}-end`}
-                ref={el => {
-                  if (!el) return
-                  const onMouseUp = (e: MouseEvent) => {
-                    handleMouseUp(e, `${idPrefix}-end`)
-                    document.removeEventListener("mouseup", onMouseUp)
-                  }
-                  el.addEventListener("mousedown", () => {
-                    document.addEventListener("mouseup", onMouseUp)
-                  })
-                }}
-              />
-            </Fragment>
-          ) : (
-            <span key={`${idPrefix}-${part}-part`}>{part}</span>
-          )
+              <Fragment key={`${idPrefix}-fragment`}>
+                <div
+                  className={styles.pin}
+                  id={`${idPrefix}-start`}
+                  ref={(el) => {
+                    if (!el)
+                      return
+                    const onMouseUp = (e: MouseEvent) => {
+                      handleMouseUp(e, `${idPrefix}-start`)
+                      document.removeEventListener("mouseup", onMouseUp)
+                    }
+                    el.addEventListener("mousedown", () => {
+                      document.addEventListener("mouseup", onMouseUp)
+                    })
+                  }}
+                />
+                <span
+                  style={{
+                    backgroundColor: "#ffbb55",
+                  }}
+                >
+                  {part}
+                </span>
+                <div
+                  className={styles.pin}
+                  id={`${idPrefix}-end`}
+                  ref={(el) => {
+                    if (!el)
+                      return
+                    const onMouseUp = (e: MouseEvent) => {
+                      handleMouseUp(e, `${idPrefix}-end`)
+                      document.removeEventListener("mouseup", onMouseUp)
+                    }
+                    el.addEventListener("mousedown", () => {
+                      document.addEventListener("mouseup", onMouseUp)
+                    })
+                  }}
+                />
+              </Fragment>
+            )
+          : (
+              <span key={`${idPrefix}-${part}-part`}>{part}</span>
+            )
 
       ))}
     </div>
