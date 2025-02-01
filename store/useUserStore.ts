@@ -18,7 +18,7 @@ export const useUserStore = create<UserState>()(set => ({
       set({ user })
     }
     catch (e) {
-      console.log(e)
+      console.warn(e)
       throw e
     }
   },

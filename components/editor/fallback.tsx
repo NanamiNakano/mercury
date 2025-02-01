@@ -11,7 +11,7 @@ export function Loading() {
 }
 
 interface hasErrorProps {
-  onRetry?: Function
+  onRetry?: () => void
 }
 
 export function HasError({ onRetry = null }: hasErrorProps) {

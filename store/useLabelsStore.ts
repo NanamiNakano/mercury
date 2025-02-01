@@ -15,7 +15,7 @@ export const useLabelsStore = create<LabelsState>()(set => ({
       set({ labels })
     }
     catch (e) {
-      console.log(e)
+      console.warn(e)
       throw e
     }
   },

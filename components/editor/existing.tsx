@@ -15,7 +15,7 @@ import {
 } from "@fluentui/react-components"
 import { ArrowSyncRegular, EditRegular, EyeRegular } from "@fluentui/react-icons"
 import _ from "lodash"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
 import { useTrackedEditorStore } from "../../store/useEditorStore"
 import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { useTrackedPopupStore } from "../../store/usePopupStore"
@@ -48,19 +48,20 @@ export default function ExistingPane() {
   const [viewOthers, setViewOthers] = useState<CheckboxProps["checked"]>(true)
   const classes = useStyles()
 
-  const debounceSetIsLoading = _.debounce(setIsLoading, 500)
-
   const onRefreshHistory = useCallback(async () => {
+    const debounceSetIsLoading = _.debounce(setIsLoading, 500)
+
     setHasError(false)
     debounceSetIsLoading(true)
     try {
       await editorStore.updateHistory(indexStore.index)
     }
     catch (e) {
+      console.warn(e)
       setHasError(true)
     }
     debounceSetIsLoading(false)
-  }, [indexStore.index])
+  }, [indexStore.index, editorStore])
 
   useEffect(() => {
     let ignore = false
@@ -72,7 +73,7 @@ export default function ExistingPane() {
     return () => {
       ignore = true
     }
-  }, [indexStore.index])
+  }, [indexStore.index, onRefreshHistory])
 
   const viewing = useMemo(() => {
     const data: LabelData[] = []
@@ -92,7 +93,7 @@ export default function ExistingPane() {
     })
 
     return data
-  }, [editorStore.history, viewYour, viewOthers])
+  }, [editorStore.history, viewYour, viewOthers, userStore.user.id])
 
   return (
     <div
@@ -132,8 +133,8 @@ export default function ExistingPane() {
         {hasError && <HasError />}
         {!isLoading && !hasError && taskStore.current && (
           viewing.map((record, index) => (
-            <>
-              <div role="tabpanel" className={classes.propsTable} key={record.record_id}>
+            <Fragment key={record.record_id}>
+              <div role="tabpanel" className={classes.propsTable}>
                 <table>
                   <tbody>
                     {(isSafeNumber(record.source_end) && isSafeNumber(record.source_start)) && (
@@ -202,7 +203,7 @@ export default function ExistingPane() {
                 }}
                 />
               )}
-            </>
+            </Fragment>
           ))
         )}
       </Card>

@@ -87,7 +87,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       }
     }
     catch (e) {
-      console.log(e)
+      console.warn(e)
       throw e
     }
   },
@@ -101,7 +101,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     }
     catch (e) {
       set({ history: [] })
-      console.log(e)
+      console.warn(e)
       throw e
     }
   },

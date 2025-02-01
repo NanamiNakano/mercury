@@ -28,7 +28,7 @@ export const useIndexStore = create<IndexState>()(set => ({
       }))
     }
     catch (e) {
-      console.log(e)
+      console.warn(e)
       throw e
     }
   },

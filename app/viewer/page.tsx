@@ -93,6 +93,63 @@ function SliceText(props: { text: string, start?: number, end?: number }) {
   )
 }
 
+function LabelInfoPanel(props: DumpAnnotationSlice) {
+  const styles = useStyles()
+  const annotator = props.annotation.annotator_name ?? props.annotation.annotator
+  return (
+    <div role="tabpanel">
+      <table className={styles.propsTable}>
+        <tbody>
+          <tr>
+            <td>Sample ID</td>
+            <td>
+              {props.sample_id + 1}
+              {" "}
+              (in current batch)
+            </td>
+          </tr>
+          <tr>
+            <td>Annotator</td>
+            <td>{annotator}</td>
+          </tr>
+          <tr>
+            <td>Labels</td>
+            <td>
+              <TagGroups tags={props.annotation.label} />
+            </td>
+          </tr>
+          {props.annotation.note && (
+            <tr>
+              <td>Note</td>
+              <td>{props.annotation.note}</td>
+            </tr>
+          )}
+          <tr>
+            <td>Annot ID</td>
+            <td>{props.annotation.annot_id}</td>
+          </tr>
+          {(isNumber(props.annotation.source_end) && isNumber(props.annotation.source_start)) && (
+            <tr>
+              <td>Source Range</td>
+              <td>
+                {`${props.annotation.source_start} - ${props.annotation.source_end}`}
+              </td>
+            </tr>
+          )}
+          {(isNumber(props.annotation.summary_start) && isNumber(props.annotation.summary_end)) && (
+            <tr>
+              <td>Summary Range</td>
+              <td>
+                {`${props.annotation.summary_start} - ${props.annotation.summary_end}`}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export default function Page() {
   const [sampleIndex, setSampleIndex] = useState(0)
   const [maxSample, setMaxSample] = useState(0)
@@ -107,7 +164,6 @@ export default function Page() {
   const [filterUsers, setFilterUsers] = useState<string[]>([])
   const [users, setUsers] = useState<Users | null>(null)
   const fetchLock = useRef(false)
-  const styles = useStyles()
 
   useEffect(() => {
     if (fetchLock.current) {
@@ -129,7 +185,7 @@ export default function Page() {
       })
       .catch((error) => {
         console.error(error)
-        console.log("--- Failed to fetch labels, upload a json file to start.")
+        console.warn("--- Failed to fetch labels, upload a json file to start.")
       })
   }, [])
 
@@ -184,62 +240,6 @@ export default function Page() {
     setAnnotationIndex(0)
     setNowSlices(newSlices)
   }, [fullSlices, filterUsers])
-
-  const LabelInfoPanel = (props: DumpAnnotationSlice) => {
-    const annotator = props.annotation.annotator_name ?? props.annotation.annotator
-    return (
-      <div role="tabpanel">
-        <table className={styles.propsTable}>
-          <tbody>
-            <tr>
-              <td>Sample ID</td>
-              <td>
-                {props.sample_id + 1}
-                {" "}
-                (in current batch)
-              </td>
-            </tr>
-            <tr>
-              <td>Annotator</td>
-              <td>{annotator}</td>
-            </tr>
-            <tr>
-              <td>Labels</td>
-              <td>
-                <TagGroups tags={props.annotation.label} />
-              </td>
-            </tr>
-            {props.annotation.note && (
-              <tr>
-                <td>Note</td>
-                <td>{props.annotation.note}</td>
-              </tr>
-            )}
-            <tr>
-              <td>Annot ID</td>
-              <td>{props.annotation.annot_id}</td>
-            </tr>
-            {(isNumber(props.annotation.source_end) && isNumber(props.annotation.source_start)) && (
-              <tr>
-                <td>Source Range</td>
-                <td>
-                  {`${props.annotation.source_start} - ${props.annotation.source_end}`}
-                </td>
-              </tr>
-            )}
-            {(isNumber(props.annotation.summary_start) && isNumber(props.annotation.summary_end)) && (
-              <tr>
-                <td>Summary Range</td>
-                <td>
-                  {`${props.annotation.summary_start} - ${props.annotation.summary_end}`}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
 
   return (
     <>

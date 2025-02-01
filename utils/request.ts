@@ -49,7 +49,7 @@ const backend = process.env.NEXT_PUBLIC_BACKEND || ""
 function getAccessToken(): string {
   const accessToken = localStorage.getItem("access_token")
   if (accessToken === "" || accessToken === null) {
-    console.log("Please login")
+    console.warn("Please login")
   }
   return accessToken
 }

@@ -38,7 +38,7 @@ function Page() {
       didInit = true
 
       indexStore.fetchMax().catch((e) => {
-        console.log(e)
+        console.warn(e)
         dispatchToast(
           <Toast>
             <ToastTitle
@@ -61,7 +61,7 @@ function Page() {
       })
 
       labelsStore.fetch().catch((e) => {
-        console.log(e)
+        console.warn(e)
         dispatchToast(
           <Toast>
             <ToastTitle
@@ -94,7 +94,7 @@ function Page() {
 
     if (typeof window !== "undefined" && !userStore.user.name) {
       const access_token = localStorage.getItem("access_token")
-      if (access_token == "" || access_token == null) {
+      if (access_token === "" || access_token === null) {
         dispatchToast(
           <Toast>
             <ToastTitle>Not logged in</ToastTitle>
@@ -117,7 +117,7 @@ function Page() {
         }
       })
       userStore.fetch().catch((e) => {
-        console.log(e)
+        console.warn(e)
         dispatchToast(
           <Toast>
             <ToastTitle

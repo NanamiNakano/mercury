@@ -15,7 +15,7 @@ export default function Controls() {
   const onReset = useCallback(() => {
     editorStore.clearAllSelection()
     editorStore.setViewing(null)
-  }, [])
+  }, [editorStore])
 
   const onExportJSON = useCallback(async () => {
     try {

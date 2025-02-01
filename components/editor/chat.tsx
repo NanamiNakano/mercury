@@ -32,9 +32,9 @@ export default function Chat({ id }: { id: number }) {
     setValue(data.value)
   }
 
-  const debounceSetIsLoading = _.debounce(setIsLoading, 500)
-
   const onFetch = useCallback(async () => {
+    const debounceSetIsLoading = _.debounce(setIsLoading, 500)
+
     setHasError(false)
     debounceSetIsLoading(true)
     try {
@@ -46,12 +46,13 @@ export default function Chat({ id }: { id: number }) {
       }
     }
     catch (e) {
+      console.warn(e)
       setHasError(true)
     }
     finally {
       debounceSetIsLoading(false)
     }
-  }, [])
+  }, [id])
 
   useEffect(() => {
     let ignore = false
@@ -63,7 +64,7 @@ export default function Chat({ id }: { id: number }) {
     return () => {
       ignore = true
     }
-  }, [])
+  }, [onFetch])
 
   const onSubmitMessage = useCallback(async () => {
     const parent_id = replying ? replyTo : null
@@ -85,7 +86,7 @@ export default function Chat({ id }: { id: number }) {
     setValue("")
     setReplying(false)
     setEditing(false)
-  }, [replying, replyTo, value])
+  }, [replying, replyTo, value, onFetch, edit, editing, id])
 
   function onUnsetReply() {
     setReplying(false)

@@ -6,4 +6,8 @@ export default antfu({
     quotes: "double",
   },
   ignores: ["**/*.md"],
+  rules: {
+    "node/prefer-global/process": "off",
+    "ts/ban-ts-comment": "off",
+  },
 })

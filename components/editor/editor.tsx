@@ -47,24 +47,20 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
     return isLoadingServerSection && editorStore.initiator === "source"
   }, [isLoadingServerSection, editorStore.initiator])
 
-  const debounceSetIsLoading = _.debounce(setIsLoading, 500)
-
-  const onRestoreViewingHistory = useCallback(() => {
-    editorStore.clearAllSelection()
-    editorStore.setViewing(null)
-  }, [])
-
   const onFetchTask = useCallback(async () => {
+    const debounceSetIsLoading = _.debounce(setIsLoading, 500)
+
     setHasError(false)
     debounceSetIsLoading(true)
     try {
       await taskStore.fetch(indexStore.index)
     }
     catch (e) {
+      console.warn(e)
       setHasError(true)
     }
     debounceSetIsLoading(false)
-  }, [indexStore.index])
+  }, [indexStore.index, taskStore])
 
   const onFetchServerSection = useCallback(async () => {
     try {
@@ -82,13 +78,15 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
               </ToastTrigger>
             )}
           >
-            Fail fetching server section
+            Fail fetching server section:
+            {" "}
+            {e}
           </ToastTitle>
         </Toast>,
         { intent: "error" },
       )
     }
-  }, [indexStore.index])
+  }, [indexStore.index, editorStore])
 
   const handleMouseUp = useCallback((target: "source" | "summary") => {
     if (typeof window === "undefined")

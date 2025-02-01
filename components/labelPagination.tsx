@@ -6,18 +6,14 @@ import { useCallback } from "react"
 import { useTrackedEditorStore } from "../store/useEditorStore"
 import { useTrackedIndexStore } from "../store/useIndexStore"
 
-interface Props {
-  beforeChangeIndex?: Function
-}
-
-export default function LabelPagination({ beforeChangeIndex = new Function() }: Props) {
+export default function LabelPagination() {
   const indexStore = useTrackedIndexStore()
   const editorStore = useTrackedEditorStore()
 
   const onReset = useCallback(() => {
     editorStore.clearAllSelection()
     editorStore.setViewing(null)
-  }, [])
+  }, [editorStore])
 
   return (
     <div
@@ -36,7 +32,6 @@ export default function LabelPagination({ beforeChangeIndex = new Function() }: 
         icon={<ChevronLeftRegular />}
         iconPosition="before"
         onClick={() => {
-          beforeChangeIndex()
           onReset()
           indexStore.previous()
         }}
@@ -56,7 +51,6 @@ export default function LabelPagination({ beforeChangeIndex = new Function() }: 
         icon={<IosChevronRightRegular />}
         iconPosition="after"
         onClick={() => {
-          beforeChangeIndex()
           onReset()
           indexStore.next()
         }}
