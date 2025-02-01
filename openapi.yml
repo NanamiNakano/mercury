@@ -9,6 +9,8 @@ servers:
 paths:
   /candidate_labels:
     get:
+      summary: Get candidate labels
+      description: Get candidate labels for labeling
       responses:
         '200':
           description: OK
@@ -19,6 +21,8 @@ paths:
 
   /user/me:
     get:
+      summary: Get current user info
+      description: Get current user info
       responses:
         '200':
           description: OK
@@ -37,6 +41,8 @@ paths:
 
   /user/name:
     post:
+      summary: Update current user name
+      description: Update current user name
       requestBody:
         content:
           application/json:
@@ -64,6 +70,8 @@ paths:
 
   /user/export:
     get:
+      summary: Export labels made by current user
+      description: Export labels made by current user
       responses:
         '200':
           description: OK
@@ -84,6 +92,8 @@ paths:
 
   /task:
     get:
+      summary: Get task count
+      description: Get task count
       responses:
         '200':
           description: OK
@@ -97,6 +107,8 @@ paths:
 
   /task/{task_index}:
     get:
+      summary: Get task info
+      description: Get task info
       parameters:
         - name: task_index
           in: path
@@ -115,6 +127,8 @@ paths:
 
   /task/{task_index}/history:
     get:
+      summary: Get all labels made for a task
+      description: Get all labels made for a task
       parameters:
         - name: task_index
           in: path
@@ -141,6 +155,8 @@ paths:
   
   /task/{task_index}/label:
     post:
+      summary: Submit a label for a task
+      description: Submit a label for a task
       parameters:
         - name: task_index
           in: path
@@ -170,6 +186,8 @@ paths:
 
   /task/{task_index}/label/{record_id}:
     patch:
+      summary: Edit a label for a task
+      description: Edit a label for a task
       parameters:
         - name: task_index
           in: path
@@ -204,6 +222,8 @@ paths:
 
   /task/{task_index}/select:
     post:
+      summary: Get AI prediction for a selected span
+      description: Get AI prediction for a selected span. Returns five possible spans.
       parameters:
         - name: task_index
           in: path
@@ -236,6 +256,8 @@ paths:
           type: integer
 
     get:
+      summary: Get all comments for a label
+      description: Get all comments for a label
       responses:
         '200':
           description: OK
@@ -246,6 +268,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/Comment'
     post:
+      summary: Submit a comment for a label
+      description: Submit a comment for a label
       requestBody:
         content:
           application/json:
@@ -281,6 +305,8 @@ paths:
           type: integer
 
     patch:
+      summary: Edit a comment for a label
+      description: Edit a comment for a label
       requestBody:
         content:
           application/json:
@@ -305,6 +331,8 @@ paths:
         - OAuth2: []
     
     delete:
+      summary: Delete a comment for a label
+      description: Delete a comment for a label
       responses:
         '200':
           description: OK
@@ -325,6 +353,8 @@ paths:
   
   /record/{record_id}:
     delete:
+      summary: Delete a label
+      description: Delete a label
       parameters:
         - name: record_id
           in: path
