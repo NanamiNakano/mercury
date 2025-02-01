@@ -93,7 +93,7 @@ export type User = {
 
 export type Comment = {
   comment_id: number
-  user_id: number
+  user_id: string
   username: string
   annot_id: number
   parent_id: number | null
