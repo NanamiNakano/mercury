@@ -1,7 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { produce } from "immer"
 import { useEffect, useMemo, useState } from "react"
-
+import { Window } from "@/components/ui/window"
 interface CandidateProps {
   candidate: Array<string>
   prefix: string | null
@@ -103,11 +103,13 @@ export default function Label({ label, onResultChange }: LabelProps) {
   }, [outerResult, innerResult])
 
   return (
-    <div>
-      <Candidate candidate={outer} onResultChange={setOuterResult} prefix={null} />
-      {Object.entries(inner).map(([key, value]) => (
-        <Candidate candidate={value} onResultChange={result => handleInnerResultChange(key, result)} prefix={key} key={key} />
-      ))}
-    </div>
+    <Window name="Label">
+      <div>
+        <Candidate candidate={outer} onResultChange={setOuterResult} prefix={null} />
+        {Object.entries(inner).map(([key, value]) => (
+          <Candidate candidate={value} onResultChange={result => handleInnerResultChange(key, result)} prefix={key} key={key} />
+        ))}
+      </div>
+    </Window>
   )
 }
