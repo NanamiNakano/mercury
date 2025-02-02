@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react"
 import { useState } from "react"
 import Label from "./label"
 
-const LabelWithState = (args: any) => {
+function LabelWithState(args: any) {
   const [result, setResult] = useState<string[]>([])
-  
+
   return (
     <div>
       <Label {...args} onResultChange={setResult} />
@@ -30,23 +30,23 @@ export const Primary: Story = {
       "Questionable",
       "Benign",
       {
-        "Unwanted": [
+        Unwanted: [
           "Extrinsic",
-          "Instrinsic"
-        ]
+          "Instrinsic",
+        ],
       },
       {
-        "Unwanted1": [
+        Unwanted1: [
           "Extrinsic",
-          "Instrinsic"
-        ]
+          "Instrinsic",
+        ],
       },
       {
-        "Unwanted2": [
+        Unwanted2: [
           "Extrinsic",
-          "Instrinsic"
-        ]
-      }
+          "Instrinsic",
+        ],
+      },
     ],
   },
 }
