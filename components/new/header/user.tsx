@@ -7,6 +7,7 @@ import { useTrackedUserStore } from "@/store/useUserStore"
 export default function User() {
   const userStore = useTrackedUserStore()
   return (
+    <div>
     <Dialog>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -33,8 +34,9 @@ export default function User() {
         Name
         <DialogFooter>
           <Button type="submit">Save changes</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

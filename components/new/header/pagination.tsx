@@ -38,7 +38,7 @@ export default function Pagination() {
   }
 
   return (
-    <div className="flex items-center justify-center gap-4">
+    <div className="flex gap-4">
       <Button disabled={indexStore.index === 0} onClick={indexStore.previous} variant="outline" size="icon">
         <IconArrowLeft />
       </Button>
