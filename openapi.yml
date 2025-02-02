@@ -217,6 +217,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPException"
+        "403":
+          description: Not allowed to edit other's annotation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPException"
+        "404":
+          description: Annotation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPException"
       security:
         - OAuth2: []
 
@@ -326,7 +338,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/HTTPException"
         "403":
-          description: Forbidden
+          description: Not allowed to edit other's comment
       security:
         - OAuth2: []
 
@@ -347,7 +359,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/HTTPException"
         "403":
-          description: Forbidden
+          description: Not allowed to delete other's comment
       security:
         - OAuth2: []
 
@@ -370,6 +382,12 @@ paths:
                 $ref: "#/components/schemas/RequestMessage"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPException"
+        "403":
+          description: Not allowed to delete other's annotation
           content:
             application/json:
               schema:
