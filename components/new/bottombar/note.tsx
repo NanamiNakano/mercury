@@ -1,7 +1,6 @@
 import { Textarea } from "@/components/ui/textarea"
 import { Window } from "@/components/ui/window"
 
-
 interface NoteProps {
   onNoteChange: (note: string) => void
 }

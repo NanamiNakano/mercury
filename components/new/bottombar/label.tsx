@@ -1,7 +1,8 @@
 import { Checkbox } from "@/components/ui/checkbox"
+import { Window } from "@/components/ui/window"
 import { produce } from "immer"
 import { useEffect, useMemo, useState } from "react"
-import { Window } from "@/components/ui/window"
+
 interface CandidateProps {
   candidate: Array<string>
   prefix: string | null
