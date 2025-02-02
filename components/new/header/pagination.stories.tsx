@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
 import { useTrackedIndexStore } from "@/store/useIndexStore"
-import Pagination from "./Pagination"
+import Pagination from "./pagination"
 
 const meta: Meta<typeof Pagination> = {
   component: Pagination,

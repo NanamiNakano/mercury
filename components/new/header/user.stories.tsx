@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
 import { useTrackedUserStore } from "@/store/useUserStore"
-import User from "./User"
+import User from "./user"
 
 const meta: Meta<typeof User> = {
   component: User,
