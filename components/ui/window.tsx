@@ -7,7 +7,7 @@ interface WindowProps {
 
 export function Window({ children, name }: WindowProps) {
   return (
-    <div>
+    <div className="w-full h-full">
       <div className="flex items-center bg-slate-100 h-9 px-4">
         <h1>{name}</h1>
       </div>
