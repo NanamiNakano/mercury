@@ -232,7 +232,7 @@ async def patch_task(task_index: int, record_id: int, label: Label, user: Annota
 
     label_string = json.dumps(label.consistent)
 
-    database.update_annotation({
+    result = database.update_annotation({
         "record_id": record_id,
         "sample_id": sample_id,
         "annotator": annotator,
@@ -240,6 +240,11 @@ async def patch_task(task_index: int, record_id: int, label: Label, user: Annota
         "annot_spans": annot_spans,
         "note": label.note
     })
+    if result is None:
+        raise HTTPException(status_code=404, detail="Annotation not found")
+    if not result:
+        raise HTTPException(status_code=403, detail="You are not allowed to edit other's annotation")
+    
     return {"message": "success"}
 
 @app.post(
@@ -390,7 +395,7 @@ async def post_comments(annot_index: int, comment: CommentData, user: Annotated[
 async def delete_comments(annot_index: int, comment_id: int, user: Annotated[User, Depends(get_user)]):
     comment = database.get_comment_by_id(comment_id)
     if comment[1] != user.id or comment[2] != annot_index:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="You are not allowed to delete other's comment")
     database.delete_comment(user.id, comment_id)
     return {"message": "success"}
 
@@ -399,14 +404,16 @@ async def delete_comments(annot_index: int, comment_id: int, user: Annotated[Use
 async def patch_comments(annot_index: int, comment_id: int, comment: CommentData, user: Annotated[User, Depends(get_user)]):
     target = database.get_comment_by_id(comment_id)
     if target[1] != user.id or target[2] != annot_index:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="You are not allowed to edit other's comment")
     database.edit_comment(user.id, comment_id, comment.text)
     return {"message": "success"}
 
 
 @app.delete("/record/{record_id}")
 async def delete_annotation(record_id: str, user: Annotated[User, Depends(get_user)]):
-    database.delete_annotation(record_id, user.id)
+    success = database.delete_annotation(record_id, user.id)
+    if not success:
+        raise HTTPException(status_code=403, detail="You are not allowed to delete other's annotation")
     return {"message": f"delete anntation {record_id} success"}
 
 
