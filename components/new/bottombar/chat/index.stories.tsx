@@ -1,8 +1,7 @@
+import type { Comment, CommentData } from "@/utils/types"
 import type { Meta, StoryObj } from "@storybook/react"
-import Chat from "./index"
 import { useState } from "react"
-import { CommentData } from "@/utils/types"
-import { Comment } from "@/utils/types"
+import Chat from "./index"
 
 function ChatWithState(args: any) {
   const [comments, setComments] = useState<Comment[]>([
@@ -29,7 +28,7 @@ function ChatWithState(args: any) {
   }
 
   function onEdit(id: number, comment: CommentData) {
-    setComments(comments.map((c) => (c.comment_id === id ? { ...c, text: comment.text } : c)))
+    setComments(comments.map(c => (c.comment_id === id ? { ...c, text: comment.text } : c)))
   }
 
   return <Chat {...args} comments={comments} labelId={1} onSubmit={onSubmit} onEdit={onEdit} />

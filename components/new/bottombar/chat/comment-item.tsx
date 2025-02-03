@@ -1,8 +1,8 @@
+import type { Comment } from "@/utils/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Pencil, MessageSquare } from "lucide-react"
-import type { Comment } from "@/utils/types"
+import { MessageSquare, Pencil } from "lucide-react"
 import QuotedText from "./quoted-text"
 
 interface CommentItemProps {
@@ -35,36 +35,38 @@ export default function CommentItem({
         <div className="mx-2 flex-grow">
           <div className="font-semibold">{comment.username}</div>
           <div className="p-2 rounded-lg bg-gray-200 whitespace-pre-wrap">
-            {isEditing ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  onSaveEdit()
-                }}
-                className="flex items-center"
-              >
-                <Input
-                  value={editText}
-                  onChange={(e) => onEditChange(e.target.value)}
-                  className="mr-2 bg-white text-black"
-                />
-                <Button type="submit" size="sm">
-                  Save
-                </Button>
-              </form>
-            ) : (
-              <>
-                <QuotedText text={comment.text} />
-                {comment.user_id === currentUserId && (
-                  <button
-                    onClick={() => onEdit(comment.comment_id)}
-                    className="ml-2 text-xs opacity-50 hover:opacity-100"
+            {isEditing
+              ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      onSaveEdit()
+                    }}
+                    className="flex items-center"
                   >
-                    <Pencil size={12} />
-                  </button>
+                    <Input
+                      value={editText}
+                      onChange={e => onEditChange(e.target.value)}
+                      className="mr-2 bg-white text-black"
+                    />
+                    <Button type="submit" size="sm">
+                      Save
+                    </Button>
+                  </form>
+                )
+              : (
+                  <>
+                    <QuotedText text={comment.text} />
+                    {comment.user_id === currentUserId && (
+                      <button
+                        onClick={() => onEdit(comment.comment_id)}
+                        className="ml-2 text-xs opacity-50 hover:opacity-100"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    )}
+                  </>
                 )}
-              </>
-            )}
           </div>
           <div className="mt-1 text-sm text-gray-500">
             {new Date(comment.comment_time).toLocaleString()}
@@ -72,7 +74,9 @@ export default function CommentItem({
               onClick={() => onReply(comment.comment_id)}
               className="ml-2 text-blue-500 hover:underline flex items-center"
             >
-              <MessageSquare size={12} className="mr-1" /> Reply
+              <MessageSquare size={12} className="mr-1" />
+              {" "}
+              Reply
             </button>
           </div>
         </div>

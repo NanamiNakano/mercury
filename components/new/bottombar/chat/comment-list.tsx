@@ -1,6 +1,7 @@
-import { ScrollArea } from "@/components/ui/scroll-area"
 import type { Comment } from "@/utils/types"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import CommentItem from "./comment-item"
+
 interface CommentListProps {
   comments: Comment[]
   onReply: (commentId: number) => void
@@ -24,7 +25,7 @@ export default function CommentList({
 }: CommentListProps) {
   return (
     <ScrollArea className="h-full pr-4">
-      {comments.map((comment) => (
+      {comments.map(comment => (
         <CommentItem
           key={comment.comment_id}
           comment={comment}
@@ -40,4 +41,3 @@ export default function CommentList({
     </ScrollArea>
   )
 }
-

@@ -1,5 +1,5 @@
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface CommentFormProps {
   newComment: string
@@ -20,7 +20,7 @@ export default function CommentForm({ newComment, onCommentChange, onSubmit, onC
     >
       <Input
         value={newComment}
-        onChange={(e) => onCommentChange(e.target.value)}
+        onChange={e => onCommentChange(e.target.value)}
         placeholder={isReplying ? "Type your reply..." : "Type a comment..."}
         className="flex-grow"
       />
@@ -33,4 +33,3 @@ export default function CommentForm({ newComment, onCommentChange, onSubmit, onC
     </form>
   )
 }
-

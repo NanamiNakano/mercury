@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
 import type { Comment, CommentData } from "@/utils/types"
-import CommentList from "./comment-list"
-import CommentForm from "./comment-form"
 import { Window } from "@/components/ui/window"
 import { useTrackedUserStore } from "@/store/useUserStore"
+import { useState } from "react"
+import CommentForm from "./comment-form"
+import CommentList from "./comment-list"
 
 interface ChatProps {
   labelId: number
@@ -23,7 +23,7 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
 
   const handleSendComment = () => {
     if (newComment.trim() !== "") {
-      const parentComment = comments.find((c) => c.comment_id === replyingTo)
+      const parentComment = comments.find(c => c.comment_id === replyingTo)
       let text = newComment
       if (parentComment) {
         text = `> ${parentComment.username}: ${parentComment.text.substring(0, 50)}${parentComment.text.length > 50 ? "..." : ""}\n\n${newComment}`
@@ -31,7 +31,7 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
       const newCommentObj: CommentData = {
         annot_id: labelId,
         parent_id: replyingTo,
-        text: text,
+        text,
       }
       onSubmit(newCommentObj)
       setNewComment("")
@@ -40,7 +40,7 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
   }
 
   const handleEditComment = (id: number) => {
-    const commentToEdit = comments.find((c) => c.comment_id === id)
+    const commentToEdit = comments.find(c => c.comment_id === id)
     if (commentToEdit) {
       setEditingId(id)
       setEditText(commentToEdit.text)
@@ -83,4 +83,3 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
     </Window>
   )
 }
-
