@@ -12,30 +12,23 @@ interface CandidateProps {
 }
 
 function Candidate({ candidate, prefix, initialData, onResultChange }: CandidateProps) {
-  const [labels, setLabels] = useState(() =>
-    Object.fromEntries(candidate.map(item => [item, false])),
-  )
-  const [prefixSelected, setPrefixSelected] = useState(false)
+  const newLabels = Object.fromEntries(candidate.map(item => [item, false]))
+  let hasPrefix = false
 
-  useEffect(() => {
-    const newLabels = { ...labels }
-    let hasPrefix = false
-
-    initialData.forEach((item) => {
-      if (item.includes(".") && prefix) {
-        const [_prefix, _candidate] = item.split(".")
-        if (_prefix === prefix) {
-          newLabels[_candidate] = true
-          hasPrefix = true
-        }
-      } else if (item === prefix) {
+  initialData.forEach((item) => {
+    if (item.includes(".") && prefix) {
+      const [_prefix, _candidate] = item.split(".")
+      if (_prefix === prefix) {
+        newLabels[_candidate] = true
         hasPrefix = true
       }
-    })
+    } else if (item === prefix) {
+      hasPrefix = true
+    }
+  })
 
-    setLabels(newLabels)
-    setPrefixSelected(hasPrefix)
-  }, [])
+  const [labels, setLabels] = useState(newLabels)
+  const [prefixSelected, setPrefixSelected] = useState(hasPrefix)
 
   function handleChange(item: string, value: boolean | "indeterminate") {
     if (value === "indeterminate") {
@@ -112,15 +105,20 @@ export default function Label({ initialData, onResultChange }: LabelProps) {
     return { ...acc, ...obj }
   }, {})
 
-  const [outerResult, setOuterResult] = useState(() =>
-    initialData.filter(item => outerCandidate.includes(item)),
-  )
-  const [innerResult, setInnerResult] = useState(() =>
-    Object.entries(innerCandidate).reduce((acc, [prefix]) => ({
-      ...acc,
-      [prefix]: initialData.filter(item => item.startsWith(`${prefix}.`)),
-    }), {} as Record<string, string[]>),
-  )
+  const outerInitial = initialData.filter(item => outerCandidate.includes(item))
+  const [outerResult, setOuterResult] = useState<string[]>(outerInitial)
+
+  const innerInitial = Object.entries(innerCandidate).reduce((acc, [prefix]) => ({
+    ...acc,
+    [prefix]: initialData.filter(item => item.startsWith(`${prefix}.`)),
+  }), {} as Record<string, string[]>)
+  const [innerResult, setInnerResult] = useState(innerInitial)
+
+  const handleInnerResultChange = (key: string, result: string[]) => {
+    setInnerResult(produce(innerResult, (draft) => {
+      draft[key] = result
+    }))
+  }
 
   useEffect(() => {
     const result = [...outerResult, ...Object.values(innerResult).flat()]
@@ -130,14 +128,12 @@ export default function Label({ initialData, onResultChange }: LabelProps) {
   return (
     <Window name="Label">
       <div>
-        <Candidate candidate={outerCandidate} initialData={outerResult} setLabelData={setOuterResult} prefix={null} />
+        <Candidate candidate={outerCandidate} initialData={outerInitial} onResultChange={setOuterResult} prefix={null} />
         {Object.entries(innerCandidate).map(([key, value]) => (
           <Candidate
             candidate={value}
-            initialData={innerResult[key]}
-            setLabelData={result => setInnerResult(produce(innerResult, (draft) => {
-              draft[key] = result
-            }))}
+            initialData={innerInitial[key]}
+            onResultChange={result => handleInnerResultChange(key, result)}
             prefix={key}
             key={key}
           />
