@@ -23,7 +23,7 @@ interface EditorState {
   fetchServerSection: (index: number) => Promise<void>
 
   history: LabelData[]
-  viewingID: string | null
+  viewingID: number | null
   updateHistory: (labelIndex: number) => Promise<void>
   setHistory: (history: LabelData[]) => void
   setViewing: (viewingRecord: LabelData) => void
