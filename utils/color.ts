@@ -1,6 +1,6 @@
 import { produce } from "immer"
 
-const colors = [
+const serverColors = [
   "#c4ebff",
   "#a8e1ff",
   "#70cdff",
@@ -9,8 +9,8 @@ const colors = [
   "#00a6ff",
 ]
 
-export function getColor(score: number) {
-  return colors[Math.floor(score * (colors.length - 1))]
+export function getServerColor(score: number) {
+  return serverColors[Math.floor(score * (serverColors.length - 1))]
 }
 
 export function normalizationScore(score: number[]) {
@@ -25,4 +25,20 @@ export function normalizationScore(score: number[]) {
       draft[i] = (draft[i] - minScore) / (maxScore - minScore)
     }
   })
+}
+
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i)
+  }
+  return hash;
+}
+
+export function generateUserColor(userId: string, recordId: number) {
+  const hash = simpleHash(userId)
+  const h = (hash + recordId * 10) % 360
+  const s = 70
+  const l = 60
+  return `hsl(${h}, ${s}%, ${l}%)`
 }

@@ -19,7 +19,7 @@ import { useTrackedIndexStore } from "../../store/useIndexStore"
 import { useTrackedLabelsStore } from "../../store/useLabelsStore"
 import { useTrackedPopupStore } from "../../store/usePopupStore"
 import { useTrackedTaskStore } from "../../store/useTaskStore"
-import { getColor, normalizationScore } from "../../utils/color"
+import { getServerColor, normalizationScore } from "../../utils/color"
 import { processServerSection } from "../../utils/processServerSection"
 import { labelText, updateRecord } from "../../utils/request"
 import Tooltip from "../tooltip"
@@ -208,7 +208,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
           start={sectionStart}
           end={sectionEnd}
           key={`slice-${sectionStart}-${sectionEnd}`}
-          backgroundColor={getColor(normalizedColors[section.index])}
+          backgroundColor={getServerColor(normalizedColors[section.index])}
           textColor="black"
           text={text.slice(sectionStart, sectionEnd)}
           score={section.score}
