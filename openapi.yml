@@ -458,7 +458,7 @@ components:
         - note
       properties:
         record_id:
-          type: string
+          type: integer
         sample_id:
           type: string
         summary_start:

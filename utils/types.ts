@@ -72,7 +72,7 @@ export interface Normal {
 }
 
 export interface LabelData {
-  record_id: string
+  record_id: number
   sample_id: string
   summary_start: number
   summary_end: number
