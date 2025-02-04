@@ -7,9 +7,10 @@ interface CommentFormProps {
   onSubmit: () => void
   onCancel: () => void
   isReplying: boolean
+  disabled?: boolean
 }
 
-export default function CommentForm({ newComment, onCommentChange, onSubmit, onCancel, isReplying }: CommentFormProps) {
+export default function CommentForm({ newComment, onCommentChange, onSubmit, onCancel, isReplying, disabled = false }: CommentFormProps) {
   return (
     <form
       onSubmit={(e) => {
@@ -23,10 +24,11 @@ export default function CommentForm({ newComment, onCommentChange, onSubmit, onC
         onChange={e => onCommentChange(e.target.value)}
         placeholder={isReplying ? "Type your reply..." : "Type a comment..."}
         className="flex-grow"
+        disabled={disabled}
       />
-      <Button type="submit">{isReplying ? "Reply" : "Send"}</Button>
+      <Button type="submit" disabled={disabled}>{isReplying ? "Reply" : "Send"}</Button>
       {isReplying && (
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={disabled}>
           Cancel
         </Button>
       )}

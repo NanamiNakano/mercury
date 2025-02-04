@@ -12,9 +12,10 @@ interface ChatProps {
   comments: Comment[]
   onSubmit: (comments: CommentData) => void
   onEdit: (id: number, comment: CommentData) => void
+  disabled?: boolean
 }
 
-export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps) {
+export default function Chat({ labelId, comments, onSubmit, onEdit, disabled = false }: ChatProps) {
   const [newComment, setNewComment] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editText, setEditText] = useState("")
@@ -77,6 +78,7 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
             onSubmit={handleSendComment}
             onCancel={() => setReplyingTo(null)}
             isReplying={replyingTo !== null}
+            disabled={disabled}
           />
         </div>
       </div>

@@ -4,9 +4,10 @@ import { Window } from "@/components/ui/window"
 interface NoteProps {
   initialNote: string
   onNoteChange: (note: string) => void
+  disabled?: boolean
 }
 
-export default function Note({ initialNote = "", onNoteChange }: NoteProps) {
+export default function Note({ initialNote = "", onNoteChange, disabled = false }: NoteProps) {
   if (initialNote !== "") {
     onNoteChange(initialNote)
   }
@@ -17,6 +18,7 @@ export default function Note({ initialNote = "", onNoteChange }: NoteProps) {
         <Textarea
           placeholder="Note"
           onChange={e => onNoteChange(e.target.value)}
+          disabled={disabled}
         >
           {initialNote}
         </Textarea>
