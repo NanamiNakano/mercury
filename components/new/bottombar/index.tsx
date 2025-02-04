@@ -6,8 +6,8 @@ import Label from "./label"
 import Note from "./note"
 
 interface BottomBarProps {
-  initialConsistent: Array<string>
-  initialNote: string
+  initialConsistent?: Array<string>
+  initialNote?: string
   onResultChange: (result: Array<string>) => void
   onNoteChange: (note: string) => void
   onSubmitLabel: () => void

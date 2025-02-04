@@ -54,12 +54,4 @@ export default meta
 type Story = StoryObj<typeof Label>
 
 export const Primary: Story = {
-  args: {
-    initialData: [
-      "Questionable",
-      "Benign",
-      "Unwanted1.Extrinsic",
-      "Unwanted2.Instrinsic",
-    ],
-  },
 }

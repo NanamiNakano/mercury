@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 interface CandidateProps {
   candidate: Array<string>
   prefix: string | null
-  initialData: Array<string>
+  initialData?: Array<string>
   onResultChange: (labelData: Array<string>) => void
   disabled?: boolean
 }
@@ -16,17 +16,19 @@ function Candidate({ candidate, prefix, initialData, onResultChange, disabled = 
   const newLabels = Object.fromEntries(candidate.map(item => [item, false]))
   let hasPrefix = false
 
-  initialData.forEach((item) => {
-    if (item.includes(".") && prefix) {
-      const [_prefix, _candidate] = item.split(".")
-      if (_prefix === prefix) {
-        newLabels[_candidate] = true
+  if (initialData) {
+    initialData.forEach((item) => {
+      if (item.includes(".") && prefix) {
+        const [_prefix, _candidate] = item.split(".")
+        if (_prefix === prefix) {
+          newLabels[_candidate] = true
+          hasPrefix = true
+        }
+      } else if (item === prefix) {
         hasPrefix = true
       }
-    } else if (item === prefix) {
-      hasPrefix = true
-    }
-  })
+    })
+  }
 
   const [labels, setLabels] = useState(newLabels)
   const [prefixSelected, setPrefixSelected] = useState(hasPrefix)
@@ -99,7 +101,7 @@ function Candidate({ candidate, prefix, initialData, onResultChange, disabled = 
 }
 
 interface LabelProps {
-  initialData: Array<string>
+  initialData?: Array<string>
   onResultChange: (labelData: Array<string>) => void
   disabled?: boolean
 }
@@ -111,12 +113,12 @@ export default function Label({ initialData, onResultChange, disabled = false }:
     return { ...acc, ...obj }
   }, {})
 
-  const outerInitial = initialData.filter(item => outerCandidate.includes(item))
+  const outerInitial = initialData ? initialData.filter(item => outerCandidate.includes(item)) : []
   const [outerResult, setOuterResult] = useState<string[]>(outerInitial)
 
   const innerInitial = Object.entries(innerCandidate).reduce((acc, [prefix]) => ({
     ...acc,
-    [prefix]: initialData.filter(item => item.startsWith(`${prefix}.`)),
+    [prefix]: initialData ? initialData.filter(item => item.startsWith(`${prefix}.`)) : [],
   }), {} as Record<string, string[]>)
   const [innerResult, setInnerResult] = useState(innerInitial)
 
