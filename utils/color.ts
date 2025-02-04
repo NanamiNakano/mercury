@@ -28,11 +28,11 @@ export function normalizationScore(score: number[]) {
 }
 
 function simpleHash(str: string): number {
-  let hash = 0;
+  let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = (hash << 5) - hash + str.charCodeAt(i)
   }
-  return hash;
+  return hash
 }
 
 export function generateUserColor(userId: string, recordId: number) {

@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react"
 
 import { useTrackedUserStore } from "@/store/useUserStore"
 import { generateUserColor } from "@/utils/color"
-import Entry from "./entry"
 import { fn } from "@storybook/test"
+import Entry from "./entry"
 
 const meta: Meta<typeof Entry> = {
   component: Entry,

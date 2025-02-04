@@ -25,7 +25,11 @@ interface EditorState {
   history: LabelData[]
   viewingID: string | null
   updateHistory: (labelIndex: number) => Promise<void>
+  setHistory: (history: LabelData[]) => void
   setViewing: (viewingRecord: LabelData) => void
+
+  activeList: Record<string, boolean>
+  setActiveList: (activeList: Record<string, boolean>) => void
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -102,6 +106,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       throw e
     }
   },
+  setHistory: (history: LabelData[]) => set({ history }),
   setViewing: (viewing: LabelData | null) => set(produce((state: EditorState) => {
     if (viewing === null) {
       state.editable = true
@@ -115,6 +120,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       state.viewingID = viewing.record_id
     }
   })),
+  activeList: {},
+  setActiveList: (activeList: Record<string, boolean>) => set({ activeList }),
 }))
 
 export const useTrackedEditorStore = createTrackedSelector(useEditorStore)
