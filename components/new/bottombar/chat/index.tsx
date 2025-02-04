@@ -57,7 +57,7 @@ export default function Chat({ labelId, comments, onSubmit, onEdit }: ChatProps)
 
   return (
     <Window name="Chat">
-      <div className="w-full flex flex-col gap-4 p-4 bg-background h-full">
+      <div className="w-full flex flex-col bg-background h-full">
         <div className="flex-1 overflow-y-auto h-full">
           <CommentList
             comments={comments}
