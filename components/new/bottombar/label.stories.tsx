@@ -8,7 +8,7 @@ function LabelWithState(args: any) {
 
   return (
     <div>
-      <Label {...args} setLabelData={setLabelData} />
+      <Label {...args} onResultChange={setLabelData} />
       <div className="mt-4">
         <h3>Selected Labels:</h3>
         <pre>{JSON.stringify(labelData, null, 2)}</pre>
@@ -55,7 +55,7 @@ type Story = StoryObj<typeof Label>
 
 export const Primary: Story = {
   args: {
-    labelData: [
+    initialData: [
       "Questionable",
       "Benign",
       "Unwanted1.Extrinsic",
