@@ -24,11 +24,11 @@ export default function BottomBar({ initialConsistent, initialNote, onResultChan
   return (
     <ResizablePanelGroup direction="horizontal" className="border border-slate-200">
       <ResizablePanel>
-        <Label initialData={initialConsistent} onResultChange={onResultChange} />
+        <Label initialData={initialConsistent} onResultChange={onResultChange} disabled={type === "viewing"} />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel>
-        <Note initialNote={initialNote} onNoteChange={onNoteChange} />
+        <Note initialNote={initialNote} onNoteChange={onNoteChange} disabled={type === "viewing"} />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel>
@@ -36,7 +36,7 @@ export default function BottomBar({ initialConsistent, initialNote, onResultChan
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel>
-        <Chat labelId={labelId} comments={comments} onSubmit={onSubmitChat} onEdit={onEdit} />
+        <Chat labelId={labelId} comments={comments} onSubmit={onSubmitChat} onEdit={onEdit} disabled={type === "editing"} />
       </ResizablePanel>
     </ResizablePanelGroup>
   )
