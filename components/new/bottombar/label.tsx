@@ -9,9 +9,10 @@ interface CandidateProps {
   prefix: string | null
   initialData: Array<string>
   onResultChange: (labelData: Array<string>) => void
+  disabled?: boolean
 }
 
-function Candidate({ candidate, prefix, initialData, onResultChange }: CandidateProps) {
+function Candidate({ candidate, prefix, initialData, onResultChange, disabled = false }: CandidateProps) {
   const newLabels = Object.fromEntries(candidate.map(item => [item, false]))
   let hasPrefix = false
 
@@ -44,7 +45,7 @@ function Candidate({ candidate, prefix, initialData, onResultChange }: Candidate
     if (value === "indeterminate") {
       return
     }
-    
+
     if (!value) {
       setLabels({} as Record<string, boolean>)
     }
@@ -74,7 +75,7 @@ function Candidate({ candidate, prefix, initialData, onResultChange }: Candidate
     <div>
       { prefix && (
         <div className="flex items-center space-x-2">
-          <Checkbox id={prefix} checked={prefixSelected} onCheckedChange={handlePrefixChange} />
+          <Checkbox id={prefix} checked={prefixSelected} onCheckedChange={handlePrefixChange} disabled={disabled} />
           <label htmlFor={prefix} className="font-bold">{prefix}</label>
         </div>
       )}
@@ -82,7 +83,7 @@ function Candidate({ candidate, prefix, initialData, onResultChange }: Candidate
         <div className="flex flex-col gap-2">
           {candidate.map(item => (
             <div className="flex items-center space-x-2" key={item}>
-              <Checkbox id={item} checked={labels[item]} onCheckedChange={value => handleChange(item, value)} />
+              <Checkbox id={item} checked={labels[item]} onCheckedChange={value => handleChange(item, value)} disabled={disabled} />
               <label
                 htmlFor={item}
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -100,9 +101,10 @@ function Candidate({ candidate, prefix, initialData, onResultChange }: Candidate
 interface LabelProps {
   initialData: Array<string>
   onResultChange: (labelData: Array<string>) => void
+  disabled?: boolean
 }
 
-export default function Label({ initialData, onResultChange }: LabelProps) {
+export default function Label({ initialData, onResultChange, disabled = false }: LabelProps) {
   const labelsStore = useTrackedLabelsStore()
   const outerCandidate = labelsStore.candidates.filter(item => typeof item === "string")
   const innerCandidate = (labelsStore.candidates.filter(item => typeof item === "object")).reduce((acc, obj) => {
@@ -132,7 +134,7 @@ export default function Label({ initialData, onResultChange }: LabelProps) {
   return (
     <Window name="Label">
       <div>
-        <Candidate candidate={outerCandidate} initialData={outerInitial} onResultChange={setOuterResult} prefix={null} />
+        <Candidate candidate={outerCandidate} initialData={outerInitial} onResultChange={setOuterResult} prefix={null} disabled={disabled} />
         {Object.entries(innerCandidate).map(([key, value]) => (
           <Candidate
             candidate={value}
@@ -140,6 +142,7 @@ export default function Label({ initialData, onResultChange }: LabelProps) {
             onResultChange={result => handleInnerResultChange(key, result)}
             prefix={key}
             key={key}
+            disabled={disabled}
           />
         ))}
       </div>
