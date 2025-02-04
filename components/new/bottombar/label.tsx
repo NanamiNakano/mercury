@@ -44,6 +44,10 @@ function Candidate({ candidate, prefix, initialData, onResultChange }: Candidate
     if (value === "indeterminate") {
       return
     }
+    
+    if (!value) {
+      setLabels({} as Record<string, boolean>)
+    }
     setPrefixSelected(value)
   }
 
