@@ -152,7 +152,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
           textColor="black"
           text={text.slice(selection.start, selection.end)}
           score={editorStore.initiator === target ? null : 2}
-          labels={labelsStore.labels}
+          labels={labelsStore.candidates}
           onLabel={async (label, note) => {
             await labelText(indexStore.index, {
               source_start: editorStore.sourceSelection.start,
@@ -212,7 +212,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
           textColor="black"
           text={text.slice(sectionStart, sectionEnd)}
           score={section.score}
-          labels={labelsStore.labels}
+          labels={labelsStore.candidates}
           onLabel={async (label, note) => {
             await labelText(indexStore.index, {
               source_start: editorStore.initiator === "source" ? editorStore.sourceSelection.start : sectionStart,
@@ -271,7 +271,7 @@ export default function Editor({ dispatchToast }: { dispatchToast: Function }) {
                   popUpStore.clearAll()
                 }
               }}
-              labels={labelsStore.labels}
+              labels={labelsStore.candidates}
             />
             <div
               style={{

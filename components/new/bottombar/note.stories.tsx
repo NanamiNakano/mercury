@@ -25,4 +25,7 @@ export default meta
 type Story = StoryObj<typeof Note>
 
 export const Primary: Story = {
+  args: {
+    initialNote: "This is a note",
+  },
 }
