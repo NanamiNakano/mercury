@@ -37,7 +37,9 @@ function BottomBarWithState(args: any) {
 
   return (
     <div>
-      <BottomBar {...args} onResultChange={setLabelData} onNoteChange={setNoteData} onSubmitChat={onSubmitChat} onEdit={onEdit} labelId={1} comments={comments} />
+      <div className="h-64">
+        <BottomBar {...args} onResultChange={setLabelData} onNoteChange={setNoteData} onSubmitChat={onSubmitChat} onEdit={onEdit} labelId={1} comments={comments} />
+      </div>
       <div className="mt-4">
         <h3>Selected Labels:</h3>
         <pre>{JSON.stringify(labelData, null, 2)}</pre>
