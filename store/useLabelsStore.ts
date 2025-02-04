@@ -3,16 +3,18 @@ import { create } from "zustand"
 import { getAllLabels } from "../utils/request"
 
 interface LabelsState {
-  labels: (string | object)[]
+  candidates: (string | object)[]
+  setCandidates: (candidates: (string | object)[]) => void
   fetch: () => Promise<void>
 }
 
 export const useLabelsStore = create<LabelsState>()(set => ({
-  labels: [],
+  candidates: [],
+  setCandidates: (candidates: (string | object)[]) => set({ candidates }),
   fetch: async () => {
     try {
       const labels = await getAllLabels()
-      set({ labels })
+      set({ candidates: labels })
     } catch (e) {
       console.warn(e)
       throw e

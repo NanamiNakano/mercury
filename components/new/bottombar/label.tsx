@@ -1,19 +1,41 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Window } from "@/components/ui/window"
+import { useTrackedLabelsStore } from "@/store/useLabelsStore"
 import { produce } from "immer"
 import { useEffect, useMemo, useState } from "react"
 
 interface CandidateProps {
   candidate: Array<string>
   prefix: string | null
-  onResultChange: (result: Array<string>) => void
+  labelData: Array<string>
+  setLabelData: (labelData: Array<string>) => void
 }
 
-function Candidate({ candidate, prefix, onResultChange }: CandidateProps) {
-  const [labels, setLabels] = useState<Record<string, boolean>>(
+function Candidate({ candidate, prefix, labelData, setLabelData }: CandidateProps) {
+  const [labels, setLabels] = useState(() =>
     Object.fromEntries(candidate.map(item => [item, false])),
   )
-  const [prefixSelected, setPrefixSelected] = useState<boolean>(false)
+  const [prefixSelected, setPrefixSelected] = useState(false)
+
+  useEffect(() => {
+    const newLabels = { ...labels }
+    let hasPrefix = false
+
+    labelData.forEach((item) => {
+      if (item.includes(".") && prefix) {
+        const [_prefix, _candidate] = item.split(".")
+        if (_prefix === prefix) {
+          newLabels[_candidate] = true
+          hasPrefix = true
+        }
+      } else if (item === prefix) {
+        hasPrefix = true
+      }
+    })
+
+    setLabels(newLabels)
+    setPrefixSelected(hasPrefix)
+  }, [])
 
   function handleChange(item: string, value: boolean | "indeterminate") {
     if (value === "indeterminate") {
@@ -48,8 +70,8 @@ function Candidate({ candidate, prefix, onResultChange }: CandidateProps) {
   }, [labels, prefix, prefixSelected])
 
   useEffect(() => {
-    onResultChange(result)
-  }, [result])
+    setLabelData(result)
+  }, [result, setLabelData])
 
   return (
     <div>
@@ -79,36 +101,46 @@ function Candidate({ candidate, prefix, onResultChange }: CandidateProps) {
 }
 
 interface LabelProps {
-  label: Array<string | Record<string, string[]>>
-  onResultChange: (result: Array<string>) => void
+  labelData: Array<string>
+  setLabelData: (labelData: Array<string>) => void
 }
 
-export default function Label({ label, onResultChange }: LabelProps) {
-  const outer = label.filter(item => typeof item === "string")
-  const inner = (label.filter(item => typeof item === "object")).reduce((acc, obj) => {
+export default function Label({ labelData, setLabelData }: LabelProps) {
+  const labelsStore = useTrackedLabelsStore()
+  const outerCandidate = labelsStore.candidates.filter(item => typeof item === "string")
+  const innerCandidate = (labelsStore.candidates.filter(item => typeof item === "object")).reduce((acc, obj) => {
     return { ...acc, ...obj }
   }, {})
 
-  const [outerResult, setOuterResult] = useState<Array<string>>([])
-  const [innerResult, setInnerResult] = useState<Record<string, Array<string>>>({})
-
-  function handleInnerResultChange(key: string, result: Array<string>) {
-    setInnerResult(produce(innerResult, (draft) => {
-      draft[key] = result
-    }))
-  }
+  const [outerResult, setOuterResult] = useState(() =>
+    labelData.filter(item => outerCandidate.includes(item)),
+  )
+  const [innerResult, setInnerResult] = useState(() =>
+    Object.entries(innerCandidate).reduce((acc, [prefix]) => ({
+      ...acc,
+      [prefix]: labelData.filter(item => item.startsWith(`${prefix}.`)),
+    }), {} as Record<string, string[]>),
+  )
 
   useEffect(() => {
     const result = [...outerResult, ...Object.values(innerResult).flat()]
-    onResultChange(result)
+    setLabelData(result)
   }, [outerResult, innerResult])
 
   return (
     <Window name="Label">
       <div>
-        <Candidate candidate={outer} onResultChange={setOuterResult} prefix={null} />
-        {Object.entries(inner).map(([key, value]) => (
-          <Candidate candidate={value} onResultChange={result => handleInnerResultChange(key, result)} prefix={key} key={key} />
+        <Candidate candidate={outerCandidate} labelData={outerResult} setLabelData={setOuterResult} prefix={null} />
+        {Object.entries(innerCandidate).map(([key, value]) => (
+          <Candidate
+            candidate={value}
+            labelData={innerResult[key]}
+            setLabelData={result => setInnerResult(produce(innerResult, (draft) => {
+              draft[key] = result
+            }))}
+            prefix={key}
+            key={key}
+          />
         ))}
       </div>
     </Window>
