@@ -11,7 +11,7 @@ export default function Note({ initialNote = "", onNoteChange, disabled = false 
   if (initialNote !== "") {
     onNoteChange(initialNote)
   }
-  
+
   return (
     <Window name="Note">
       <div>
