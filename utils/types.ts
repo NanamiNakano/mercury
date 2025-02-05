@@ -114,3 +114,9 @@ export function isNumber(value: unknown) {
 export function isSafeNumber(value: unknown) {
   return isNumber(value) ? (value as number) >= 0 : false
 }
+
+export interface HighlightMeta {
+  start: number
+  end: number
+  color: string
+}
