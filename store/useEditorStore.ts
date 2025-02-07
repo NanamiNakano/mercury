@@ -28,8 +28,8 @@ interface EditorState {
   setHistory: (history: LabelData[]) => void
   setViewing: (viewingRecord: LabelData) => void
 
-  activeList: Record<string, boolean>
-  setActiveList: (activeList: Record<string, boolean>) => void
+  activeList: Record<number, boolean>
+  setActiveList: (activeList: Record<number, boolean>) => void
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -121,7 +121,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     }
   })),
   activeList: {},
-  setActiveList: (activeList: Record<string, boolean>) => set({ activeList }),
+  setActiveList: (activeList: Record<number, boolean>) => set({ activeList }),
 }))
 
 export const useTrackedEditorStore = createTrackedSelector(useEditorStore)
