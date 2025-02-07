@@ -3,11 +3,7 @@ import { generateUserColor } from "@/utils/color"
 import { produce } from "immer"
 import Entry from "./entry"
 
-interface EntryListProps {
-
-}
-
-export default function EntryList({ }: EntryListProps) {
+export default function EntryList() {
   const editorStore = useTrackedEditorStore()
   editorStore.setActiveList(editorStore.history.reduce((acc, label) => {
     acc[label.record_id] = true
