@@ -4,9 +4,10 @@ import Color from "color"
 interface HighlightProps {
   text: string
   highlights: HighlightMeta[]
+  onMouseUp: (e: React.MouseEvent<HTMLParagraphElement>) => void
 }
 
-export default function Highlight({ text, highlights }: HighlightProps) {
+export default function Highlight({ text, highlights, onMouseUp }: HighlightProps) {
   const copyHighlights = [...highlights]
   const noLapHighlights = new Array<HighlightMeta>()
 
@@ -78,5 +79,9 @@ export default function Highlight({ text, highlights }: HighlightProps) {
 
   segments.push(text.slice(lastIndex))
 
-  return segments
+  return (
+    <p onMouseUp={onMouseUp}>
+      {segments}
+    </p>
+  )
 }
