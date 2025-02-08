@@ -1,6 +1,5 @@
 "use client"
 import { Toaster } from "@/components/ui/toaster"
-import { FluentProvider, webLightTheme } from "@fluentui/react-components"
 import "react-contexify/ReactContexify.css"
 import "@/app/globals.css"
 
@@ -23,10 +22,8 @@ export default function RootLayout({ children }) {
           position: "relative",
         }}
       >
-        <FluentProvider theme={webLightTheme}>
-          <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
-          <Toaster />
-        </FluentProvider>
+        <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
+        <Toaster />
       </body>
     </html>
   )
