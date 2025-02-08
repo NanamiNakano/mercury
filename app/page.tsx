@@ -1,7 +1,7 @@
 "use client"
 
-import Editor from "@/components/new/editor"
-import Header from "@/components/new/header"
+import Editor from "@/components/editor"
+import Header from "@/components/header"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
@@ -10,7 +10,7 @@ import { useTrackedLabelsStore } from "../store/useLabelsStore"
 import { useTrackedUserStore } from "../store/useUserStore"
 import { checkUserMe } from "../utils/request"
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable"
-import Sidebar from "@/components/new/sidebar"
+import Sidebar from "@/components/sidebar"
 
 let didInit = false
 
