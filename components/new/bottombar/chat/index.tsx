@@ -1,5 +1,3 @@
-"use client"
-
 import type { Comment, CommentData } from "@/utils/types"
 import { Window } from "@/components/ui/window"
 import { useTrackedUserStore } from "@/store/useUserStore"

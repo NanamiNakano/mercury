@@ -1,17 +1,24 @@
 import type { SelectionRequest } from "@/utils/types"
+import type { Ref } from "react"
 import { Window } from "@/components/ui/window"
 import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { generateUserColor, getServerColor } from "@/utils/color"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useImperativeHandle, useMemo, useState } from "react"
 import Highlight from "./highlight"
 
 interface EditorPanelProps {
   docType: "summary" | "source"
   type: "editing" | "viewing"
   text: string
+  ref: Ref<EditorPanelRef>
 }
 
-export default function EditorPanel({ docType, type, text }: EditorPanelProps) {
+export interface EditorPanelRef {
+  selection: SelectionRequest | null
+  reset: () => void
+}
+
+export default function EditorPanel({ docType, type, text, ref }: EditorPanelProps) {
   const editorStore = useTrackedEditorStore()
   const [selection, setSelection] = useState<SelectionRequest | null>(null)
 
@@ -71,6 +78,11 @@ export default function EditorPanel({ docType, type, text }: EditorPanelProps) {
     }
     return []
   }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history])
+
+  useImperativeHandle(ref, () => ({
+    selection,
+    reset: () => setSelection(null),
+  }))
 
   return (
     <Window name={docType === "summary" ? "Summary" : "Source"}>

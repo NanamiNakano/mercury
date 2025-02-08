@@ -1,20 +1,10 @@
 "use client"
 
-import {
-  Button,
-  Title1,
-  Toast,
-  Toaster,
-  ToastTitle,
-  ToastTrigger,
-  useId,
-  useToastController,
-} from "@fluentui/react-components"
+import Editor from "@/components/new/editor"
+import Header from "@/components/new/header"
+import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
-import Controls from "../components/editor/controls"
-import Editor from "../components/editor/editor"
-import LabelPagination from "../components/labelPagination"
 import { useTrackedIndexStore } from "../store/useIndexStore"
 import { useTrackedLabelsStore } from "../store/useLabelsStore"
 import { useTrackedUserStore } from "../store/useUserStore"
@@ -29,9 +19,7 @@ function Page() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  const toasterId = useId("toaster")
-  const { dispatchToast } = useToastController(toasterId)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!didInit) {
@@ -39,48 +27,18 @@ function Page() {
 
       indexStore.fetchMax().catch((e) => {
         console.warn(e)
-        dispatchToast(
-          <Toast>
-            <ToastTitle
-              action={(
-                <ToastTrigger>
-                  <Button onClick={() => {
-                    router.refresh()
-                  }}
-                  >
-                    Reload app
-                  </Button>
-                </ToastTrigger>
-              )}
-            >
-              Fail loading index
-            </ToastTitle>
-          </Toast>,
-          { intent: "error" },
-        )
+        toast({
+          title: "Fail loading index",
+          description: "Please try again later.",
+        })
       })
 
       labelsStore.fetch().catch((e) => {
         console.warn(e)
-        dispatchToast(
-          <Toast>
-            <ToastTitle
-              action={(
-                <ToastTrigger>
-                  <Button onClick={() => {
-                    router.refresh()
-                  }}
-                  >
-                    Reload app
-                  </Button>
-                </ToastTrigger>
-              )}
-            >
-              Fail loading labels
-            </ToastTitle>
-          </Toast>,
-          { intent: "error" },
-        )
+        toast({
+          title: "Fail loading labels",
+          description: "Please try again later.",
+        })
       })
 
       if (searchParams.has("sample")) {
@@ -93,65 +51,38 @@ function Page() {
     }
 
     if (typeof window !== "undefined" && !userStore.user.name) {
-      const access_token = localStorage.getItem("access_token")
-      if (access_token === "" || access_token === null) {
-        dispatchToast(
-          <Toast>
-            <ToastTitle>Not logged in</ToastTitle>
-          </Toast>,
-          { intent: "error" },
-        )
+      if (userStore.accessToken === "") {
+        toast({
+          title: "Not logged in",
+          description: "Please log in to continue.",
+        })
         router.push("/login")
         return
       }
-      checkUserMe(access_token).then((valid) => {
+      checkUserMe(userStore.accessToken).then((valid) => {
         if (!valid) {
           localStorage.removeItem("access_token")
-          dispatchToast(
-            <Toast>
-              <ToastTitle>Session expired</ToastTitle>
-            </Toast>,
-            { intent: "error" },
-          )
+          toast({
+            title: "Session expired",
+            description: "Please log in to continue.",
+          })
           router.push("/login")
         }
       })
       userStore.fetch().catch((e) => {
         console.warn(e)
-        dispatchToast(
-          <Toast>
-            <ToastTitle
-              action={(
-                <ToastTrigger>
-                  <Button onClick={() => {
-                    router.refresh()
-                  }}
-                  >
-                    Reload app
-                  </Button>
-                </ToastTrigger>
-              )}
-            >
-              Fail loading user data
-            </ToastTitle>
-          </Toast>,
-          { intent: "error" },
-        )
+        toast({
+          title: "Fail loading user data",
+          description: "Please try again later.",
+        })
       })
     }
   }, [])
 
   return (
     <>
-      <Toaster toasterId={toasterId} />
-      <Title1>Mercury Label</Title1>
-      <br />
-      <br />
-      <Controls />
-      <br />
-      <LabelPagination />
-      <br />
-      <Editor dispatchToast={dispatchToast} />
+      <Header />
+      <Editor />
     </>
   )
 }

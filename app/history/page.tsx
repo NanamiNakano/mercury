@@ -2,6 +2,7 @@
 
 import type { HistorySlice } from "../../utils/mergeArray"
 import type { LabelData, Task } from "../../utils/types"
+import { useTrackedUserStore } from "@/store/useUserStore"
 import {
   Body1,
   Button,
@@ -24,7 +25,7 @@ import { DeleteRegular, DismissRegular, EyeRegular } from "@fluentui/react-icons
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { historyTextToSlice } from "../../utils/mergeArray"
-import { deleteRecord, exportLabel, getSingleTask } from "../../utils/request"
+import { deleteLabel, exportLabel, getSingleTask } from "../../utils/request"
 
 export default function Page() {
   const [history, setHistory] = useState<LabelData[]>([])
@@ -37,11 +38,12 @@ export default function Page() {
   const [summary, setSummary] = useState<HistorySlice[] | null>(null)
 
   const queryDone = useRef(false)
+  const userStore = useTrackedUserStore()
 
   useEffect(() => {
     if (queryDone.current)
       return
-    exportLabel().then((data) => {
+    exportLabel(userStore.accessToken).then((data) => {
       setHistory(data)
       queryDone.current = true
     })
@@ -170,7 +172,7 @@ export default function Page() {
               <Button
                 icon={<DeleteRegular />}
                 onClick={() => {
-                  deleteRecord(taskData.record_id).then(() => {
+                  deleteLabel(userStore.accessToken, taskData.record_id).then(() => {
                     setDialogOpen(false)
                     setHistory(history.filter((_, index) => index !== historyIndex))
                   })
