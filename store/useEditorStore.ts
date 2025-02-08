@@ -20,7 +20,6 @@ interface EditorState {
 export const useEditorStore = create<EditorState>()(set => ({
   initiator: null,
   serverSection: [],
-  editable: true,
   clearAllSelection: () => set(produce((state: EditorState) => {
     state.serverSection = []
     state.initiator = null

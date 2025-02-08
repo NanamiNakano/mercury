@@ -11,51 +11,10 @@ import type {
   Task,
   User,
 } from "./types"
-import { produce } from "immer"
 
 const backend = process.env.NEXT_PUBLIC_BACKEND || ""
 
-// const getKey = async (): Promise<string> => {
-//   const hasUserMe = await checkUserMe()
-//
-//   const key = localStorage.getItem("key")
-//   if (key === "" || key === null) {
-//     const response = await fetch(`${backend}/user/new`)
-//     const data = await response.json()
-//     localStorage.setItem("key", data.key)
-//     if (hasUserMe) {
-//       localStorage.setItem("name", data.name)
-//     }
-//     return data.key
-//   }
-//
-//   if (hasUserMe) {
-//     const nameResponse = await fetch(`${backend}/user/me`, {
-//       headers: {
-//         "User-Key": key,
-//       },
-//     })
-//
-//     const data = await nameResponse.json()
-//     if ("error" in data) {
-//       localStorage.removeItem("key")
-//       localStorage.removeItem("name")
-//       return getKey()
-//     }
-//     localStorage.setItem("name", data.name)
-//     return Promise.resolve(key)
-//   }
-// }
-function getAccessToken(): string {
-  const accessToken = localStorage.getItem("access_token")
-  if (accessToken === "" || accessToken === null) {
-    console.warn("Please login")
-  }
-  return accessToken
-}
-
-async function getUserMe(): Promise<User> {
-  const access_token = getAccessToken()
+async function getUserMe(access_token: string): Promise<User> {
   const response = await fetch(`${backend}/user/me`, {
     headers: {
       Authorization: `Bearer ${access_token}`,
@@ -73,8 +32,7 @@ async function checkUserMe(access_token: string): Promise<boolean> {
   return response.ok
 }
 
-async function changeName(name: string): Promise<Normal> {
-  const access_token = getAccessToken()
+async function changeName(access_token: string, name: string): Promise<Normal> {
   const response = await fetch(`${backend}/user/name`, {
     method: "POST",
     headers: {
@@ -84,7 +42,6 @@ async function changeName(name: string): Promise<Normal> {
     body: JSON.stringify({ name }),
   })
   const data = await response.json()
-  localStorage.setItem("name", name)
   return data as Normal
 }
 
@@ -118,33 +75,20 @@ async function selectText(taskIndex: number, req: SelectionRequest): Promise<Sec
   return data as SectionResponse | RequestError
 }
 
-async function labelText(taskIndex: number, req: LabelRequest, single?: "source" | "summary"): Promise<Normal> {
-  const processedReq = produce(req, (draft) => {
-    if (single) {
-      if (single === "source") {
-        draft.summary_start = -1
-        draft.summary_end = -1
-      } else {
-        draft.source_start = -1
-        draft.source_end = -1
-      }
-    }
-  })
-  const access_token = getAccessToken()
+async function labelText(access_token: string, taskIndex: number, req: LabelRequest): Promise<Normal> {
   const response = await fetch(`${backend}/task/${taskIndex}/label`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${access_token}`,
     },
-    body: JSON.stringify(processedReq),
+    body: JSON.stringify(req),
   })
   const data = await response.json()
   return data as Normal
 }
 
-async function exportLabel(): Promise<LabelData[]> {
-  const access_token = getAccessToken()
+async function exportLabel(access_token: string): Promise<LabelData[]> {
   const response = await fetch(`${backend}/user/export`, {
     headers: {
       Authorization: `Bearer ${access_token}`,
@@ -154,8 +98,7 @@ async function exportLabel(): Promise<LabelData[]> {
   return data as LabelData[]
 }
 
-async function getTaskHistory(taskIndex: number): Promise<LabelData[]> {
-  const access_token = getAccessToken()
+async function getTaskHistory(access_token: string, taskIndex: number): Promise<LabelData[]> {
   const response = await fetch(`${backend}/task/${taskIndex}/history`, {
     headers: {
       Authorization: `Bearer ${access_token}`,
@@ -168,8 +111,7 @@ async function getTaskHistory(taskIndex: number): Promise<LabelData[]> {
   return []
 }
 
-async function deleteRecord(recordId: string): Promise<Normal> {
-  const access_token = getAccessToken()
+async function deleteLabel(access_token: string, recordId: number): Promise<Normal> {
   const response = await fetch(`${backend}/record/${recordId}`, {
     method: "DELETE",
     headers: {
@@ -196,8 +138,7 @@ async function login(email: string, password: string): Promise<boolean> {
   return false
 }
 
-async function updateRecord(taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> {
-  const access_token = getAccessToken()
+async function updateRecord(access_token: string, taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> {
   const response = await fetch(`${backend}/task/${taskIndex}/label/${recordId}`, {
     method: "PATCH",
     headers: {
@@ -216,8 +157,7 @@ async function getComment(annotId: number) {
   return data as Comment[]
 }
 
-async function commitComment(comment: CommentData) {
-  const access_token = getAccessToken()
+async function commitComment(access_token: string, comment: CommentData) {
   const response = await fetch(`${backend}/annot/${comment.annot_id}/comments`, {
     method: "POST",
     headers: {
@@ -230,8 +170,7 @@ async function commitComment(comment: CommentData) {
   return data as Normal
 }
 
-async function patchComment(id: number, comment: CommentData) {
-  const access_token = getAccessToken()
+async function patchComment(access_token: string, id: number, comment: CommentData) {
   const response = await fetch(`${backend}/annot/${comment.annot_id}/comments/${id}`, {
     method: "PATCH",
     headers: {
@@ -244,8 +183,7 @@ async function patchComment(id: number, comment: CommentData) {
   return data as Normal
 }
 
-async function deleteComment(id: number, annotId: number) {
-  const access_token = getAccessToken()
+async function deleteComment(access_token: string, id: number, annotId: number) {
   const response = await fetch(`${backend}/annot/${annotId}/comments/${id}`, {
     method: "DELETE",
     headers: {
@@ -261,7 +199,7 @@ export {
   checkUserMe,
   commitComment,
   deleteComment,
-  deleteRecord,
+  deleteLabel,
   exportLabel,
   getAllLabels,
   getAllTasksLength,
