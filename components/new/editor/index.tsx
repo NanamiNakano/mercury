@@ -9,7 +9,7 @@ import { useTrackedUserStore } from "@/store/useUserStore"
 import { commitComment, deleteLabel, labelText, patchComment } from "@/utils/request"
 import { useMemo, useRef, useState } from "react"
 import BottomBar from "../bottombar"
-import EditorPanel from "./panel"
+import { EditorPanel } from "./panel"
 
 export default function Editor() {
   const taskStore = useTrackedTaskStore()
@@ -163,35 +163,47 @@ export default function Editor() {
   }
 
   return (
-    <ResizablePanelGroup direction="vertical">
-      <ResizablePanel>
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel>
-            <EditorPanel docType="source" type={type} text={taskStore.current?.doc || ""} ref={sourceRef} />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel>
-            <EditorPanel docType="summary" type={type} text={taskStore.current?.sum || ""} ref={summaryRef} />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel>
-        <BottomBar
-          initialNote={initialNote}
-          initialConsistent={initialConsistent}
-          type={type}
-          onConsistentChange={setConsistent}
-          onNoteChange={setNote}
-          labelId={editorStore.viewingID}
-          onSubmitChat={handleSubmitComment}
-          onEditMessage={handleEditComment}
-          comments={comments}
-          onDelete={handleDeleteLabel}
-          onReset={handleResetLabel}
-          onSubmitLabel={handleSubmitLabel}
-        />
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    <div style={{ height: "100vh" }}>
+      <ResizablePanelGroup direction="vertical">
+        <ResizablePanel>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel>
+              <EditorPanel
+                docType="source"
+                type={type}
+                text={taskStore.current?.doc || ""}
+                ref={sourceRef}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel>
+              <EditorPanel
+                docType="summary"
+                type={type}
+                text={taskStore.current?.sum || ""}
+                ref={summaryRef}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={25}>
+          <BottomBar
+            initialNote={initialNote}
+            initialConsistent={initialConsistent}
+            type={type}
+            onConsistentChange={setConsistent}
+            onNoteChange={setNote}
+            labelId={editorStore.viewingID}
+            onSubmitChat={handleSubmitComment}
+            onEditMessage={handleEditComment}
+            comments={comments}
+            onDelete={handleDeleteLabel}
+            onReset={handleResetLabel}
+            onSubmitLabel={handleSubmitLabel}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   )
 }

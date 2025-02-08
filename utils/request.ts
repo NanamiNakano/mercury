@@ -122,7 +122,7 @@ async function deleteLabel(access_token: string, recordId: number): Promise<Norm
   return data as Normal
 }
 
-async function login(email: string, password: string): Promise<boolean> {
+async function login(email: string, password: string): Promise<string | null> {
   const response = await fetch(`${backend}/login`, {
     method: "POST",
     headers: {
@@ -132,10 +132,9 @@ async function login(email: string, password: string): Promise<boolean> {
   })
   const data = await response.json()
   if ("access_token" in data) {
-    localStorage.setItem("access_token", data.access_token)
-    return true
+    return data.access_token
   }
-  return false
+  return null
 }
 
 async function updateRecord(access_token: string, taskIndex: number, recordId: string, labelData: LabelData): Promise<Normal> {

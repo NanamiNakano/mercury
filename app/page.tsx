@@ -77,7 +77,7 @@ function Page() {
         })
       })
     }
-  }, [])
+  }, [userStore.accessToken])
 
   return (
     <>
