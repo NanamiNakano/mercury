@@ -163,7 +163,6 @@ export default function Editor() {
   }
 
   return (
-    <div style={{ height: "100vh" }}>
       <ResizablePanelGroup direction="vertical">
         <ResizablePanel>
           <ResizablePanelGroup direction="horizontal">
@@ -204,6 +203,5 @@ export default function Editor() {
           />
         </ResizablePanel>
       </ResizablePanelGroup>
-    </div>
   )
 }

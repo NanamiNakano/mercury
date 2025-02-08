@@ -9,6 +9,8 @@ import { useTrackedIndexStore } from "../store/useIndexStore"
 import { useTrackedLabelsStore } from "../store/useLabelsStore"
 import { useTrackedUserStore } from "../store/useUserStore"
 import { checkUserMe } from "../utils/request"
+import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable"
+import Sidebar from "@/components/new/sidebar"
 
 let didInit = false
 
@@ -80,10 +82,18 @@ function Page() {
   }, [userStore.accessToken])
 
   return (
-    <>
+    <div className="h-svh w-svw flex flex-col">
       <Header />
-      <Editor />
-    </>
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanel>
+          <Editor />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel>
+          <Sidebar />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   )
 }
 

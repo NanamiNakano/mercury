@@ -15,14 +15,8 @@ export default function RootLayout({ children }) {
           />
         )}
       </head>
-      <body
-        style={{
-          margin: "0",
-          height: "100vh",
-          position: "relative",
-        }}
-      >
-        <div style={{ width: "98%", padding: "1rem", margin: "0 auto" }}>{children}</div>
+      <body className="h-svh w-svw">
+        <div>{children}</div>
         <Toaster />
       </body>
     </html>
