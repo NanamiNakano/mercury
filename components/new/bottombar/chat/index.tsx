@@ -8,7 +8,7 @@ import CommentForm from "./comment-form"
 import CommentList from "./comment-list"
 
 interface ChatProps {
-  labelId: number
+  labelId: number | null
   comments: Comment[]
   onSubmit: (comments: CommentData) => void
   onEdit: (id: number, comment: CommentData) => void
