@@ -16,12 +16,12 @@ interface UserState {
 
 export const useUserStore = create<UserState>()(
   persist(
-    set => ({
+    (set, get) => ({
       user: {} as User,
       accessToken: "",
       fetch: async () => {
         try {
-          const user = await getUserMe()
+          const user = await getUserMe(get().accessToken)
           set({ user })
         } catch (e) {
           console.warn(e)
