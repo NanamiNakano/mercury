@@ -1,6 +1,6 @@
 "use client"
+
 import { Toaster } from "@/components/ui/toaster"
-import "react-contexify/ReactContexify.css"
 import "@/app/globals.css"
 
 export default function RootLayout({ children }) {
