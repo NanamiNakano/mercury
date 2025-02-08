@@ -3,9 +3,9 @@ import { Window } from "@/components/ui/window"
 import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { generateUserColor, getServerColor } from "@/utils/color"
 import rangy from "rangy"
-import "rangy/lib/rangy-textrange"
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react"
 import Highlight from "./highlight"
+import "rangy/lib/rangy-textrange"
 
 interface EditorPanelProps {
   docType: "summary" | "source"

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react"
+import { fn } from "@storybook/test"
 import Actions from "./actions"
 
 const meta: Meta<typeof Actions> = {
@@ -17,15 +18,15 @@ type Story = StoryObj<typeof Actions>
 export const EditingMode: Story = {
   args: {
     type: "editing",
-    onSubmit: () => console.log("Submit clicked"),
-    onDelete: () => console.log("Delete clicked"),
-    onReset: () => console.log("Reset clicked"),
+    onSubmit: () => fn(),
+    onDelete: () => fn(),
+    onReset: () => fn(),
   },
 }
 
 export const ViewingMode: Story = {
   args: {
     type: "viewing",
-    onReset: () => console.log("Reset clicked"),
+    onReset: () => fn(),
   },
 }

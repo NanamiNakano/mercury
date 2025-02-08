@@ -1,6 +1,7 @@
 import type { HighlightMeta } from "@/utils/types"
 import Color from "color"
 import { Fragment } from "react"
+
 interface HighlightProps {
   id: string
   text: string

@@ -1,7 +1,7 @@
 import type { ReactElement } from "react"
 
 interface WindowProps {
-  children: ReactElement
+  children: ReactElement<any>
   name: string
 }
 
