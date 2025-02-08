@@ -1,13 +1,14 @@
 import type { HighlightMeta } from "@/utils/types"
 import Color from "color"
-
+import { Fragment } from "react"
 interface HighlightProps {
+  id: string
   text: string
   highlights: HighlightMeta[]
   onMouseUp: (e: React.MouseEvent<HTMLParagraphElement>) => void
 }
 
-export default function Highlight({ text, highlights, onMouseUp }: HighlightProps) {
+export default function Highlight({ id, text, highlights, onMouseUp }: HighlightProps) {
   const copyHighlights = [...highlights]
   const noLapHighlights = new Array<HighlightMeta>()
 
@@ -80,8 +81,10 @@ export default function Highlight({ text, highlights, onMouseUp }: HighlightProp
   segments.push(text.slice(lastIndex))
 
   return (
-    <p onMouseUp={onMouseUp}>
-      {segments}
+    <p onMouseUp={onMouseUp} className="whitespace-pre-wrap" id={id}>
+      {segments.map((segment, index) => (
+        <Fragment key={index}>{segment}</Fragment>
+      ))}
     </p>
   )
 }

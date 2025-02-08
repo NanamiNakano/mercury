@@ -1,16 +1,16 @@
 import type { SelectionRequest } from "@/utils/types"
-import type { Ref } from "react"
 import { Window } from "@/components/ui/window"
 import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { generateUserColor, getServerColor } from "@/utils/color"
-import { useCallback, useImperativeHandle, useMemo, useState } from "react"
+import rangy from "rangy"
+import "rangy/lib/rangy-textrange"
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react"
 import Highlight from "./highlight"
 
 interface EditorPanelProps {
   docType: "summary" | "source"
   type: "editing" | "viewing"
   text: string
-  ref: Ref<EditorPanelRef>
 }
 
 export interface EditorPanelRef {
@@ -18,11 +18,11 @@ export interface EditorPanelRef {
   reset: () => void
 }
 
-export default function EditorPanel({ docType, type, text, ref }: EditorPanelProps) {
+function EditorPanelPrimitive({ docType, type, text }: EditorPanelProps, ref) {
   const editorStore = useTrackedEditorStore()
   const [selection, setSelection] = useState<SelectionRequest | null>(null)
 
-  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLParagraphElement>) => {
+  const handleMouseUp = useCallback(() => {
     if (typeof window === "undefined")
       return
     const selection = rangy.getSelection()
@@ -37,7 +37,7 @@ export default function EditorPanel({ docType, type, text, ref }: EditorPanelPro
       return
     }
 
-    const element = e.target as HTMLElement
+    const element = document.getElementById(docType) as HTMLElement
     const { start, end } = range.toCharacterRange(element)
 
     setSelection({
@@ -45,6 +45,8 @@ export default function EditorPanel({ docType, type, text, ref }: EditorPanelPro
       start,
       end,
     })
+
+    window.getSelection()?.empty()
   }, [docType, type])
 
   const highlights = useMemo(() => {
@@ -81,12 +83,13 @@ export default function EditorPanel({ docType, type, text, ref }: EditorPanelPro
 
   useImperativeHandle(ref, () => ({
     selection,
-    reset: () => setSelection(null),
   }))
 
   return (
     <Window name={docType === "summary" ? "Summary" : "Source"}>
-      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} />
+      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} id={docType} />
     </Window>
   )
 }
+
+export const EditorPanel = forwardRef(EditorPanelPrimitive)
