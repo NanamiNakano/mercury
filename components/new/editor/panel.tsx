@@ -1,7 +1,6 @@
 import type { SelectionRequest } from "@/utils/types"
 import { Window } from "@/components/ui/window"
 import { useTrackedEditorStore } from "@/store/useEditorStore"
-import { useTrackedTaskStore } from "@/store/useTaskStore"
 import { generateUserColor, getServerColor } from "@/utils/color"
 import { useCallback, useMemo, useState } from "react"
 import Highlight from "./highlight"
@@ -9,21 +8,12 @@ import Highlight from "./highlight"
 interface EditorPanelProps {
   docType: "summary" | "source"
   type: "editing" | "viewing"
+  text: string
 }
 
-export default function EditorPanel({ docType, type }: EditorPanelProps) {
-  const taskStore = useTrackedTaskStore()
+export default function EditorPanel({ docType, type, text }: EditorPanelProps) {
   const editorStore = useTrackedEditorStore()
   const [selection, setSelection] = useState<SelectionRequest | null>(null)
-
-  const text = useMemo(() => {
-    if (!taskStore.current)
-      return ""
-    if (docType === "summary") {
-      return taskStore.current.sum
-    }
-    return taskStore.current.doc
-  }, [docType, taskStore])
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLParagraphElement>) => {
     if (typeof window === "undefined")
