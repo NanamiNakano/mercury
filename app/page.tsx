@@ -13,6 +13,7 @@ import { useTrackedUserStore } from "../store/useUserStore"
 import { checkUserMe } from "../utils/request"
 
 let didInit = false
+let didLogin = false
 
 function Page() {
   const indexStore = useTrackedIndexStore()
@@ -52,7 +53,14 @@ function Page() {
       }
     }
 
-    if (typeof window !== "undefined" && !userStore.user.name) {
+    return () => {
+      didInit = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (window !== undefined && userStore.user.name !== undefined && !didLogin) {
+      didLogin = true
       if (userStore.accessToken === "") {
         toast({
           title: "Not logged in",
@@ -79,7 +87,7 @@ function Page() {
         })
       })
     }
-  }, [userStore.accessToken])
+  }, [userStore.user.name])
 
   return (
     <div className="h-svh w-svw flex flex-col">
