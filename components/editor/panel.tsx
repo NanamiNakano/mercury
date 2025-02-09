@@ -3,7 +3,7 @@ import { Window } from "@/components/ui/window"
 import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { generateUserColor, getServerColor } from "@/utils/color"
 import rangy from "rangy"
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react"
+import { useCallback, useImperativeHandle, useMemo, useState } from "react"
 import Highlight from "./highlight"
 import "rangy/lib/rangy-textrange"
 
@@ -11,6 +11,7 @@ interface EditorPanelProps {
   docType: "summary" | "source"
   type: "editing" | "viewing"
   text: string
+  ref: React.RefObject<EditorPanelRef>
 }
 
 export interface EditorPanelRef {
@@ -18,7 +19,7 @@ export interface EditorPanelRef {
   reset: () => void
 }
 
-function EditorPanelPrimitive({ docType, type, text }: EditorPanelProps, ref) {
+export default function EditorPanel({ docType, type, text, ref }: EditorPanelProps) {
   const editorStore = useTrackedEditorStore()
   const [selection, setSelection] = useState<SelectionRequest | null>(null)
 
@@ -83,6 +84,9 @@ function EditorPanelPrimitive({ docType, type, text }: EditorPanelProps, ref) {
 
   useImperativeHandle(ref, () => ({
     selection,
+    reset: () => {
+      setSelection(null)
+    },
   }))
 
   return (
@@ -91,5 +95,3 @@ function EditorPanelPrimitive({ docType, type, text }: EditorPanelProps, ref) {
     </Window>
   )
 }
-
-export const EditorPanel = forwardRef(EditorPanelPrimitive)

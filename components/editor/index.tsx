@@ -9,7 +9,7 @@ import { useTrackedUserStore } from "@/store/useUserStore"
 import { commitComment, deleteLabel, labelText, patchComment } from "@/utils/request"
 import { useEffect, useMemo, useRef, useState } from "react"
 import BottomBar from "../bottombar"
-import { EditorPanel } from "./panel"
+import EditorPanel from "./panel"
 
 export default function Editor() {
   const taskStore = useTrackedTaskStore()
