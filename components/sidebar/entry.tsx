@@ -18,7 +18,7 @@ export default function Entry({ username, hslColor: color, onStateChange, onSele
   }
 
   return (
-    <div className="h-10 border-slate-200 flex items-center justify-between px-2 border">
+    <div className="h-10 border-slate-200 flex items-center justify-between px-2 border-b">
       <div className="flex gap-2">
         <div className="size-6 rounded-sm" style={{ backgroundColor: color }} onClick={() => onSelect(true)} />
         <p>{username}</p>

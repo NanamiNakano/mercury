@@ -3,7 +3,7 @@ import EntryList from "./entry-list"
 
 export default function Sidebar() {
   return (
-    <Window name="Annotations">
+    <Window name="Annotations" noPadding>
       <EntryList />
     </Window>
   )
