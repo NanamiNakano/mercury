@@ -138,13 +138,10 @@ export default function Editor() {
   }
 
   function handleResetLabel() {
-    if (editorStore.viewing) {
-      return
-    }
-
     sourceRef.current?.reset()
     summaryRef.current?.reset()
     editorStore.clearServerSection()
+    editorStore.setViewing(null)
   }
 
   const handleSubmitLabel = useCallback(async () => {
@@ -213,6 +210,7 @@ export default function Editor() {
           description: "There was a problem with your request.",
         })
       })
+      handleResetLabel()
     }
   }, [indexStore.index, userStore.accessToken])
 
