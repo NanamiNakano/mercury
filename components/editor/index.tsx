@@ -63,7 +63,7 @@ export default function Editor() {
   }, [editorStore.viewing])
 
   async function handleSubmitComment(comment: CommentData) {
-      if (!editorStore.viewing) {
+    if (!editorStore.viewing) {
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",

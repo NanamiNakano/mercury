@@ -2,8 +2,9 @@ import type { LabelData, SectionResponse } from "../utils/types"
 import { produce } from "immer"
 import { createTrackedSelector } from "react-tracked"
 import { create } from "zustand"
-import { getTaskHistory } from "../utils/request"
 import { normalizationScore } from "../utils/color"
+import { getTaskHistory } from "../utils/request"
+
 interface EditorState {
   serverSection: SectionResponse
   setServerSection: (section: SectionResponse) => void

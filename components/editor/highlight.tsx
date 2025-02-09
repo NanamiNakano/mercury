@@ -86,7 +86,7 @@ export default function Highlight({ id, text, highlights, pending, clickable, on
       segments.push(
         <span style={{ backgroundColor: highlight.color }} onClick={() => onClick(highlight.start, highlight.end)}>
           {text.slice(highlight.start, highlight.end)}
-        </span>
+        </span>,
       )
     } else {
       segments.push(<span style={{ backgroundColor: highlight.color }}>{text.slice(highlight.start, highlight.end)}</span>)
