@@ -1,19 +1,12 @@
 import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { generateUserColor } from "@/utils/color"
-import { produce } from "immer"
 import Entry from "./entry"
 
 export default function EntryList() {
   const editorStore = useTrackedEditorStore()
-  editorStore.setActiveList(editorStore.history.reduce((acc, label) => {
-    acc[label.record_id] = true
-    return acc
-  }, {} as Record<number, boolean>))
 
   function handleStateChange(recordId: number, active: boolean) {
-    editorStore.setActiveList(produce(editorStore.activeList, (draft) => {
-      draft[recordId] = active
-    }))
+    editorStore.setActive(recordId, active)
   }
 
   return (

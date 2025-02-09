@@ -17,7 +17,7 @@ interface EditorState {
   setViewing: (viewingRecord: LabelData) => void
 
   activeList: Record<number, boolean>
-  setActiveList: (activeList: Record<number, boolean>) => void
+  setActive: (recordId: number, active: boolean) => void
 }
 
 export const useEditorStore = create<EditorState>()(set => ({
@@ -33,7 +33,11 @@ export const useEditorStore = create<EditorState>()(set => ({
   setHistory: (history: LabelData[]) => set({ history }),
   fetchHistory: async (accessToken: string, taskIndex: number) => {
     const history = await getTaskHistory(accessToken, taskIndex)
-    set({ history })
+    const activeList = history.reduce((acc, label) => {
+      acc[label.record_id] = true
+      return acc
+    }, {} as Record<number, boolean>)
+    set({ history, activeList })
   },
 
   viewingID: null,
@@ -42,7 +46,9 @@ export const useEditorStore = create<EditorState>()(set => ({
   })),
 
   activeList: {},
-  setActiveList: (activeList: Record<number, boolean>) => set({ activeList }),
+  setActive: (recordId: number, active: boolean) => set(produce((state: EditorState) => {
+    state.activeList[recordId] = active
+  })),
 }))
 
 export const useTrackedEditorStore = createTrackedSelector(useEditorStore)

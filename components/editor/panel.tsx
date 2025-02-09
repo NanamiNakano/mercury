@@ -70,14 +70,26 @@ export default function EditorPanel({ docType, type, text, ref }: EditorPanelPro
     if (Object.keys(editorStore.activeList).length > 0) {
       return Object.entries(editorStore.activeList)
         .filter(([_key, value]) => value)
-        .map(([key, _value]) => {
+        .reduce((acc, [key, _value]) => {
           const label = editorStore.history.find(label => label.record_id === Number.parseInt(key))
-          return {
-            start: label.summary_start,
-            end: label.summary_end,
-            color: generateUserColor(label.user_id, label.record_id),
+          if (!label) {
+            return acc
           }
-        })
+
+          if (docType === "summary") {
+            return [...acc, {
+              start: label.summary_start,
+              end: label.summary_end,
+              color: generateUserColor(label.user_id, label.record_id),
+            }]
+          }
+
+          return [...acc, {
+            start: label.source_start,
+            end: label.source_end,
+            color: generateUserColor(label.user_id, label.record_id),
+          }]
+        }, [])
     }
     return []
   }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history])

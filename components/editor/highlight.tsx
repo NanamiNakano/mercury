@@ -10,7 +10,7 @@ interface HighlightProps {
 }
 
 export default function Highlight({ id, text, highlights, onMouseUp }: HighlightProps) {
-  const copyHighlights = [...highlights]
+  const copyHighlights = highlights.filter(highlight => highlight.start !== -1 && highlight.end !== -1)
   const noLapHighlights = new Array<HighlightMeta>()
 
   while (copyHighlights.length > 1) {
