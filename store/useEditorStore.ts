@@ -13,8 +13,8 @@ interface EditorState {
   setHistory: (history: LabelData[]) => void
   fetchHistory: (accessToken: string, taskIndex: number) => Promise<void>
 
-  viewingID: number | null
-  setViewing: (viewingRecord: LabelData) => void
+  viewing: LabelData | null
+  setViewing: (viewing: LabelData | null) => void
 
   activeList: Record<number, boolean>
   setActive: (recordId: number, active: boolean) => void
@@ -42,10 +42,8 @@ export const useEditorStore = create<EditorState>()(set => ({
     set({ history, activeList })
   },
 
-  viewingID: null,
-  setViewing: (viewing: LabelData | null) => set(produce((state: EditorState) => {
-    state.viewingID = viewing?.record_id ?? null
-  })),
+  viewing: null,
+  setViewing: (viewing: LabelData | null) => set({ viewing }),
 
   activeList: {},
   setActive: (recordId: number, active: boolean) => set(produce((state: EditorState) => {

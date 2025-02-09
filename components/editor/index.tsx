@@ -21,11 +21,11 @@ export default function Editor() {
   const { toast } = useToast()
 
   const type = useMemo(() => {
-    if (editorStore.viewingID) {
+    if (editorStore.viewing) {
       return "viewing"
     }
     return "editing"
-  }, [editorStore.viewingID])
+  }, [editorStore.viewing])
 
   const sourceRef = useRef<EditorPanelRef>(null)
   const summaryRef = useRef<EditorPanelRef>(null)
@@ -42,28 +42,28 @@ export default function Editor() {
   })
 
   const initialNote = useMemo(() => {
-    if (editorStore.viewingID) {
-      return editorStore.history.find(record => record.record_id === editorStore.viewingID)?.note
+    if (editorStore.viewing) {
+      return editorStore.viewing.note
     }
     return ""
-  }, [editorStore.viewingID, editorStore.history])
+  }, [editorStore.viewing])
 
   const initialConsistent = useMemo(() => {
-    if (editorStore.viewingID) {
-      return editorStore.history.find(record => record.record_id === editorStore.viewingID)?.consistent
+    if (editorStore.viewing) {
+      return editorStore.viewing.consistent
     }
     return []
-  }, [editorStore.viewingID, editorStore.history])
+  }, [editorStore.viewing, editorStore.history])
 
   const comments = useMemo(() => {
-    if (editorStore.viewingID) {
+    if (editorStore.viewing) {
       return [] // TODO: get comments
     }
     return []
-  }, [editorStore.viewingID])
+  }, [editorStore.viewing])
 
   async function handleSubmitComment(comment: CommentData) {
-    if (!editorStore.viewingID) {
+      if (!editorStore.viewing) {
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
@@ -87,7 +87,7 @@ export default function Editor() {
   }
 
   async function handleEditComment(id: number, comment: CommentData) {
-    if (!editorStore.viewingID) {
+    if (!editorStore.viewing) {
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
@@ -111,7 +111,7 @@ export default function Editor() {
   }
 
   async function handleDeleteLabel() {
-    if (!editorStore.viewingID) {
+    if (!editorStore.viewing) {
       toast({
         title: "Cannot delete label",
         description: "You did not select any label to delete.",
@@ -119,7 +119,7 @@ export default function Editor() {
       return
     }
     try {
-      await deleteLabel(userStore.accessToken, editorStore.viewingID)
+      await deleteLabel(userStore.accessToken, editorStore.viewing.record_id)
       toast({
         title: "Label deleted",
         description: "The label has been deleted.",
@@ -134,7 +134,7 @@ export default function Editor() {
   }
 
   function handleResetLabel() {
-    if (editorStore.viewingID) {
+    if (editorStore.viewing) {
       return
     }
 
@@ -144,7 +144,7 @@ export default function Editor() {
   }
 
   const handleSubmitLabel = useCallback(async () => {
-    if (editorStore.viewingID) {
+    if (editorStore.viewing) {
       return
     }
 
@@ -181,7 +181,7 @@ export default function Editor() {
         description: `There was a problem with your request: ${error}`,
       })
     }
-  }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewingID, selection])
+  }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewing, selection])
 
   function handleSelectionChange(selection: SelectionRequest | null, docType: "source" | "summary") {
     setSelection(produce((draft) => {
@@ -270,7 +270,6 @@ export default function Editor() {
           type={type}
           onConsistentChange={setConsistent}
           onNoteChange={setNote}
-          labelId={editorStore.viewingID}
           onSubmitChat={handleSubmitComment}
           onEditMessage={handleEditComment}
           comments={comments}
