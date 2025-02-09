@@ -7,7 +7,7 @@ import { useTrackedIndexStore } from "@/store/useIndexStore"
 import { useTrackedTaskStore } from "@/store/useTaskStore"
 import { useTrackedUserStore } from "@/store/useUserStore"
 import { commitComment, deleteLabel, labelText, patchComment } from "@/utils/request"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import BottomBar from "../bottombar"
 import { EditorPanel } from "./panel"
 
@@ -161,6 +161,18 @@ export default function Editor() {
       })
     }
   }
+
+  useEffect(() => {
+    if (indexStore.index !== undefined) {
+      taskStore.fetch(indexStore.index).catch((e) => {
+        console.warn(e)
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
+        })
+      })
+    }
+  }, [indexStore.index])
 
   return (
     <ResizablePanelGroup direction="vertical">

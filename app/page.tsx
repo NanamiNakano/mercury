@@ -97,7 +97,7 @@ function Page() {
           <Editor />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel>
+        <ResizablePanel defaultSize={15}>
           <Sidebar />
         </ResizablePanel>
       </ResizablePanelGroup>
