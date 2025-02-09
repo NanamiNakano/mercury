@@ -3,7 +3,7 @@ import { produce } from "immer"
 import { createTrackedSelector } from "react-tracked"
 import { create } from "zustand"
 import { getTaskHistory } from "../utils/request"
-
+import { normalizationScore } from "../utils/color"
 interface EditorState {
   serverSection: SectionResponse
   setServerSection: (section: SectionResponse) => void
@@ -22,7 +22,14 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>()(set => ({
   serverSection: [],
-  setServerSection: (section: SectionResponse) => set({ serverSection: section }),
+  setServerSection: (section: SectionResponse) => set(produce((state: EditorState) => {
+    const scores = section.map(section => section.score)
+    const normalizedScores = normalizationScore(scores)
+    state.serverSection = section.map((section, index) => ({
+      ...section,
+      score: normalizedScores[index],
+    }))
+  })),
   clearServerSection: () => set({ serverSection: [] }),
   history: [],
   setHistory: (history: LabelData[]) => set({ history }),
