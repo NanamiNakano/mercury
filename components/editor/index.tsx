@@ -7,7 +7,7 @@ import { useTrackedIndexStore } from "@/store/useIndexStore"
 import { useTrackedTaskStore } from "@/store/useTaskStore"
 import { useTrackedUserStore } from "@/store/useUserStore"
 import { commitComment, deleteLabel, labelText, patchComment } from "@/utils/request"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import BottomBar from "../bottombar"
 import EditorPanel from "./panel"
 
@@ -131,7 +131,7 @@ export default function Editor() {
     summaryRef.current?.reset()
   }
 
-  async function handleSubmitLabel() {
+  const handleSubmitLabel = useCallback(async () => {
     if (editorStore.viewingID) {
       return
     }
@@ -151,8 +151,16 @@ export default function Editor() {
       consistent,
       note,
     }
+
     try {
       await labelText(userStore.accessToken, indexStore.index, labelRequest)
+      editorStore.fetchHistory(userStore.accessToken, indexStore.index).catch((e) => {
+        console.warn(e)
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
+        })
+      })
     } catch (error) {
       toast({
         variant: "destructive",
@@ -160,7 +168,7 @@ export default function Editor() {
         description: `There was a problem with your request: ${error}`,
       })
     }
-  }
+  }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewingID])
 
   useEffect(() => {
     if (indexStore.index !== undefined) {
@@ -171,8 +179,15 @@ export default function Editor() {
           description: "There was a problem with your request.",
         })
       })
+      editorStore.fetchHistory(userStore.accessToken, indexStore.index).catch((e) => {
+        console.warn(e)
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
+        })
+      })
     }
-  }, [indexStore.index])
+  }, [indexStore.index, userStore.accessToken])
 
   return (
     <ResizablePanelGroup direction="vertical">
