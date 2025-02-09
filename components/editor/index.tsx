@@ -120,9 +120,13 @@ export default function Editor() {
     }
     try {
       await deleteLabel(userStore.accessToken, editorStore.viewing.record_id)
-      toast({
-        title: "Label deleted",
-        description: "The label has been deleted.",
+      editorStore.setViewing(null)
+      editorStore.fetchHistory(userStore.accessToken, indexStore.index).catch((e) => {
+        console.warn(e)
+        toast({
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
+        })
       })
     } catch (error) {
       toast({

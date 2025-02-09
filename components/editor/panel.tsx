@@ -84,6 +84,15 @@ export default function EditorPanel({ docType, type, text, pending, onSelectionC
           color: getServerColor(section.score),
         }))
     }
+    if (editorStore.viewing) {
+      const start = docType === "summary" ? editorStore.viewing.summary_start : editorStore.viewing.source_start
+      const end = docType === "summary" ? editorStore.viewing.summary_end : editorStore.viewing.source_end
+      return [{
+        start,
+        end,
+        color: generateUserColor(editorStore.viewing.user_id, editorStore.viewing.record_id),
+      }]
+    }
     if (Object.keys(editorStore.activeList).length > 0) {
       return Object.entries(editorStore.activeList)
         .filter(([_key, value]) => value)
@@ -109,7 +118,7 @@ export default function EditorPanel({ docType, type, text, pending, onSelectionC
         }, [])
     }
     return []
-  }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history, pending])
+  }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history, pending, editorStore.viewing])
 
   useImperativeHandle(ref, () => {
     return {
