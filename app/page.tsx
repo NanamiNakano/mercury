@@ -93,7 +93,7 @@ function Page() {
     <div className="h-svh w-svw flex flex-col">
       <Header />
       <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel>
+        <ResizablePanel defaultSize={85}>
           <Editor />
         </ResizablePanel>
         <ResizableHandle withHandle />

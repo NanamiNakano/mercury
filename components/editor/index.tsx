@@ -191,9 +191,9 @@ export default function Editor() {
 
   return (
     <ResizablePanelGroup direction="vertical">
-      <ResizablePanel>
+      <ResizablePanel defaultSize={75}>
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel>
+          <ResizablePanel defaultSize={50}>
             <EditorPanel
               docType="source"
               type={type}
@@ -202,7 +202,7 @@ export default function Editor() {
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel>
+          <ResizablePanel defaultSize={50}>
             <EditorPanel
               docType="summary"
               type={type}
