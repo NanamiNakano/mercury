@@ -7,10 +7,12 @@ interface HighlightProps {
   text: string
   highlights: HighlightMeta[]
   pending: boolean
+  clickable: boolean
   onMouseUp: (e: React.MouseEvent<HTMLParagraphElement>) => void
+  onClick: (start: number, end: number) => void
 }
 
-export default function Highlight({ id, text, highlights, pending, onMouseUp }: HighlightProps) {
+export default function Highlight({ id, text, highlights, pending, clickable, onMouseUp, onClick }: HighlightProps) {
   if (pending) {
     return <p className="whitespace-pre-wrap text-gray-300" id={id}>{text}</p>
   }
@@ -80,7 +82,15 @@ export default function Highlight({ id, text, highlights, pending, onMouseUp }: 
     if (highlight.start > lastIndex) {
       segments.push(text.slice(lastIndex, highlight.start))
     }
-    segments.push(<span style={{ backgroundColor: highlight.color }}>{text.slice(highlight.start, highlight.end)}</span>)
+    if (clickable) {
+      segments.push(
+        <span style={{ backgroundColor: highlight.color }} onClick={() => onClick(highlight.start, highlight.end)}>
+          {text.slice(highlight.start, highlight.end)}
+        </span>
+      )
+    } else {
+      segments.push(<span style={{ backgroundColor: highlight.color }}>{text.slice(highlight.start, highlight.end)}</span>)
+    }
     lastIndex = highlight.end
   }
 

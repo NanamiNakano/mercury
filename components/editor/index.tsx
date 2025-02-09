@@ -166,6 +166,7 @@ export default function Editor() {
 
     try {
       await labelText(userStore.accessToken, indexStore.index, labelRequest)
+      handleResetLabel()
       editorStore.fetchHistory(userStore.accessToken, indexStore.index).catch((e) => {
         console.warn(e)
         toast({
@@ -180,7 +181,7 @@ export default function Editor() {
         description: `There was a problem with your request: ${error}`,
       })
     }
-  }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewingID])
+  }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewingID, selection])
 
   function handleSelectionChange(selection: SelectionRequest | null, docType: "source" | "summary") {
     setSelection(produce((draft) => {

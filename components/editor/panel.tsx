@@ -52,6 +52,18 @@ export default function EditorPanel({ docType, type, text, pending, onSelectionC
     window.getSelection()?.empty()
   }, [docType, type, onSelectionChange])
 
+  const handleClick = useCallback((start: number, end: number) => {
+    if (type === "viewing")
+      return
+    const selection = {
+      from_summary: docType === "summary",
+      start,
+      end,
+    }
+    setSelection(selection)
+    onSelectionChange(selection)
+  }, [docType, type, onSelectionChange])
+
   const highlights = useMemo(() => {
     if (pending) {
       return []
@@ -110,7 +122,7 @@ export default function EditorPanel({ docType, type, text, pending, onSelectionC
 
   return (
     <Window name={docType === "summary" ? "Summary" : "Source"}>
-      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} id={docType} pending={pending} />
+      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} id={docType} pending={pending} clickable={type === "editing"} onClick={handleClick} />
     </Window>
   )
 }
