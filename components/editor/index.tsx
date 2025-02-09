@@ -1,4 +1,4 @@
-import type { CommentData, LabelRequest } from "@/utils/types"
+import type { CommentData, LabelRequest, SelectionRequest } from "@/utils/types"
 import type { EditorPanelRef } from "./panel"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useToast } from "@/hooks/use-toast"
@@ -6,8 +6,10 @@ import { useTrackedEditorStore } from "@/store/useEditorStore"
 import { useTrackedIndexStore } from "@/store/useIndexStore"
 import { useTrackedTaskStore } from "@/store/useTaskStore"
 import { useTrackedUserStore } from "@/store/useUserStore"
-import { commitComment, deleteLabel, labelText, patchComment } from "@/utils/request"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { commitComment, deleteLabel, labelText, patchComment, selectText } from "@/utils/request"
+import { isRequestError } from "@/utils/types"
+import { produce } from "immer"
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react"
 import BottomBar from "../bottombar"
 import EditorPanel from "./panel"
 
@@ -29,6 +31,15 @@ export default function Editor() {
   const summaryRef = useRef<EditorPanelRef>(null)
   const [consistent, setConsistent] = useState<string[]>([])
   const [note, setNote] = useState<string>("")
+  const [summaryIsPending, startRequestSummary] = useTransition()
+  const [sourceIsPending, startRequestSource] = useTransition()
+  const [selection, setSelection] = useState<{
+    sourceSelection: SelectionRequest | null
+    summarySelection: SelectionRequest | null
+  }>({
+    sourceSelection: null,
+    summarySelection: null,
+  })
 
   const initialNote = useMemo(() => {
     if (editorStore.viewingID) {
@@ -129,6 +140,7 @@ export default function Editor() {
 
     sourceRef.current?.reset()
     summaryRef.current?.reset()
+    editorStore.clearServerSection()
   }
 
   const handleSubmitLabel = useCallback(async () => {
@@ -136,8 +148,8 @@ export default function Editor() {
       return
     }
 
-    const sourceSelection = sourceRef.current?.selection ?? null
-    const summarySelection = summaryRef.current?.selection ?? null
+    const sourceSelection = selection.sourceSelection
+    const summarySelection = selection.summarySelection
 
     if (!sourceSelection && !summarySelection) {
       return
@@ -170,6 +182,16 @@ export default function Editor() {
     }
   }, [consistent, note, indexStore.index, userStore.accessToken, editorStore.viewingID])
 
+  function handleSelectionChange(selection: SelectionRequest | null, docType: "source" | "summary") {
+    setSelection(produce((draft) => {
+      if (docType === "source") {
+        draft.sourceSelection = selection
+      } else {
+        draft.summarySelection = selection
+      }
+    }))
+  }
+
   useEffect(() => {
     if (indexStore.index !== undefined) {
       taskStore.fetch(indexStore.index).catch((e) => {
@@ -189,6 +211,29 @@ export default function Editor() {
     }
   }, [indexStore.index, userStore.accessToken])
 
+  useEffect(() => {
+    // only request server section when only one of the panel is selected
+    if (selection.sourceSelection && !selection.summarySelection) {
+      startRequestSummary(async () => {
+        const response = await selectText(indexStore.index, selection.sourceSelection)
+        if (isRequestError(response)) {
+          console.error(response.error)
+        } else {
+          editorStore.setServerSection(response)
+        }
+      })
+    } else if (!selection.sourceSelection && selection.summarySelection) {
+      startRequestSource(async () => {
+        const response = await selectText(indexStore.index, selection.summarySelection)
+        if (isRequestError(response)) {
+          console.error(response.error)
+        } else {
+          editorStore.setServerSection(response)
+        }
+      })
+    }
+  }, [selection, indexStore.index])
+
   return (
     <ResizablePanelGroup direction="vertical">
       <ResizablePanel defaultSize={75}>
@@ -199,6 +244,8 @@ export default function Editor() {
               type={type}
               text={taskStore.current?.doc || ""}
               ref={sourceRef}
+              pending={sourceIsPending}
+              onSelectionChange={selection => handleSelectionChange(selection, "source")}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -208,6 +255,8 @@ export default function Editor() {
               type={type}
               text={taskStore.current?.sum || ""}
               ref={summaryRef}
+              pending={summaryIsPending}
+              onSelectionChange={selection => handleSelectionChange(selection, "summary")}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

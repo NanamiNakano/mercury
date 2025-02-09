@@ -5,9 +5,9 @@ import { create } from "zustand"
 import { getTaskHistory } from "../utils/request"
 
 interface EditorState {
-  initiator: "source" | "summary" | null
   serverSection: SectionResponse
-  clearAllSelection: () => void
+  setServerSection: (section: SectionResponse) => void
+  clearServerSection: () => void
 
   history: LabelData[]
   setHistory: (history: LabelData[]) => void
@@ -21,14 +21,9 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>()(set => ({
-  initiator: null,
   serverSection: [],
-  clearAllSelection: () => set(produce((state: EditorState) => {
-    state.serverSection = []
-    state.initiator = null
-    window.getSelection()?.removeAllRanges()
-  })),
-
+  setServerSection: (section: SectionResponse) => set({ serverSection: section }),
+  clearServerSection: () => set({ serverSection: [] }),
   history: [],
   setHistory: (history: LabelData[]) => set({ history }),
   fetchHistory: async (accessToken: string, taskIndex: number) => {

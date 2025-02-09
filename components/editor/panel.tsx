@@ -11,46 +11,51 @@ interface EditorPanelProps {
   docType: "summary" | "source"
   type: "editing" | "viewing"
   text: string
+  pending: boolean
+  onSelectionChange: (selection: SelectionRequest | null) => void
   ref: React.RefObject<EditorPanelRef>
 }
 
 export interface EditorPanelRef {
-  selection: SelectionRequest | null
   reset: () => void
 }
 
-export default function EditorPanel({ docType, type, text, ref }: EditorPanelProps) {
+export default function EditorPanel({ docType, type, text, pending, onSelectionChange, ref }: EditorPanelProps) {
   const editorStore = useTrackedEditorStore()
   const [selection, setSelection] = useState<SelectionRequest | null>(null)
 
   const handleMouseUp = useCallback(() => {
     if (typeof window === "undefined")
       return
-    const selection = rangy.getSelection()
-    if (!selection || selection.rangeCount <= 0)
+    const rangySelection = rangy.getSelection()
+    if (!rangySelection || rangySelection.rangeCount <= 0)
       return
     if (type === "viewing")
       return
-    const range = selection.getRangeAt(0)
+    const range = rangySelection.getRangeAt(0)
 
     if (range.toString().trim() === "") {
-      setSelection(null)
       return
     }
 
     const element = document.getElementById(docType) as HTMLElement
     const { start, end } = range.toCharacterRange(element)
 
-    setSelection({
+    const selection = {
       from_summary: docType === "summary",
       start,
       end,
-    })
+    }
+    setSelection(selection)
+    onSelectionChange(selection)
 
     window.getSelection()?.empty()
-  }, [docType, type])
+  }, [docType, type, onSelectionChange])
 
   const highlights = useMemo(() => {
+    if (pending) {
+      return []
+    }
     if (selection !== null) {
       return [{
         start: selection.start,
@@ -92,18 +97,20 @@ export default function EditorPanel({ docType, type, text, ref }: EditorPanelPro
         }, [])
     }
     return []
-  }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history])
+  }, [selection, editorStore.serverSection, docType, editorStore.activeList, editorStore.history, pending])
 
-  useImperativeHandle(ref, () => ({
-    selection,
-    reset: () => {
-      setSelection(null)
-    },
-  }))
+  useImperativeHandle(ref, () => {
+    return {
+      reset: () => {
+        setSelection(null)
+        onSelectionChange(null)
+      },
+    }
+  })
 
   return (
     <Window name={docType === "summary" ? "Summary" : "Source"}>
-      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} id={docType} />
+      <Highlight text={text} highlights={highlights} onMouseUp={handleMouseUp} id={docType} pending={pending} />
     </Window>
   )
 }

@@ -6,10 +6,15 @@ interface HighlightProps {
   id: string
   text: string
   highlights: HighlightMeta[]
+  pending: boolean
   onMouseUp: (e: React.MouseEvent<HTMLParagraphElement>) => void
 }
 
-export default function Highlight({ id, text, highlights, onMouseUp }: HighlightProps) {
+export default function Highlight({ id, text, highlights, pending, onMouseUp }: HighlightProps) {
+  if (pending) {
+    return <p className="whitespace-pre-wrap text-gray-300" id={id}>{text}</p>
+  }
+
   const copyHighlights = highlights.filter(highlight => highlight.start !== -1 && highlight.end !== -1)
   const noLapHighlights = new Array<HighlightMeta>()
 
