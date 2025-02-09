@@ -19,9 +19,8 @@ export default function Note({ initialNote = "", onNoteChange, disabled = false 
           placeholder="Note"
           onChange={e => onNoteChange(e.target.value)}
           disabled={disabled}
-        >
-          {initialNote}
-        </Textarea>
+          defaultValue={initialNote}
+        />
       </div>
     </Window>
   )
