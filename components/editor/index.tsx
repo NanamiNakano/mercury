@@ -163,45 +163,45 @@ export default function Editor() {
   }
 
   return (
-      <ResizablePanelGroup direction="vertical">
-        <ResizablePanel>
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel>
-              <EditorPanel
-                docType="source"
-                type={type}
-                text={taskStore.current?.doc || ""}
-                ref={sourceRef}
-              />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel>
-              <EditorPanel
-                docType="summary"
-                type={type}
-                text={taskStore.current?.sum || ""}
-                ref={summaryRef}
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={25}>
-          <BottomBar
-            initialNote={initialNote}
-            initialConsistent={initialConsistent}
-            type={type}
-            onConsistentChange={setConsistent}
-            onNoteChange={setNote}
-            labelId={editorStore.viewingID}
-            onSubmitChat={handleSubmitComment}
-            onEditMessage={handleEditComment}
-            comments={comments}
-            onDelete={handleDeleteLabel}
-            onReset={handleResetLabel}
-            onSubmitLabel={handleSubmitLabel}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+    <ResizablePanelGroup direction="vertical">
+      <ResizablePanel>
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel>
+            <EditorPanel
+              docType="source"
+              type={type}
+              text={taskStore.current?.doc || ""}
+              ref={sourceRef}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel>
+            <EditorPanel
+              docType="summary"
+              type={type}
+              text={taskStore.current?.sum || ""}
+              ref={summaryRef}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize={25}>
+        <BottomBar
+          initialNote={initialNote}
+          initialConsistent={initialConsistent}
+          type={type}
+          onConsistentChange={setConsistent}
+          onNoteChange={setNote}
+          labelId={editorStore.viewingID}
+          onSubmitChat={handleSubmitComment}
+          onEditMessage={handleEditComment}
+          comments={comments}
+          onDelete={handleDeleteLabel}
+          onReset={handleResetLabel}
+          onSubmitLabel={handleSubmitLabel}
+        />
+      </ResizablePanel>
+    </ResizablePanelGroup>
   )
 }

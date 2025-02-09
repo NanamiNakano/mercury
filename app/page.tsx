@@ -2,6 +2,8 @@
 
 import Editor from "@/components/editor"
 import Header from "@/components/header"
+import Sidebar from "@/components/sidebar"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
@@ -9,8 +11,6 @@ import { useTrackedIndexStore } from "../store/useIndexStore"
 import { useTrackedLabelsStore } from "../store/useLabelsStore"
 import { useTrackedUserStore } from "../store/useUserStore"
 import { checkUserMe } from "../utils/request"
-import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable"
-import Sidebar from "@/components/sidebar"
 
 let didInit = false
 
